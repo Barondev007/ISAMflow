@@ -55,6 +55,12 @@
         <Name>EV-Parse-Secondary-Response</Name>
     </Step>
 
+    <!-- Pick whichever of the two candidate extractions actually matched;
+         see EV-Parse-Primary-Response's comment for why there are two. -->
+    <Step>
+        <Name>AM-Coalesce-SAML-Assertion</Name>
+    </Step>
+
     <!-- No SAML assertion extracted from either response (SOAP fault, unexpected
          shape, or both calls failed without tripping RF-ISAM-Unavailable above). -->
     <Step>

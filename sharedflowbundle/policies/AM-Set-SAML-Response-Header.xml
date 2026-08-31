@@ -6,22 +6,25 @@
                  compressSaml resolved true, otherwise a plain base64 of the assertion XML. -->
             <Header name="X-SAML-Assertion">{saml.assertion.output}</Header>
             <Header name="X-SAML-Assertion-Compressed">{saml.assertion.compressed}</Header>
-            <Header name="X-SAML-Subject-Id">{isam.rstr.subject.id}</Header>
+            <!-- saml.subject.id/notBefore/notOnOrAfter come from JC-Validate-SAML-Signature,
+                 which parses the assertion XML itself rather than relying on XPath against
+                 the outer ISAM response; see EV-Parse-Primary-Response's comment. -->
+            <Header name="X-SAML-Subject-Id">{saml.subject.id}</Header>
         </Headers>
     </Set>
     <AssignVariable>
         <Name>isam.exchanged.subject.id</Name>
-        <Ref>isam.rstr.subject.id</Ref>
+        <Ref>saml.subject.id</Ref>
         <Value></Value>
     </AssignVariable>
     <AssignVariable>
         <Name>isam.exchanged.assertion.notBefore</Name>
-        <Ref>isam.rstr.notBefore</Ref>
+        <Ref>saml.assertion.notBefore</Ref>
         <Value></Value>
     </AssignVariable>
     <AssignVariable>
         <Name>isam.exchanged.assertion.notOnOrAfter</Name>
-        <Ref>isam.rstr.notOnOrAfter</Ref>
+        <Ref>saml.assertion.notOnOrAfter</Ref>
         <Value></Value>
     </AssignVariable>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>

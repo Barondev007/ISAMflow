@@ -19,6 +19,7 @@
         <Policy>JC-Validate-SAML-Signature</Policy>
         <Policy>RF-SAML-Signature-Invalid</Policy>
         <Policy>JC-Compress-SAML-Assertion</Policy>
+        <Policy>AM-Coalesce-JSON-Metadata</Policy>
         <Policy>AM-Set-SAML-Response-Header</Policy>
     </Policies>
     <SharedFlows>

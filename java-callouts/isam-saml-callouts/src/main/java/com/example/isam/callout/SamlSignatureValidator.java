@@ -46,6 +46,16 @@ import java.util.Map;
  *   cert.expired     boolean
  *   cert.thumbprint  string  - SHA-256 hex, uppercase, no separators
  *   pinned           boolean - whether thumbprint pinning was enforced
+ *
+ * Also sets saml.subject.id, saml.assertion.notBefore, saml.assertion.notOnOrAfter
+ * (parsed from the same DOM, regardless of how the validation above turns out).
+ * These used to be pulled by ExtractVariables/XPath directly against the outer
+ * ISAM response, which only works when the assertion arrives as a real nested
+ * XML element; some STS chains instead embed it as XML-escaped text inside
+ * RequestedSecurityToken, in which case there's no such element in *that*
+ * document to point an XPath at. Since this callout re-parses the (coalesced,
+ * already-unescaped) assertion string into its own DOM anyway for signature
+ * checking, extracting subject/lifetime from that DOM here works in both cases.
  */
 @IOIntensive
 public class SamlSignatureValidator implements Execution {
@@ -71,6 +81,7 @@ public class SamlSignatureValidator implements Execution {
 
             Document doc = parse(assertionXml);
             markIdAttributes(doc);
+            extractSamlMetadata(doc, messageContext);
 
             NodeList sigNodes = doc.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
             if (sigNodes.getLength() == 0) {
@@ -176,6 +187,38 @@ public class SamlSignatureValidator implements Execution {
             }
             if (el.hasAttribute("Id")) {
                 el.setIdAttribute("Id", true);
+            }
+        }
+    }
+
+    // Walks the parsed assertion DOM by local name (namespace/prefix-agnostic,
+    // same philosophy as the rest of this codebase) to pull out the subject
+    // NameID/NameIdentifier and the Conditions validity window.
+    private static void extractSamlMetadata(Document doc, MessageContext messageContext) {
+        NodeList all = doc.getElementsByTagName("*");
+        for (int i = 0; i < all.getLength(); i++) {
+            Element el = (Element) all.item(i);
+            String localName = el.getLocalName() != null ? el.getLocalName() : el.getTagName();
+
+            if ("Subject".equals(localName)) {
+                NodeList children = el.getChildNodes();
+                for (int j = 0; j < children.getLength(); j++) {
+                    org.w3c.dom.Node child = children.item(j);
+                    if (child.getNodeType() != org.w3c.dom.Node.ELEMENT_NODE) continue;
+                    Element childEl = (Element) child;
+                    String childLocalName = childEl.getLocalName() != null ? childEl.getLocalName() : childEl.getTagName();
+                    if ("NameID".equals(childLocalName) || "NameIdentifier".equals(childLocalName)) {
+                        messageContext.setVariable("saml.subject.id", childEl.getTextContent());
+                        break;
+                    }
+                }
+            } else if ("Conditions".equals(localName)) {
+                if (el.hasAttribute("NotBefore")) {
+                    messageContext.setVariable("saml.assertion.notBefore", el.getAttribute("NotBefore"));
+                }
+                if (el.hasAttribute("NotOnOrAfter")) {
+                    messageContext.setVariable("saml.assertion.notOnOrAfter", el.getAttribute("NotOnOrAfter"));
+                }
             }
         }
     }

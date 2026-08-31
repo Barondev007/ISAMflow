@@ -76,20 +76,33 @@ scripts/
    (transport error) or returned HTTP 500 — see "Failover semantics" below.
 9. **RF-ISAM-Unavailable** — raised only if both hosts failed/500'd.
 10. **EV-Parse-Primary-Response** / **EV-Parse-Secondary-Response** — whichever
-    host returned HTTP 200 gets its RSTR parsed via XPath into:
-    - `isam.rstr.assertion.xml` — the full `<saml:Assertion>` XML fragment
-    - `isam.rstr.subject.id` — the assertion's `Subject/NameID` (or `NameIdentifier`)
-    - `isam.rstr.notBefore` / `isam.rstr.notOnOrAfter` — from `saml:Conditions`
+    host returned HTTP 200 gets its RSTR parsed via `local-name()`-based XPath
+    (works regardless of exact prefixes or whether the RSTR is wrapped in a
+    `RequestSecurityTokenResponseCollection`) into **two candidates**:
+    - `isam.rstr.assertion.nodeset` — matches when
+      `RequestedSecurityTokenResponse/RequestedSecurityToken` (ISAM's real,
+      confirmed element names — not the spec's `RequestSecurityTokenResponse`)
+      contains a real nested `<saml:Assertion>` child element
+    - `isam.rstr.assertion.text` — `RequestedSecurityToken`'s own string
+      value, which equals the assertion XML when ISAM instead embeds it as
+      XML-escaped text rather than a real child element (a common WS-Trust/
+      TFIM-derived STS pattern — this turned out to be what was actually
+      breaking assertion extraction here: a nodeset XPath simply finds
+      nothing to match when there's no real element, only escaped text)
     - `isam.rstr.fault` — SOAP Fault reason text, if ISAM returned a fault instead
-
-    These XPaths use `local-name()` throughout instead of hard namespace
-    bindings, so they keep working regardless of exact prefixes or whether the
-    RSTR is wrapped in a `RequestSecurityTokenResponseCollection`.
-11. **RF-WSTrust-Fault** — raised if no assertion was extracted.
-12. **JC-Validate-SAML-Signature** (Java callout) — see "Why Java is still here".
-13. **RF-SAML-Signature-Invalid** — raised if the signature doesn't validate.
-14. **JC-Compress-SAML-Assertion** (Java callout) — see "Why Java is still here".
-15. **AM-Set-SAML-Response-Header** — sets `X-SAML-Assertion`,
+11. **AM-Coalesce-SAML-Assertion** — picks whichever candidate is actually
+    populated into the canonical `isam.rstr.assertion.xml`.
+12. **RF-WSTrust-Fault** — raised if neither candidate matched.
+13. **JC-Validate-SAML-Signature** (Java callout) — see "Why Java is still here".
+    Also extracts `saml.subject.id`, `saml.assertion.notBefore`, and
+    `saml.assertion.notOnOrAfter` from the same parsed assertion DOM, since it
+    has to parse the (already-coalesced, already-unescaped) assertion string
+    into a DOM anyway for signature checking — this is more reliable than a
+    separate XPath against the *outer* response, which only ever works for
+    the real-nested-element case.
+14. **RF-SAML-Signature-Invalid** — raised if the signature doesn't validate.
+15. **JC-Compress-SAML-Assertion** (Java callout) — see "Why Java is still here".
+16. **AM-Set-SAML-Response-Header** — sets `X-SAML-Assertion`,
     `X-SAML-Assertion-Compressed`, and `X-SAML-Subject-Id` request headers, and
     mirrors the subject/lifetime into `isam.exchanged.*` flow variables.
 
@@ -195,7 +208,13 @@ JSON throughout. Every step name mirrors its WS-Trust counterpart 1:1:
     the same XML fragment either way.
 13. **RF-SAML-Signature-Invalid**.
 14. **JC-Compress-SAML-Assertion** (Java callout, same jar).
-15. **AM-Set-SAML-Response-Header** — identical output contract to the
+15. **AM-Coalesce-JSON-Metadata** — defensive fallback in case the assumed
+    `subjectId`/`notBefore`/`notOnOrAfter` JSON fields turn out not to exist
+    (the exact class of bug the WS-Trust bundle actually hit): falls back to
+    `saml.subject.id`/`saml.assertion.notBefore`/`saml.assertion.notOnOrAfter`
+    (parsed straight out of the assertion XML by `JC-Validate-SAML-Signature`,
+    same as the WS-Trust bundle) if the JSONPath-extracted value is empty.
+16. **AM-Set-SAML-Response-Header** — identical output contract to the
     WS-Trust bundle: `X-SAML-Assertion`, `X-SAML-Assertion-Compressed`,
     `X-SAML-Subject-Id` headers, plus `isam.exchanged.*` variables.
 
@@ -384,9 +403,12 @@ apigeecli sharedflows deploy -n ISAM-JSON-TokenExchange \
   `AdditionalContext` with `ContextItem`s for IP/cert/UA) matches ISAM's
   common Federation/STS chain pattern where a JavaScript STS module maps
   `AdditionalContext` into custom claims — confirm the exact `ContextItem`
-  names your ISAM mapping rule expects. The SAML extraction XPaths assume
-  the assertion is reachable at `.../RequestedSecurityToken/saml:Assertion`
-  (any namespace prefix, any wrapper around `RequestedSecurityToken`).
+  names your ISAM mapping rule expects. The SAML assertion location
+  (`RequestedSecurityTokenResponse/RequestedSecurityToken`, holding the
+  assertion either as a real nested element or as XML-escaped text) is
+  confirmed against a real ISAM response, not assumed; see
+  `EV-Parse-Primary-Response.xml`'s comment for the two-candidate extraction
+  that handles both cases.
 - **JSON bundle**: the request shape (`requestType`/`tokenType`/`keyType`/
   `appliesTo`/`bearerToken`/`clientContext.*`) and especially the **response**
   field names (`saml`/`subjectId`/`notBefore`/`notOnOrAfter`/`error`) are

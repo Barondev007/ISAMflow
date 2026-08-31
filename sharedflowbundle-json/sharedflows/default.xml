@@ -81,6 +81,13 @@
         <Name>JC-Compress-SAML-Assertion</Name>
     </Step>
 
+    <!-- Fall back to the Java-parsed subject/lifetime if the assumed JSON
+         response fields (subjectId/notBefore/notOnOrAfter) aren't actually
+         there; see the policy's own comment. -->
+    <Step>
+        <Name>AM-Coalesce-JSON-Metadata</Name>
+    </Step>
+
     <Step>
         <Name>AM-Set-SAML-Response-Header</Name>
     </Step>

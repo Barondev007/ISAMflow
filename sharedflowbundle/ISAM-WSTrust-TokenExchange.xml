@@ -15,6 +15,7 @@
         <Policy>RF-ISAM-Unavailable</Policy>
         <Policy>EV-Parse-Primary-Response</Policy>
         <Policy>EV-Parse-Secondary-Response</Policy>
+        <Policy>AM-Coalesce-SAML-Assertion</Policy>
         <Policy>RF-WSTrust-Fault</Policy>
         <Policy>JC-Validate-SAML-Signature</Policy>
         <Policy>RF-SAML-Signature-Invalid</Policy>

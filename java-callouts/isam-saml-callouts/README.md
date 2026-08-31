@@ -66,6 +66,17 @@ Output variables (same names in both bundles): `saml.signature.valid`,
 `.error`, `.cert.subject`, `.cert.issuer`, `.cert.serial`, `.cert.expired`,
 `.cert.thumbprint`, `.pinned`.
 
+Also sets `saml.subject.id`, `saml.assertion.notBefore`, and
+`saml.assertion.notOnOrAfter`, parsed from the same DOM this class already
+builds to check the signature — regardless of how validation itself turns
+out. These exist because the WS-Trust bundle originally extracted subject/
+lifetime via XPath against the *outer* SOAP response, which only works when
+the assertion is a real nested XML element there; some STS implementations
+(confirmed for this repo's actual ISAM) instead embed it as XML-escaped text,
+in which case there's no such element to point an XPath at. Since this
+callout re-parses the (already-unescaped) assertion string into its own DOM
+regardless, extracting these three fields here works in both cases.
+
 ### `com.example.isam.callout.SamlAssertionCompressor`
 
 | Property | Default | WS-Trust bundle | JSON bundle | Meaning |

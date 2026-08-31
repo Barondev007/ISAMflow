@@ -4,17 +4,11 @@
     <VariablePrefix>isam.rstr</VariablePrefix>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
     <XMLPayload stopPayloadProcessing="false">
-        <Variable name="assertion.xml" type="nodeset">
+        <Variable name="assertion.nodeset" type="nodeset">
             <XPath>//*[local-name()='RequestedSecurityToken']/*[local-name()='Assertion']</XPath>
         </Variable>
-        <Variable name="subject.id" type="string">
-            <XPath>//*[local-name()='RequestedSecurityToken']/*[local-name()='Assertion']/*[local-name()='Subject']/*[local-name()='NameID' or local-name()='NameIdentifier']</XPath>
-        </Variable>
-        <Variable name="notBefore" type="string">
-            <XPath>//*[local-name()='RequestedSecurityToken']/*[local-name()='Assertion']/*[local-name()='Conditions']/@NotBefore</XPath>
-        </Variable>
-        <Variable name="notOnOrAfter" type="string">
-            <XPath>//*[local-name()='RequestedSecurityToken']/*[local-name()='Assertion']/*[local-name()='Conditions']/@NotOnOrAfter</XPath>
+        <Variable name="assertion.text" type="string">
+            <XPath>//*[local-name()='RequestedSecurityToken']</XPath>
         </Variable>
         <Variable name="fault" type="string">
             <XPath>//*[local-name()='Fault']//*[local-name()='Text' or local-name()='faultstring']</XPath>

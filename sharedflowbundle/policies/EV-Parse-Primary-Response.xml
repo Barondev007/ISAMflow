@@ -3,23 +3,31 @@
     <Source>isamPrimaryResponse</Source>
     <VariablePrefix>isam.rstr</VariablePrefix>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <!--
+      local-name() is used throughout instead of namespace-bound steps so this
+      keeps working regardless of the exact prefixes ISAM emits, and regardless
+      of whether the RSTR is wrapped in a RequestSecurityTokenResponseCollection.
+
+      Two candidate extractions for the assertion, because ISAM's actual RST
+      shape (confirmed in practice) puts it under
+      RequestedSecurityTokenResponse/RequestedSecurityToken, and different STS
+      implementations put the assertion there two different ways:
+        - assertion.nodeset: a real nested <saml:Assertion> XML element
+        - assertion.text: RequestedSecurityToken's own string value, which
+          equals the assertion XML text when ISAM instead embeds it as
+          XML-escaped text (&lt;saml:Assertion&gt;...) rather than a real
+          child element; common for WS-Trust/TFIM-derived STS chains
+      AM-Coalesce-SAML-Assertion (the next step) picks whichever is actually
+      populated. subject/notBefore/notOnOrAfter moved to the Java signature
+      callout, which parses the coalesced assertion.xml directly instead of
+      relying on it being real DOM nodes in *this* document.
+    -->
     <XMLPayload stopPayloadProcessing="false">
-        <!--
-          local-name() is used throughout instead of namespace-bound steps so this
-          keeps working regardless of the exact prefixes ISAM emits, and regardless
-          of whether the RSTR is wrapped in a RequestSecurityTokenResponseCollection.
-        -->
-        <Variable name="assertion.xml" type="nodeset">
+        <Variable name="assertion.nodeset" type="nodeset">
             <XPath>//*[local-name()='RequestedSecurityToken']/*[local-name()='Assertion']</XPath>
         </Variable>
-        <Variable name="subject.id" type="string">
-            <XPath>//*[local-name()='RequestedSecurityToken']/*[local-name()='Assertion']/*[local-name()='Subject']/*[local-name()='NameID' or local-name()='NameIdentifier']</XPath>
-        </Variable>
-        <Variable name="notBefore" type="string">
-            <XPath>//*[local-name()='RequestedSecurityToken']/*[local-name()='Assertion']/*[local-name()='Conditions']/@NotBefore</XPath>
-        </Variable>
-        <Variable name="notOnOrAfter" type="string">
-            <XPath>//*[local-name()='RequestedSecurityToken']/*[local-name()='Assertion']/*[local-name()='Conditions']/@NotOnOrAfter</XPath>
+        <Variable name="assertion.text" type="string">
+            <XPath>//*[local-name()='RequestedSecurityToken']</XPath>
         </Variable>
         <Variable name="fault" type="string">
             <XPath>//*[local-name()='Fault']//*[local-name()='Text' or local-name()='faultstring']</XPath>

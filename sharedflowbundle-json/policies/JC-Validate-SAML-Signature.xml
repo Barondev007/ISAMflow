@@ -1,0 +1,12 @@
+<JavaCallout name="JC-Validate-SAML-Signature">
+    <DisplayName>JC Validate SAML Signature</DisplayName>
+    <Properties>
+        <!-- Same isam-saml-callouts.jar as the WS-Trust bundle; only the
+             variable names differ, which the callout reads from these
+             Properties rather than having them hardcoded. -->
+        <Property name="assertionVariable">isamjson.response.assertion.xml</Property>
+        <Property name="trustedThumbprintsVariable">isamjson.config.trustedThumbprints</Property>
+    </Properties>
+    <ClassName>com.example.isam.callout.SamlSignatureValidator</ClassName>
+    <ResourceURL>java://isam-saml-callouts.jar</ResourceURL>
+</JavaCallout>

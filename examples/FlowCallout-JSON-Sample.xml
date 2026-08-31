@@ -1,0 +1,41 @@
+<!--
+  Sample policy for an API proxy that wants to call the
+  ISAM-JSON-TokenExchange shared flow (the JSON sibling of
+  ISAM-WSTrust-TokenExchange), e.g. attached in PreFlow before the proxy's
+  own target logic.
+
+  Optional: set compressSaml as a flow variable before this step to override
+  the KVM default for this one request, e.g. via a native AssignMessage step:
+
+    <AssignVariable>
+        <Name>compressSaml</Name>
+        <Value>true</Value>
+    </AssignVariable>
+
+  After this step runs:
+    - The shared flow has already set request headers X-SAML-Assertion
+      (base64, zipped or plain per compressSaml), X-SAML-Assertion-Compressed
+      (true/false), and X-SAML-Subject-Id, so if your target just needs
+      those forwarded as-is, there's nothing further to do.
+    - The following flow variables are also available if you'd rather read
+      them directly instead of relying on the headers this shared flow set:
+        isamjson.response.assertion.xml    raw <saml:Assertion> XML (from the
+                                            JSON response's "saml" field)
+        isam.exchanged.subject.id          SAML subject (NameID)
+        isam.exchanged.assertion.notBefore / .notOnOrAfter
+        saml.assertion.output              base64 output (zipped or plain)
+        saml.assertion.compressed          bool
+        saml.signature.valid               bool, true by the time this step
+                                            returns, since RF-SAML-Signature-Invalid
+                                            would otherwise have raised a fault
+        saml.signature.cert.subject / .issuer / .thumbprint
+
+  Any fault before this step completes (missing config/bearer token, both
+  ISAM hosts down, error response, invalid signature) propagates up as a
+  raised fault; handle it in this proxy's DefaultFaultRule/FaultRules as
+  needed.
+-->
+<FlowCallout name="FC-ISAM-JSON-TokenExchange">
+    <DisplayName>FC ISAM JSON Token Exchange</DisplayName>
+    <SharedFlowBundle>ISAM-JSON-TokenExchange</SharedFlowBundle>
+</FlowCallout>

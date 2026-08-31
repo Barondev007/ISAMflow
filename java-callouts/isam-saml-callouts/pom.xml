@@ -65,15 +65,17 @@
                     </archive>
                 </configuration>
             </plugin>
-            <!-- Drops the built jar straight into the shared flow bundle's
-                 resources/java/ directory so it deploys with the bundle. -->
+            <!-- Drops the built jar into BOTH shared flow bundles' resources/java/
+                 directories so it deploys with either one: the same two callouts
+                 (property-configurable variable names) are used unchanged by
+                 sharedflowbundle (WS-Trust) and sharedflowbundle-json (JSON). -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <version>3.1.0</version>
                 <executions>
                     <execution>
-                        <id>copy-jar-to-sharedflowbundle</id>
+                        <id>copy-jar-to-sharedflowbundles</id>
                         <phase>package</phase>
                         <goals>
                             <goal>run</goal>
@@ -83,6 +85,10 @@
                                 <copy
                                     file="${project.build.directory}/${project.build.finalName}.jar"
                                     todir="${project.basedir}/../../sharedflowbundle/resources/java"
+                                    overwrite="true"/>
+                                <copy
+                                    file="${project.build.directory}/${project.build.finalName}.jar"
+                                    todir="${project.basedir}/../../sharedflowbundle-json/resources/java"
                                     overwrite="true"/>
                             </target>
                         </configuration>

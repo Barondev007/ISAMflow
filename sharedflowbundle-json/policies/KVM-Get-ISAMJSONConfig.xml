@@ -1,0 +1,21 @@
+<KeyValueMapOperations name="KVM-Get-ISAMJSONConfig" mapIdentifier="ISAM.JSON.Config">
+    <DisplayName>KVM Get ISAM JSON Config</DisplayName>
+    <Scope>environment</Scope>
+    <ExpiryTimeInSecs>300</ExpiryTimeInSecs>
+    <!-- Separate KVM from ISAM.WSTrust.Config: the JSON token endpoint may be
+         a different host/port/path than the SOAP one, even on the same ISAM
+         appliance. One key per config field, same as the WS-Trust bundle. -->
+    <Get assignTo="isamjson.config.host1"><Key><Parameter>isam.json.host1</Parameter></Key></Get>
+    <Get assignTo="isamjson.config.host2"><Key><Parameter>isam.json.host2</Parameter></Key></Get>
+    <Get assignTo="isamjson.config.port"><Key><Parameter>isam.json.port</Parameter></Key></Get>
+    <Get assignTo="isamjson.config.scheme"><Key><Parameter>isam.json.scheme</Parameter></Key></Get>
+    <Get assignTo="isamjson.config.path"><Key><Parameter>isam.json.path</Parameter></Key></Get>
+    <Get assignTo="isamjson.config.connectTimeoutMs"><Key><Parameter>isam.json.connectTimeoutMs</Parameter></Key></Get>
+    <Get assignTo="isamjson.config.ioTimeoutMs"><Key><Parameter>isam.json.ioTimeoutMs</Parameter></Key></Get>
+    <Get assignTo="isamjson.config.appliesTo"><Key><Parameter>isam.json.appliesTo</Parameter></Key></Get>
+    <Get assignTo="isamjson.config.tokenType"><Key><Parameter>isam.json.tokenType</Parameter></Key></Get>
+    <Get assignTo="isamjson.config.keyType"><Key><Parameter>isam.json.keyType</Parameter></Key></Get>
+    <Get assignTo="isamjson.config.requestType"><Key><Parameter>isam.json.requestType</Parameter></Key></Get>
+    <Get assignTo="isamjson.config.compressSaml"><Key><Parameter>isam.json.compressSaml</Parameter></Key></Get>
+    <Get assignTo="isamjson.config.trustedThumbprints"><Key><Parameter>isam.json.trustedSigningCertThumbprints</Parameter></Key></Get>
+</KeyValueMapOperations>

@@ -1,0 +1,31 @@
+<ExtractVariables name="EV-Parse-JSON-Primary-Response">
+    <DisplayName>EV Parse JSON Primary Response</DisplayName>
+    <Source>isamJsonPrimaryResponse</Source>
+    <VariablePrefix>isamjson.response</VariablePrefix>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <!--
+      ASSUMED response field names; confirm the actual ISAM JSON token
+      response shape and adjust these JSONPaths (see README "Notes / things
+      to confirm with the ISAM side"):
+        { "saml": "<saml:Assertion ...>...</saml:Assertion>",
+          "subjectId": "...", "notBefore": "...", "notOnOrAfter": "...",
+          "error": "..." }
+    -->
+    <JSONPayload>
+        <Variable name="assertion.xml" type="string">
+            <JSONPath>$.saml</JSONPath>
+        </Variable>
+        <Variable name="subject.id" type="string">
+            <JSONPath>$.subjectId</JSONPath>
+        </Variable>
+        <Variable name="notBefore" type="string">
+            <JSONPath>$.notBefore</JSONPath>
+        </Variable>
+        <Variable name="notOnOrAfter" type="string">
+            <JSONPath>$.notOnOrAfter</JSONPath>
+        </Variable>
+        <Variable name="fault" type="string">
+            <JSONPath>$.error</JSONPath>
+        </Variable>
+    </JSONPayload>
+</ExtractVariables>

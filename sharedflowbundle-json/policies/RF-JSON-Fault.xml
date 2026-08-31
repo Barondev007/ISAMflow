@@ -1,0 +1,17 @@
+<RaiseFault name="RF-JSON-Fault">
+    <DisplayName>RF JSON Fault</DisplayName>
+    <FaultResponse>
+        <Set>
+            <Payload contentType="application/json">
+                {
+                  "error": "json_exchange_failed",
+                  "message": "ISAM returned an error, or no saml field was present in the JSON response.",
+                  "isamFaultReason": "{isamjson.response.fault}"
+                }
+            </Payload>
+            <StatusCode>502</StatusCode>
+            <ReasonPhrase>Bad Gateway</ReasonPhrase>
+        </Set>
+    </FaultResponse>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</RaiseFault>

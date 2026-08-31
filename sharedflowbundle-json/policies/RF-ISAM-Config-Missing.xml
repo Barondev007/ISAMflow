@@ -1,0 +1,16 @@
+<RaiseFault name="RF-ISAM-Config-Missing">
+    <DisplayName>RF ISAM Config Missing</DisplayName>
+    <FaultResponse>
+        <Set>
+            <Payload contentType="application/json">
+                {
+                  "error": "isam_config_missing",
+                  "message": "One or more required entries are missing from the ISAM.JSON.Config KVM (see scripts/provision-kvm-json.sh)."
+                }
+            </Payload>
+            <StatusCode>500</StatusCode>
+            <ReasonPhrase>Internal Server Error</ReasonPhrase>
+        </Set>
+    </FaultResponse>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</RaiseFault>

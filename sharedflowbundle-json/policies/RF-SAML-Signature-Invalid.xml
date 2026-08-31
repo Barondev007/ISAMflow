@@ -1,0 +1,17 @@
+<RaiseFault name="RF-SAML-Signature-Invalid">
+    <DisplayName>RF SAML Signature Invalid</DisplayName>
+    <FaultResponse>
+        <Set>
+            <Payload contentType="application/json">
+                {
+                  "error": "saml_signature_invalid",
+                  "message": "The SAML assertion's XML signature did not validate.",
+                  "detail": "{saml.signature.error}"
+                }
+            </Payload>
+            <StatusCode>502</StatusCode>
+            <ReasonPhrase>Bad Gateway</ReasonPhrase>
+        </Set>
+    </FaultResponse>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</RaiseFault>

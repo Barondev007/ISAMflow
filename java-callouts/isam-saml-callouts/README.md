@@ -1,10 +1,12 @@
 # isam-saml-callouts
 
-Two Apigee Java callouts used by the `ISAM-WSTrust-TokenExchange` shared flow.
-Apigee has no native policy for XML-DSig signature verification or zip
-compression, so both are implemented here using JDK standard-library APIs only
-(`javax.xml.crypto.dsig`, `java.util.zip`) — no third-party dependency beyond
-Apigee's own callout SDK.
+Two Apigee Java callouts shared by both the `ISAM-WSTrust-TokenExchange` and
+`ISAM-JSON-TokenExchange` shared flows (same jar, same classes — each policy
+instance just points the `assertionVariable`/etc. properties at that bundle's
+own variable names; see the class reference below). Apigee has no native
+policy for XML-DSig signature verification or zip compression, so both are
+implemented here using JDK standard-library APIs only (`javax.xml.crypto.dsig`,
+`java.util.zip`) — no third-party dependency beyond Apigee's own callout SDK.
 
 - **`SamlSignatureValidator`** (`JC-Validate-SAML-Signature`) — verifies the
   `ds:Signature` wrapped around the SAML assertion using the X.509 certificate
@@ -31,8 +33,9 @@ mvn -B package
 ```
 
 This compiles the two classes, packages `isam-saml-callouts.jar`, and copies
-it into `../../sharedflowbundle/resources/java/` (via the `maven-antrun-plugin`
-step in `pom.xml`) so it's ready to deploy with the bundle.
+it into both `../../sharedflowbundle/resources/java/` and
+`../../sharedflowbundle-json/resources/java/` (via the `maven-antrun-plugin`
+step in `pom.xml`) so it's ready to deploy with either bundle.
 
 If your build environment can't reach
 `https://us-maven.pkg.dev/apigee-release/apigee-java-callout-dependencies`,
@@ -50,22 +53,26 @@ mvn install:install-file -Dfile=expressions-1.0.0.jar \
 
 ### `com.example.isam.callout.SamlSignatureValidator`
 
-Policy properties (both optional, shown with their defaults):
+Policy properties (both optional, shown with their JDK/class-level defaults —
+both bundles set them explicitly rather than relying on the default, since
+their variable names differ):
 
-| Property | Default | Meaning |
-|---|---|---|
-| `assertionVariable` | `isam.rstr.assertion.xml` | flow variable holding the `<saml:Assertion>` XML |
-| `trustedThumbprintsVariable` | `isam.config.trustedThumbprints` | flow variable holding a comma-separated SHA-256 thumbprint allowlist (empty = no pinning) |
+| Property | Default | WS-Trust bundle | JSON bundle | Meaning |
+|---|---|---|---|---|
+| `assertionVariable` | `isam.rstr.assertion.xml` | `isam.rstr.assertion.xml` | `isamjson.response.assertion.xml` | flow variable holding the `<saml:Assertion>` XML |
+| `trustedThumbprintsVariable` | `isam.config.trustedThumbprints` | `isam.config.trustedThumbprints` | `isamjson.config.trustedThumbprints` | flow variable holding a comma-separated SHA-256 thumbprint allowlist (empty = no pinning) |
 
-Output variables: `saml.signature.valid`, `.error`, `.cert.subject`,
-`.cert.issuer`, `.cert.serial`, `.cert.expired`, `.cert.thumbprint`, `.pinned`.
+Output variables (same names in both bundles): `saml.signature.valid`,
+`.error`, `.cert.subject`, `.cert.issuer`, `.cert.serial`, `.cert.expired`,
+`.cert.thumbprint`, `.pinned`.
 
 ### `com.example.isam.callout.SamlAssertionCompressor`
 
-| Property | Default | Meaning |
-|---|---|---|
-| `assertionVariable` | `isam.rstr.assertion.xml` | flow variable holding the assertion XML to compress |
-| `compressFlagVariable` | `compressSaml` | flow variable (boolean/`"true"`/`"1"`/`"yes"`) gating compression |
+| Property | Default | WS-Trust bundle | JSON bundle | Meaning |
+|---|---|---|---|---|
+| `assertionVariable` | `isam.rstr.assertion.xml` | `isam.rstr.assertion.xml` | `isamjson.response.assertion.xml` | flow variable holding the assertion XML to compress |
+| `compressFlagVariable` | `compressSaml` | `compressSaml` | `compressSaml` | flow variable (boolean/`"true"`/`"1"`/`"yes"`) gating compression |
 
-Output variables: `saml.assertion.output` (base64), `saml.assertion.compressed`
-(bool), `saml.assertion.compress.error` (only on exception).
+Output variables (same names in both bundles): `saml.assertion.output`
+(base64), `saml.assertion.compressed` (bool), `saml.assertion.compress.error`
+(only on exception).

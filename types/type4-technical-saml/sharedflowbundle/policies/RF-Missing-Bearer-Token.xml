@@ -1,0 +1,19 @@
+<RaiseFault name="RF-Missing-Bearer-Token">
+    <DisplayName>RF Missing Bearer Token</DisplayName>
+    <FaultResponse>
+        <Set>
+            <Payload contentType="application/json">
+                {
+                  "error": "missing_bearer_token",
+                  "message": "Authorization header must be present and use the Bearer scheme."
+                }
+            </Payload>
+            <StatusCode>401</StatusCode>
+            <ReasonPhrase>Unauthorized</ReasonPhrase>
+            <Headers>
+                <Header name="WWW-Authenticate">Bearer</Header>
+            </Headers>
+        </Set>
+    </FaultResponse>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</RaiseFault>

@@ -1,0 +1,31 @@
+<SharedFlowBundle revision="1" name="ISAM-Common-CompressAssertion">
+    <ConfigurationVersion majorVersion="4" minorVersion="0"/>
+    <CreatedAt>1735689600000</CreatedAt>
+    <LastModifiedAt>1735689600000</LastModifiedAt>
+    <Description>
+        Reusable building block: zips + base64-encodes saml.assertion.xml when
+        compressSaml is true, otherwise just base64-encodes it. Used by every
+        SAML-bearing type (ISAM-SAML-Light, ISAM-SAML-User, ISAM-SAML-TP,
+        ISAM-SAML-Technical, ISAM-JWT-SAML); NOT by ISAM-JWT-Token (type 6).
+
+        INPUT variables:
+          saml.assertion.xml   string, required
+          compressSaml         boolean-ish, required (resolved by the caller
+                                from its own KVM default / per-request override
+                                before this FlowCallout)
+
+        OUTPUT variables:
+          saml.assertion.output       string (base64, zipped or plain)
+          saml.assertion.compressed   boolean
+          saml.assertion.compress.error   string, only set on exception
+    </Description>
+    <Policies>
+        <Policy>JC-Compress-SAML-Assertion</Policy>
+    </Policies>
+    <SharedFlows>
+        <SharedFlow>default</SharedFlow>
+    </SharedFlows>
+    <Resources>
+        <Resource>java://isam-saml-callouts.jar</Resource>
+    </Resources>
+</SharedFlowBundle>

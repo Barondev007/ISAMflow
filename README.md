@@ -1,424 +1,318 @@
 # ISAM Token Exchange (Apigee Shared Flows)
 
-Two Apigee shared flows that exchange an inbound bearer token for an
-ISAM-issued SAML assertion, differing only in wire format:
+Six Apigee shared flows, one per SAML/JWT "type" ISAM issues, built on four
+shared **common** building blocks so the actual ISAM call, signature
+validation, and compression logic exist exactly once instead of being
+duplicated six times.
 
-- **`sharedflowbundle/`** — `ISAM-WSTrust-TokenExchange`: WS-Trust SOAP
-  request/response.
-- **`sharedflowbundle-json/`** — `ISAM-JSON-TokenExchange`: JSON
-  request/response, same attributes, same logic.
+## Why this shape
 
-Both:
+> "I have different types of SAML — for each the request can be different
+> but the call itself to the ISAM endpoint is the same."
 
-- Look up ISAM host config from an environment KVM (no hard-coded hosts)
-- Build a request mixing static config attributes with attributes pulled off
-  the inbound request (bearer token, client IP, client certificate, user agent)
-- Fail over from the primary to the secondary ISAM host specifically on a
-  transport failure or HTTP 500
-- Extract the `saml:Assertion` (and its subject/NameID) from whichever host
-  responded
-- Validate the assertion's XML-DSig signature against its own embedded
-  certificate, with optional signing-cert pinning
-- Conditionally zip + base64 compress the assertion, gated by a
-  `compressSaml` flag
+That's the whole design in one sentence. Apigee shared flows can call other
+shared flows via `FlowCallout`, so the parts that are genuinely identical
+across every type (POST-with-failover to ISAM, XML-DSig signature
+verification, zip compression, SAML header-setting) live in four **common**
+bundles under `common/`, called via `FlowCallout` from six thin
+**type-specific** bundles under `types/` that only contain what's actually
+different per type: KVM config, request shape, response shape.
 
-**Built entirely from native Apigee policies (`KeyValueMapOperations`,
-`ExtractVariables`, `AssignMessage`, `ServiceCallout`, `RaiseFault`) — no
-JavaScript anywhere in either flow.** Two steps (XML signature verification,
-zip compression) use a small Java callout, shared unchanged by both bundles,
-because Apigee has no native policy for either; see "Why Java is still here"
-below for exactly why, and what a JS-only alternative would have cost.
+```
+                     ┌─────────────────────────────────────┐
+  API proxy  ──────▶ │  type-specific shared flow (1 of 6)  │
+                     │  - own KVM config (own ISAM hosts)   │
+                     │  - build request (XML or JSON)       │
+                     │  - parse response (own shape)        │
+                     └───────────────┬───────────────────────┘
+                                      │ FlowCallout
+                      ┌───────────────┼───────────────┬──────────────────┐
+                      ▼               ▼               ▼                  ▼
+             ISAM-Common-      ISAM-Common-    ISAM-Common-      ISAM-Common-
+             CallISAM          ValidateSignature CompressAssertion SetSamlHeaders
+             (POST + failover) (Java, JSR-105)  (Java, zip)       (headers)
+```
+
+Type 6 (JWT-is-the-token) only calls `ISAM-Common-CallISAM` — there's no
+SAML assertion in that type, so signature validation, compression, and
+SAML headers don't apply; it sets its own token header directly.
+
+## The six types
+
+| # | Bundle | Request | Bearer token | Response | Calls |
+|---|---|---|---|---|---|
+| 1 | `ISAM-SAML-Light` | WS-Trust (SOAP/XML) | **none** — client cert is the only identity | SAML assertion | CallISAM, ValidateSignature, CompressAssertion, SetSamlHeaders |
+| 2 | `ISAM-SAML-User` | WS-Trust (SOAP/XML) | yes | SAML assertion | same four |
+| 3 | `ISAM-SAML-TP` | WS-Trust (SOAP/XML) | yes | SAML assertion | same four |
+| 4 | `ISAM-SAML-Technical` | WS-Trust (SOAP/XML) | yes | SAML assertion | same four |
+| 5 | `ISAM-JWT-SAML` | JSON | yes | SAML assertion in a JSON field | same four |
+| 6 | `ISAM-JWT-Token` | JSON | yes | **JWT itself is the token** (no SAML) | CallISAM only |
+
+Types 2, 3, and 4 are structurally identical WS-Trust requests; they're
+still three separate bundles (not one bundle with branching) because each
+has its own ISAM host pair, path, and audience (`appliesTo`) — per your
+answer, hosts can differ per type, not just the path.
 
 ## Layout
 
 ```
-sharedflowbundle/            # ISAM-WSTrust-TokenExchange (SOAP)
-  ISAM-WSTrust-TokenExchange.xml
-  policies/
-  sharedflows/default.xml
-  resources/java/            # isam-saml-callouts.jar goes here (built, not checked in)
-sharedflowbundle-json/       # ISAM-JSON-TokenExchange (JSON)
-  ISAM-JSON-TokenExchange.xml
-  policies/
-  sharedflows/default.xml
-  resources/java/            # same jar, copied here too
-java-callouts/isam-saml-callouts/  # the one Maven module backing both bundles
+common/
+  ISAM-Common-CallISAM/sharedflowbundle/            # POST + failover-on-500
+  ISAM-Common-ValidateSignature/sharedflowbundle/   # XML-DSig, Java callout
+  ISAM-Common-CompressAssertion/sharedflowbundle/   # zip+base64, Java callout
+  ISAM-Common-SetSamlHeaders/sharedflowbundle/       # X-SAML-* headers
+types/
+  type1-light-saml/sharedflowbundle/      # ISAM-SAML-Light
+  type2-user-saml/sharedflowbundle/       # ISAM-SAML-User
+  type3-tp-saml/sharedflowbundle/         # ISAM-SAML-TP
+  type4-technical-saml/sharedflowbundle/  # ISAM-SAML-Technical
+  type5-jwt-saml/sharedflowbundle/        # ISAM-JWT-SAML
+  type6-jwt-token/sharedflowbundle/       # ISAM-JWT-Token
+  type*/provision-kvm.sh                  # one provisioning script per type
+java-callouts/isam-saml-callouts/         # the one Maven module backing
+                                           # ISAM-Common-ValidateSignature
+                                           # and ISAM-Common-CompressAssertion
 examples/
-  FlowCallout-Sample.xml        # calling the WS-Trust bundle from a proxy
-  FlowCallout-JSON-Sample.xml   # calling the JSON bundle from a proxy
-scripts/
-  provision-kvm.sh              # KVM entries for the WS-Trust bundle
-  provision-kvm-json.sh         # KVM entries for the JSON bundle
+  FlowCallout-Sample.xml                  # how to call any of the six types
 ```
 
-## ISAM-WSTrust-TokenExchange (`sharedflowbundle/`)
+Every bundle is independently deployable — including the four common ones,
+since `FlowCallout` in Apigee resolves a shared flow by name at runtime, the
+same way an API proxy resolves the shared flow it calls.
 
-1. **KVM-Get-ISAMConfig** — one `KeyValueMapOperations` policy, one `<Get>`
-   per config field, reading directly from the environment-scoped KVM
-   `ISAM.WSTrust.Config` into `isam.config.*` variables. No JSON, no parsing.
-2. **RF-ISAM-Config-Missing** — raised if any required `isam.config.*`
-   variable came back null (a `Condition` on the step, no code).
-3. **EV-Extract-BearerToken** — native `ExtractVariables` with a `Header`
-   `Pattern` (`Bearer {token}`) on `Authorization`, setting
-   `wstrust.bearer.token`.
-4. **RF-Missing-Bearer-Token** — raised if that came back null.
-5. **AM-Set-Default-CompressSaml** — only runs if the calling proxy didn't
-   already set a `compressSaml` flow variable; copies the KVM default
-   (`isam.config.compressSaml`) in, or `false` if even that's unset.
-6. **AM-Build-WSTrust-Request** — a native `AssignMessage` that builds the
-   full WS-Trust SOAP envelope as literal nested XML, using Apigee's built-in
-   message-template functions (`escapeXML`, `createUuid`, `encodeBase64`) for
-   the parts that need them, into a new message variable `wstrustRequestMsg`.
-7. **SC-Call-ISAM-Primary** — POSTs `{wstrustRequestMsg.content}` to the
-   primary ISAM host (`continueOnError="true"` so failure doesn't abort the
-   flow outright).
-8. **SC-Call-ISAM-Secondary** — runs only if the primary call failed outright
-   (transport error) or returned HTTP 500 — see "Failover semantics" below.
-9. **RF-ISAM-Unavailable** — raised only if both hosts failed/500'd.
-10. **EV-Parse-Primary-Response** / **EV-Parse-Secondary-Response** — whichever
-    host returned HTTP 200 gets its RSTR parsed via `local-name()`-based XPath
-    (works regardless of exact prefixes or whether the RSTR is wrapped in a
-    `RequestSecurityTokenResponseCollection`) into **two candidates**:
-    - `isam.rstr.assertion.nodeset` — matches when
-      `RequestedSecurityTokenResponse/RequestedSecurityToken` (ISAM's real,
-      confirmed element names — not the spec's `RequestSecurityTokenResponse`)
-      contains a real nested `<saml:Assertion>` child element
-    - `isam.rstr.assertion.text` — `RequestedSecurityToken`'s own string
-      value, which equals the assertion XML when ISAM instead embeds it as
-      XML-escaped text rather than a real child element (a common WS-Trust/
-      TFIM-derived STS pattern — this turned out to be what was actually
-      breaking assertion extraction here: a nodeset XPath simply finds
-      nothing to match when there's no real element, only escaped text)
-    - `isam.rstr.fault` — SOAP Fault reason text, if ISAM returned a fault instead
-11. **AM-Coalesce-SAML-Assertion** — picks whichever candidate is actually
-    populated into the canonical `isam.rstr.assertion.xml`.
-12. **RF-WSTrust-Fault** — raised if neither candidate matched.
-13. **JC-Validate-SAML-Signature** (Java callout) — see "Why Java is still here".
-    Also extracts `saml.subject.id`, `saml.assertion.notBefore`, and
-    `saml.assertion.notOnOrAfter` from the same parsed assertion DOM, since it
-    has to parse the (already-coalesced, already-unescaped) assertion string
-    into a DOM anyway for signature checking — this is more reliable than a
-    separate XPath against the *outer* response, which only ever works for
-    the real-nested-element case.
-14. **RF-SAML-Signature-Invalid** — raised if the signature doesn't validate.
-15. **JC-Compress-SAML-Assertion** (Java callout) — see "Why Java is still here".
-16. **AM-Set-SAML-Response-Header** — sets `X-SAML-Assertion`,
-    `X-SAML-Assertion-Compressed`, and `X-SAML-Subject-Id` request headers, and
-    mirrors the subject/lifetime into `isam.exchanged.*` flow variables.
+## The contract: how type flows talk to common flows
 
-### Dynamic (per-request) attributes on the WS-Trust request
+Apigee shared flows don't have formal parameters — a `FlowCallout` just
+continues in the same transaction, so "input" and "output" are flow
+variables by convention. Each common bundle documents its own contract in
+its root descriptor's `<Description>`; the short version:
 
-| WS-Trust element                                | Source                                                             |
-|--------------------------------------------------|----------------------------------------------------------------------|
-| `wsse:BinarySecurityToken` (header + OnBehalfOf) | `Authorization: Bearer <token>` request header, base64-encoded via `encodeBase64()` |
-| `AdditionalContext/ContextItem[@Name='ip']`      | `client.ip` (Apigee-native)                                          |
-| `AdditionalContext/ContextItem[@Name='forwardedFor']` | `X-Forwarded-For` request header, passed through verbatim (not split — see below) |
-| `AdditionalContext/ContextItem[@Name='userAgent']` | `User-Agent` request header                                        |
-| `AdditionalContext/ContextItem[@Name='clientCertificate']` | `X-Client-Cert` request header (hard-coded name — see below)  |
-| `wsa:MessageID`                                   | `createUuid()` (Apigee-native)                                       |
+**`ISAM-Common-CallISAM`** — input: `isamcall.request.body`,
+`isamcall.request.contentType`, `isamcall.target.url.primary/.secondary`,
+`isamcall.connectTimeoutMs`/`.ioTimeoutMs`. Output:
+`isamcall.response.body`, `isamcall.response.statusCode`. Raises its own
+`RF-ISAM-Unavailable` (502) if both hosts failed or 500'd.
 
-### KVM config (`ISAM.WSTrust.Config`)
+**`ISAM-Common-ValidateSignature`** — input: `saml.assertion.xml`,
+`saml.trustedThumbprints` (optional). Output: `saml.signature.*`,
+`saml.subject.id`, `saml.assertion.notBefore`/`.notOnOrAfter`. Raises its
+own `RF-SAML-Signature-Invalid` (502) if the signature doesn't validate.
 
-| Key | Required | Example |
-|---|---|---|
-| `isam.sts.host1` | yes | `isam1.internal.example.com` |
-| `isam.sts.host2` | yes | `isam2.internal.example.com` |
-| `isam.sts.port` | yes | `443` |
-| `isam.sts.scheme` | yes | `https` |
-| `isam.sts.path` | yes | `/TrustServer/SecurityTokenService` |
-| `isam.sts.appliesTo` | yes | `urn:isam:relying-party:my-service` |
-| `isam.sts.tokenType` | yes | `urn:ietf:params:oauth:token-type:jwt` |
-| `isam.sts.keyType` | yes | `http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer` |
-| `isam.sts.requestType` | yes | `http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue` |
-| `isam.sts.connectTimeoutMs` | no (default 5000) | `5000` |
-| `isam.sts.ioTimeoutMs` | no (default 10000) | `10000` |
-| `isam.sts.compressSaml` | no (default false) | `false` |
-| `isam.sts.trustedSigningCertThumbprints` | no | comma-separated SHA-256 thumbprints |
+**`ISAM-Common-CompressAssertion`** — input: `saml.assertion.xml`,
+`compressSaml`. Output: `saml.assertion.output`, `saml.assertion.compressed`.
 
-Provision with `scripts/provision-kvm.sh` (edit its `KEYS` array first).
+**`ISAM-Common-SetSamlHeaders`** — input: whatever the two flows above just
+set. Sets `X-SAML-Assertion`, `X-SAML-Assertion-Compressed`,
+`X-SAML-Subject-Id` request headers plus `isam.exchanged.*` variables.
 
-## ISAM-JSON-TokenExchange (`sharedflowbundle-json/`)
+A type flow's job is: read its own KVM into `isam.config.*`, build its own
+request, call `ISAM-Common-CallISAM`, parse its own response into
+`saml.assertion.xml` (a single canonical name every common flow after that
+point reads), then call the remaining three common flows in order. See
+`types/type2-user-saml/sharedflowbundle/sharedflows/default.xml` for the
+canonical example of that sequence — every SAML-bearing type follows it
+exactly.
 
-Same flow shape as the WS-Trust bundle, transport swapped from SOAP/XML to
-JSON throughout. Every step name mirrors its WS-Trust counterpart 1:1:
+### Why a plain string, not a Message object, for `isamcall.response.body`
 
-1. **KVM-Get-ISAMJSONConfig** — reads `ISAM.JSON.Config` into `isamjson.config.*`.
-   A *separate* KVM from the WS-Trust bundle's, since the JSON token endpoint
-   may live on a different host/port/path than the SOAP one, even on the same
-   ISAM appliance.
-2. **RF-ISAM-Config-Missing** — same idea, JSON-bundle wording.
-3. **EV-Extract-BearerToken** — identical `Header`/`Pattern` extraction,
-   setting `isamjson.bearer.token`.
-4. **RF-Missing-Bearer-Token**.
-5. **AM-Set-Default-CompressSaml** — identical mechanism, reading
-   `isamjson.config.compressSaml`.
-6. **AM-Build-JSON-Request** — builds the JSON request body as a literal JSON
-   object in an `AssignMessage` `Payload`, using `escapeJSON()` (JSON's
-   analogue of `escapeXML()`) and `createUuid()`, into `isamJsonRequestMsg`:
+`ISAM-Common-CallISAM` hands back the ISAM response as a **plain string**
+variable, not a Message-type object — deliberately, so it stays agnostic to
+what the caller does with it. Each type's own `EV-Parse-*` step then points
+`ExtractVariables`'s `<Source>` straight at that string variable (the same
+technique Apigee's own docs use for `<Source>request.content</Source>` —
+`.content` is itself just a string) and applies its own `XMLPayload` or
+`JSONPayload` extraction. This is what makes the common/type split possible
+without the common flow needing to know anything about WS-Trust vs JSON.
 
-   ```json
-   {
-     "requestId": "<uuid>",
-     "requestType": "<from KVM>",
-     "tokenType": "<from KVM>",
-     "keyType": "<from KVM>",
-     "appliesTo": "<from KVM>",
-     "bearerToken": "<raw bearer token, not base64>",
-     "clientContext": {
-       "ip": "<client.ip>",
-       "forwardedFor": "<X-Forwarded-For header, verbatim>",
-       "userAgent": "<User-Agent header>",
-       "clientCertificate": "<X-Client-Cert header>"
-     }
-   }
-   ```
+## Failover semantics
 
-   Unlike the WS-Trust envelope, the bearer token is sent as plain text, not
-   base64 — that encoding was a WS-Security `BinarySecurityToken` convention,
-   not something a JSON API would typically expect. `escapeJSON()` is applied
-   to every dynamic string regardless, since (unlike XML) an unescaped quote
-   or backslash in a header value would break the JSON structure itself.
-7. **SC-Call-ISAM-JSON-Primary** — POSTs `{isamJsonRequestMsg.content}` with
-   `Content-Type`/`Accept: application/json` to the primary host.
-8. **SC-Call-ISAM-JSON-Secondary** — same failover-on-500 condition as the
-   WS-Trust bundle.
-9. **RF-ISAM-Unavailable**.
-10. **EV-Parse-JSON-Primary-Response** / **EV-Parse-JSON-Secondary-Response** —
-    `ExtractVariables` with `JSONPayload`/`JSONPath` (native, no XPath
-    complexity needed) into:
-    - `isamjson.response.assertion.xml` — the SAML assertion XML, expected as
-      a string value in the JSON response's `saml` field
-    - `isamjson.response.subject.id` — from `subjectId`
-    - `isamjson.response.notBefore` / `.notOnOrAfter`
-    - `isamjson.response.fault` — from `error`, if ISAM returned one instead
-
-    **These field names (`saml`, `subjectId`, `notBefore`, `notOnOrAfter`,
-    `error`) are assumed** — there was no actual ISAM JSON contract to go on,
-    only "one of the response attributes is the saml". Confirm the real
-    response shape with the ISAM side and adjust the `JSONPath`s in
-    `EV-Parse-JSON-Primary-Response.xml` / `EV-Parse-JSON-Secondary-Response.xml`
-    accordingly — everything downstream (signature validation, compression,
-    header names) is unaffected by a field-name change, since only these two
-    `JSONPath`s would need editing.
-11. **RF-JSON-Fault** — raised if no assertion was extracted.
-12. **JC-Validate-SAML-Signature** (Java callout, same jar as the WS-Trust
-    bundle, `Properties` pointed at `isamjson.*` variable names) — see "Why
-    Java is still here". Signature validation itself doesn't care whether the
-    assertion arrived inside a SOAP envelope or a JSON string field — it's
-    the same XML fragment either way.
-13. **RF-SAML-Signature-Invalid**.
-14. **JC-Compress-SAML-Assertion** (Java callout, same jar).
-15. **AM-Coalesce-JSON-Metadata** — defensive fallback in case the assumed
-    `subjectId`/`notBefore`/`notOnOrAfter` JSON fields turn out not to exist
-    (the exact class of bug the WS-Trust bundle actually hit): falls back to
-    `saml.subject.id`/`saml.assertion.notBefore`/`saml.assertion.notOnOrAfter`
-    (parsed straight out of the assertion XML by `JC-Validate-SAML-Signature`,
-    same as the WS-Trust bundle) if the JSONPath-extracted value is empty.
-16. **AM-Set-SAML-Response-Header** — identical output contract to the
-    WS-Trust bundle: `X-SAML-Assertion`, `X-SAML-Assertion-Compressed`,
-    `X-SAML-Subject-Id` headers, plus `isam.exchanged.*` variables.
-
-### KVM config (`ISAM.JSON.Config`)
-
-Same field set as `ISAM.WSTrust.Config`, different key prefix (`isam.json.*`
-instead of `isam.sts.*`) and a REST-shaped default path/requestType:
-
-| Key | Required | Example |
-|---|---|---|
-| `isam.json.host1` / `.host2` | yes | `isam1.internal.example.com` |
-| `isam.json.port` | yes | `443` |
-| `isam.json.scheme` | yes | `https` |
-| `isam.json.path` | yes | `/json/token-exchange` |
-| `isam.json.appliesTo` | yes | `urn:isam:relying-party:my-service` |
-| `isam.json.tokenType` | yes | `urn:ietf:params:oauth:token-type:jwt` |
-| `isam.json.keyType` | yes | `http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer` |
-| `isam.json.requestType` | yes | `issue` |
-| `isam.json.connectTimeoutMs` / `.ioTimeoutMs` | no | `5000` / `10000` |
-| `isam.json.compressSaml` | no (default false) | `false` |
-| `isam.json.trustedSigningCertThumbprints` | no | comma-separated SHA-256 thumbprints |
-
-Provision with `scripts/provision-kvm-json.sh` (edit its `KEYS` array first).
-
-## Failover semantics (both bundles)
-
-The task only calls for failing over "if the first call fails with an error
-500", so that's exactly what's implemented: primary → secondary only on a
-transport-level failure or an explicit HTTP 500 from the primary. A primary
-response of, say, 400 or 503 is *not* retried against the secondary; it
-instead falls through to the fault step once no assertion was extracted from
-anywhere. If you'd rather retry on any non-200, broaden the conditions in the
-relevant `sharedflows/default.xml` (the `SC-Call-*-Secondary` and
-`RF-ISAM-Unavailable` steps).
+Only `ISAM-Common-CallISAM` implements failover, and it does exactly what
+was asked: primary → secondary only on a transport-level failure or an
+explicit HTTP 500 from the primary, never on other 4xx/5xx (a 400 would
+presumably repeat identically on the secondary). A non-200 that isn't 500
+returns normally from the common flow (with `isamcall.response.statusCode`
+set accordingly) and it's each type's own response-parsing step that turns
+"couldn't find what I expected in this body" into that type's own fault.
 
 ## Why Java is still here
 
-Two steps, identical in both bundles, could not be moved to native policies
-or JavaScript, because Apigee's JavaScript sandbox has no crypto or
-compression primitives (no `crypto`, no `zlib`/`Deflater`, no
-XML-canonicalization library) and there is no native Apigee policy for
-either operation:
+Two operations, used by every SAML-bearing type via
+`ISAM-Common-ValidateSignature` / `ISAM-Common-CompressAssertion`, have no
+native Apigee policy and no safe JavaScript equivalent:
 
-- **`JC-Validate-SAML-Signature`** — verifying an XML-DSig `ds:Signature`
-  needs XML canonicalization (C14N) plus RSA/X.509 verification. This is
-  algorithmically substantial and security-sensitive; a hand-rolled
-  JavaScript version would be both a large amount of code and a real risk of
-  getting subtly wrong in a way that *looks* like it validates. The Java
-  version uses only JDK-standard `javax.xml.crypto.dsig` (JSR-105), no
-  third-party crypto library. This is unaffected by whether the assertion
-  arrived via SOAP or JSON — it's the same XML fragment either way.
-- **`JC-Compress-SAML-Assertion`** — DEFLATE/zip has no native Apigee policy
-  either. It *could* be reimplemented in pure JavaScript (the algorithm
-  doesn't require native code), but that means porting/hand-writing a
-  compliant DEFLATE encoder — hundreds of lines, with its own correctness
-  risk, to replace three lines of `java.util.zip`. Java was kept here for
-  the same reason: it's the smaller, more reliable option once *some*
-  custom code is unavoidable.
+- **XML-DSig signature verification** needs XML canonicalization (C14N) plus
+  RSA/X.509 verification — algorithmically substantial and
+  security-sensitive enough that a hand-rolled JavaScript version would be a
+  lot of code with real risk of getting subtly wrong in a way that *looks*
+  like it validates. The Java version uses only JDK-standard
+  `javax.xml.crypto.dsig` (JSR-105), no third-party crypto library.
+- **zip/DEFLATE compression** has no native Apigee policy either, and while
+  it *could* be reimplemented in pure JavaScript, that means porting or
+  hand-writing a compliant DEFLATE encoder — hundreds of lines, with its own
+  correctness risk, to replace three lines of `java.util.zip`.
 
-Both are already built and tested (against a real self-signed-cert-signed
-assertion for the validator: valid/tampered/pinned/unpinned/unsigned cases;
-a real zip/base64 round trip for the compressor).
+Factoring both into their own common bundles means exactly two Java classes
+exist for all six types combined, not up to twelve. Both were built and
+tested (a real self-signed-cert-signed assertion for the validator:
+valid/tampered/pinned/unpinned/unsigned cases and correct subject/lifetime
+extraction; a real zip/base64 round trip for the compressor) — see
+`java-callouts/isam-saml-callouts/README.md`.
 
-## Dynamic-attribute simplifications (both bundles)
+Type 6 skips both entirely, per your answer: there's no SAML assertion to
+validate or compress, only a JWT to pass through as-is.
 
-Two trade-offs fall out of going JS-free, common to both bundles:
+## Dynamic-attribute simplifications (all WS-Trust and JSON types)
 
-- **Client IP**: no "first hop of X-Forwarded-For" parsing. That
-  string-splitting needs code, so instead both `client.ip` (Apigee's own
-  view) and the raw `X-Forwarded-For` header (however many hops) are sent
-  separately and verbatim — let ISAM's own mapping rule decide which one it
-  trusts, rather than deciding client-side.
-- **Client certificate header**: the header name is **hard-coded to
-  `X-Client-Cert`** in `AM-Build-WSTrust-Request.xml` / `AM-Build-JSON-Request.xml`,
-  rather than KVM-configurable. Looking up a header by a name stored in
-  *another* variable needs indirect variable resolution, which Apigee's
-  native templating doesn't support — only JavaScript could do that. If your
-  header name needs to vary, edit that one line directly. The value is also
-  expected **pre-normalized to bare base64** (no PEM armor, no URL-encoding,
-  no embedded newlines) by whatever terminates mTLS in front of Apigee.
+Two trade-offs, common to every type, fall out of building everything from
+native Apigee policies (no JavaScript anywhere in this project):
+
+- **Client IP**: no "first hop of X-Forwarded-For" parsing — that
+  string-splitting needs code. Instead `client.ip` (Apigee's own view) and
+  the raw `X-Forwarded-For` header are sent separately and verbatim; let
+  ISAM's own mapping rule decide which it trusts.
+- **Client certificate header**: hard-coded to `X-Client-Cert` in each
+  type's `AM-Build-*-Request.xml`, rather than KVM-configurable — looking up
+  a header by a name stored in *another* variable needs indirect variable
+  resolution, which native Apigee templating can't do (only JavaScript
+  could). If your header name varies, edit that one line per type. The
+  value is also expected pre-normalized to bare base64 (no PEM armor, no
+  URL-encoding) by whatever terminates mTLS in front of Apigee.
 
 ## Signature validation & trust
 
-`JC-Validate-SAML-Signature` verifies the assertion's `ds:Signature`
+`ISAM-Common-ValidateSignature` verifies the assertion's `ds:Signature`
 cryptographically matches the X.509 certificate embedded in that same
 signature's `ds:KeyInfo` — i.e. "the assertion wasn't altered after whoever
-holds that certificate's private key signed it."
+holds that certificate's private key signed it." **That alone does not
+prove ISAM signed it**: nothing stops an attacker who can inject a response
+into this flow from generating their own keypair, embedding their own
+self-signed certificate, and signing a forged assertion with it.
 
-**That alone does not prove ISAM signed it.** Nothing stops an attacker who
-can inject a response into this flow from generating their own keypair,
-embedding their own self-signed certificate, and signing a forged assertion
-with it — the signature would validate perfectly, against the wrong signer.
-
-To close that gap, set `trustedSigningCertThumbprints` in the relevant KVM
-(`isam.sts.trustedSigningCertThumbprints` or `isam.json.trustedSigningCertThumbprints`)
-to the SHA-256 thumbprint(s) of ISAM's actual signing certificate(s) (both
-hosts, plus room for a rotation overlap). When set, `JC-Validate-SAML-Signature`
-additionally rejects any assertion whose signing cert isn't in that list —
-this is the pinning that anchors trust in something you control rather than
-in the token itself. Get the current thumbprint with:
+To close that gap, set `trustedSigningCertThumbprints` in each type's own
+KVM to the SHA-256 thumbprint(s) of ISAM's actual signing certificate(s).
+When set, `ISAM-Common-ValidateSignature` additionally rejects any assertion
+whose signing cert isn't in that list:
 
 ```bash
 openssl x509 -in isam-signing-cert.pem -noout -fingerprint -sha256
 ```
 
-Leave the field empty only if you have another way to establish trust in the
+Leave it empty only if you have another way to establish trust in the
 signer and understand the tradeoff.
-
-## Compression (`compressSaml`)
-
-`JC-Compress-SAML-Assertion` zips the assertion (a real zip archive, one
-`assertion.xml` entry) and base64-encodes it when `compressSaml` resolves
-true; otherwise it just base64-encodes the raw XML. Either way the result is
-in `saml.assertion.output` and gets set as the `X-SAML-Assertion` header,
-with `X-SAML-Assertion-Compressed` telling the receiver which case it is.
-
-The flag resolves in this order: a `compressSaml` flow variable set by the
-*calling* proxy before invoking the shared flow (see the `examples/` files)
-wins; otherwise it falls back to the KVM default (`AM-Set-Default-CompressSaml`).
 
 ## TLS trust for the outbound call to ISAM
 
-Both bundles' `ServiceCallout` policies reference `ref://isam-truststore-ref`.
-If ISAM's TLS certificate is signed by an internal/private CA, create a
-Keystore containing that CA chain in the target environment and create a
-Reference named `isam-truststore-ref` pointing at it:
+`ISAM-Common-CallISAM`'s `ServiceCallout` policies reference
+`ref://isam-truststore-ref`. If any ISAM host's TLS certificate is signed by
+an internal/private CA, create a Keystore with that CA chain and a
+Reference named `isam-truststore-ref` in the target environment:
 
-```
+```bash
 apigeecli keystores create -n isam-truststore --env <env> --org <org> --token <token>
 apigeecli keystores certs create -k isam-truststore --certfile isam-ca-chain.pem ...
 apigeecli references create -n isam-truststore-ref --restype TrustStore --refers isam-truststore --env <env> --org <org> --token <token>
 ```
 
-If ISAM's cert chains to a public/well-known CA already trusted by Apigee,
-drop the `<SSLInfo>` block from the `SC-Call-*` policies instead. (This is
-separate from, and does not substitute for, the SAML signature pinning above
-— TLS trust protects the transport; signature pinning protects the token
-itself, which may travel further than this one hop.)
+This is a single shared reference since it lives in `ISAM-Common-CallISAM`,
+used by all six types regardless of which type-specific ISAM hosts they
+call — if different types' ISAM hosts use different CAs, that truststore
+needs to contain all of their chains.
+
+## KVM config per type
+
+Every type's KVM map has the same shape (fields listed once here; the key
+*prefix* differs per type — see each `provision-kvm.sh`):
+
+| Field | Required | Types 1-4 (WS-Trust) | Types 5-6 (JSON) |
+|---|---|---|---|
+| `host1` / `host2` | yes | ✓ | ✓ |
+| `port` / `scheme` / `path` | yes | ✓ | ✓ |
+| `appliesTo` / `tokenType` / `keyType` / `requestType` | yes | ✓ | ✓ |
+| `connectTimeoutMs` / `ioTimeoutMs` | no | ✓ | ✓ |
+| `compressSaml` | no | ✓ | type 5 only |
+| `trustedSigningCertThumbprints` | no | ✓ | type 5 only |
+
+| Type | KVM map | Key prefix | Script |
+|---|---|---|---|
+| 1 | `ISAM.SamlLight.Config` | `isam.saml.light.*` | `types/type1-light-saml/provision-kvm.sh` |
+| 2 | `ISAM.SamlUser.Config` | `isam.saml.user.*` | `types/type2-user-saml/provision-kvm.sh` |
+| 3 | `ISAM.SamlTP.Config` | `isam.saml.tp.*` | `types/type3-tp-saml/provision-kvm.sh` |
+| 4 | `ISAM.SamlTechnical.Config` | `isam.saml.technical.*` | `types/type4-technical-saml/provision-kvm.sh` |
+| 5 | `ISAM.JwtSaml.Config` | `isam.jwtsaml.*` | `types/type5-jwt-saml/provision-kvm.sh` |
+| 6 | `ISAM.JwtToken.Config` | `isam.jwttoken.*` | `types/type6-jwt-token/provision-kvm.sh` |
+
+Run any script with `ORG=... ENV=... TOKEN=$(gcloud auth print-access-token) ./provision-kvm.sh` (edit its `KEYS` array first).
 
 ## Java callouts
 
-Both bundles' `JC-Validate-SAML-Signature` and `JC-Compress-SAML-Assertion`
-are backed by the single Maven module at `java-callouts/isam-saml-callouts/`.
-Build it once and it drops the jar into both bundles:
+`ISAM-Common-ValidateSignature` and `ISAM-Common-CompressAssertion` are
+backed by the single Maven module at `java-callouts/isam-saml-callouts/`.
+Build it once and it drops the jar into both common bundles:
 
 ```bash
 cd java-callouts/isam-saml-callouts
-mvn -B package   # copies isam-saml-callouts.jar into both bundles' resources/java/
+mvn -B package
 ```
 
-See `java-callouts/isam-saml-callouts/README.md` for the class/property
-reference (including the WS-Trust-vs-JSON property value differences).
+See that module's own README for the class/property reference.
 
-## Calling a shared flow from a proxy
+## Calling a type from a proxy
 
-See `examples/FlowCallout-Sample.xml` (WS-Trust) or
-`examples/FlowCallout-JSON-Sample.xml` (JSON). Attach a `FlowCallout` step
-(referencing the relevant `SharedFlowBundle`) in your proxy's PreFlow. Any
-fault raised inside the shared flow propagates up as a raised fault for your
-proxy's own fault handling to catch.
+See `examples/FlowCallout-Sample.xml`. Attach a `FlowCallout` step
+(referencing the one type bundle your proxy needs) in your proxy's PreFlow.
+Any fault raised anywhere in the chain (missing config/bearer
+token/client-cert, both ISAM hosts down, bad response, invalid signature)
+propagates up as a raised fault for your proxy's own fault handling to
+catch.
 
 ## Deploying
 
-Each bundle follows the standard Apigee shared flow bundle layout, so it
-deploys the same way any shared flow does — via `apigeecli`, Maven
-(`apigee-config-maven-plugin` / `apigee-deploy-maven-plugin`), or by zipping
-the bundle directory and importing it through the Apigee UI/Management API.
-Build the Java callout jar *first* (see above) so it's present under both
-bundles' `resources/java/` before packaging. Example with `apigeecli`:
+Each bundle (four common, six type-specific) follows the standard Apigee
+shared flow bundle layout and deploys independently — via `apigeecli`,
+Maven, or by zipping the bundle directory and importing through the Apigee
+UI/Management API. Build the Java callout jar *first* so it's present under
+both common bundles' `resources/java/` before packaging them. Deploy the
+four common bundles before any type bundle that calls them (a `FlowCallout`
+to an undeployed shared flow fails at runtime, not at import time). Example:
 
 ```bash
-apigeecli sharedflows create -n ISAM-WSTrust-TokenExchange \
-  -f sharedflowbundle --org <org> --token <token>
-apigeecli sharedflows deploy -n ISAM-WSTrust-TokenExchange \
-  --env <env> --org <org> --ovr --token <token>
+# common bundles first
+for b in ISAM-Common-CallISAM ISAM-Common-ValidateSignature ISAM-Common-CompressAssertion ISAM-Common-SetSamlHeaders; do
+  apigeecli sharedflows create -n "$b" -f "common/$b/sharedflowbundle" --org <org> --token <token>
+  apigeecli sharedflows deploy -n "$b" --env <env> --org <org> --ovr --token <token>
+done
 
-apigeecli sharedflows create -n ISAM-JSON-TokenExchange \
-  -f sharedflowbundle-json --org <org> --token <token>
-apigeecli sharedflows deploy -n ISAM-JSON-TokenExchange \
-  --env <env> --org <org> --ovr --token <token>
+# then whichever type(s) you need, e.g.:
+apigeecli sharedflows create -n ISAM-SAML-User -f types/type2-user-saml/sharedflowbundle --org <org> --token <token>
+apigeecli sharedflows deploy -n ISAM-SAML-User --env <env> --org <org> --ovr --token <token>
 ```
 
 ## Notes / things to confirm with the ISAM side
 
-- **WS-Trust bundle**: the RST/RSTR shape (SOAP 1.2, WS-Trust 1.3 `Issue`,
-  `AdditionalContext` with `ContextItem`s for IP/cert/UA) matches ISAM's
-  common Federation/STS chain pattern where a JavaScript STS module maps
-  `AdditionalContext` into custom claims — confirm the exact `ContextItem`
-  names your ISAM mapping rule expects. The SAML assertion location
+- **Types 1-4 (WS-Trust)**: the RST/RSTR shape (SOAP 1.2, WS-Trust 1.3
+  `Issue`, `AdditionalContext` with `ContextItem`s for IP/cert/UA) matches
+  ISAM's common Federation/STS chain pattern. The SAML assertion location
   (`RequestedSecurityTokenResponse/RequestedSecurityToken`, holding the
   assertion either as a real nested element or as XML-escaped text) is
-  confirmed against a real ISAM response, not assumed; see
-  `EV-Parse-Primary-Response.xml`'s comment for the two-candidate extraction
-  that handles both cases.
-- **JSON bundle**: the request shape (`requestType`/`tokenType`/`keyType`/
-  `appliesTo`/`bearerToken`/`clientContext.*`) and especially the **response**
-  field names (`saml`/`subjectId`/`notBefore`/`notOnOrAfter`/`error`) are
-  this repo's assumptions, not a confirmed ISAM contract — there was no
-  actual JSON schema to build against. Get the real one and adjust
-  `AM-Build-JSON-Request.xml` (request shape) and the two
-  `EV-Parse-JSON-*-Response.xml` files (response `JSONPath`s) accordingly.
-- **Both**: `TokenType`, `KeyType`, `RequestType`, and `AppliesTo` are pulled
-  from KVM as static values — adjust per relying party if you need more than
-  one profile. Confirm whether ISAM expects the bearer token base64-encoded
-  (WS-Trust bundle does this) or raw (JSON bundle does this) — that's an
-  assumption following each format's own convention, not something ISAM told
-  us either way.
+  confirmed against a real ISAM response for the type this was originally
+  built against — types 3 and 4 assume the same shape but haven't
+  individually been confirmed; if either differs, only that type's
+  `EV-Parse-ISAM-Response.xml` needs adjusting.
+- **Type 1 specifically**: assumed to still return a full SAML RSTR despite
+  carrying no bearer token; if ISAM's light-SAML endpoint responds
+  differently (e.g. a bare assertion with no SOAP envelope at all), adjust
+  `types/type1-light-saml/sharedflowbundle/policies/EV-Parse-ISAM-Response.xml`.
+- **Type 5 (JWT-SAML)**: request shape
+  (`requestType`/`tokenType`/`keyType`/`appliesTo`/`bearerToken`/`clientContext.*`)
+  and response field names (`saml`/`subjectId`/`notBefore`/`notOnOrAfter`/`error`)
+  are this repo's assumptions, not a confirmed ISAM contract.
+- **Type 6 (JWT-Token)**: request shape assumed identical to type 5's;
+  response field names (`token`/`tokenType`/`expiresIn`/`error`) are assumed
+  too. `X-Access-Token` / `X-Access-Token-Type` are this repo's own header
+  naming choice for surfacing the JWT — rename in
+  `types/type6-jwt-token/sharedflowbundle/policies/AM-Set-JWT-Response-Header.xml`
+  if your downstream expects something specific (e.g. `Authorization: Bearer`).
+- **All types**: `TokenType`/`KeyType`/`RequestType`/`AppliesTo` are pulled
+  from each type's own KVM as static values — confirm the actual values
+  each ISAM endpoint expects; the provisioning scripts ship with placeholder
+  defaults.

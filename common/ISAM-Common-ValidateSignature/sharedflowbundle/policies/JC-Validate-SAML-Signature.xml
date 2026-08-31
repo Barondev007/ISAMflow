@@ -1,0 +1,13 @@
+<JavaCallout name="JC-Validate-SAML-Signature">
+    <DisplayName>JC Validate SAML Signature</DisplayName>
+    <Properties>
+        <!-- Canonical contract variable names: every type-specific bundle
+             sets saml.assertion.xml (and, optionally, saml.trustedThumbprints)
+             before calling this shared flow, regardless of whether its own
+             ISAM response was WS-Trust XML or JSON. -->
+        <Property name="assertionVariable">saml.assertion.xml</Property>
+        <Property name="trustedThumbprintsVariable">saml.trustedThumbprints</Property>
+    </Properties>
+    <ClassName>com.example.isam.callout.SamlSignatureValidator</ClassName>
+    <ResourceURL>java://isam-saml-callouts.jar</ResourceURL>
+</JavaCallout>

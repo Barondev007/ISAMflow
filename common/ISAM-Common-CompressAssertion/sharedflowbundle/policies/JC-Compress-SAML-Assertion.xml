@@ -1,0 +1,9 @@
+<JavaCallout name="JC-Compress-SAML-Assertion">
+    <DisplayName>JC Compress SAML Assertion</DisplayName>
+    <Properties>
+        <Property name="assertionVariable">saml.assertion.xml</Property>
+        <Property name="compressFlagVariable">compressSaml</Property>
+    </Properties>
+    <ClassName>com.example.isam.callout.SamlAssertionCompressor</ClassName>
+    <ResourceURL>java://isam-saml-callouts.jar</ResourceURL>
+</JavaCallout>

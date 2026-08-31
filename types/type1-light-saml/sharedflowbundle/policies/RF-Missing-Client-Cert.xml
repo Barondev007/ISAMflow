@@ -1,0 +1,22 @@
+<!--
+  Type 1 carries no bearer token, so the client certificate is the only
+  identifying attribute on the request; unlike the other types (where a
+  missing cert is just a missing optional context item), here its absence
+  means the request has no identity at all.
+-->
+<RaiseFault name="RF-Missing-Client-Cert">
+    <DisplayName>RF Missing Client Cert</DisplayName>
+    <FaultResponse>
+        <Set>
+            <Payload contentType="application/json">
+                {
+                  "error": "missing_client_certificate",
+                  "message": "X-Client-Cert header must be present (type 1 has no bearer token, so the client certificate is the only identifying attribute)."
+                }
+            </Payload>
+            <StatusCode>401</StatusCode>
+            <ReasonPhrase>Unauthorized</ReasonPhrase>
+        </Set>
+    </FaultResponse>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</RaiseFault>

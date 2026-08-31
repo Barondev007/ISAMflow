@@ -1,0 +1,18 @@
+<RaiseFault name="RF-ISAM-Unavailable">
+    <DisplayName>RF ISAM Unavailable</DisplayName>
+    <FaultResponse>
+        <Set>
+            <Payload contentType="application/json">
+                {
+                  "error": "isam_unavailable",
+                  "message": "Both configured ISAM hosts failed to respond.",
+                  "primaryUrl": "{isamcall.target.url.primary}",
+                  "secondaryUrl": "{isamcall.target.url.secondary}"
+                }
+            </Payload>
+            <StatusCode>502</StatusCode>
+            <ReasonPhrase>Bad Gateway</ReasonPhrase>
+        </Set>
+    </FaultResponse>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</RaiseFault>

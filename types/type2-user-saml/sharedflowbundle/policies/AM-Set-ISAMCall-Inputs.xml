@@ -1,0 +1,39 @@
+<!--
+  Bridges this type's own config/request into the ISAM-Common-CallISAM
+  contract (see that bundle's own description for the full input/output
+  list). Kept as a separate, plain-variable-only step from
+  AM-Build-WSTrust-Request specifically so it never has to guess whether
+  AssignVariable's Value supports message-template functions; it doesn't
+  need to, here, since {wstrustRequestMsg.content} is a single plain
+  variable reference.
+-->
+<AssignMessage name="AM-Set-ISAMCall-Inputs">
+    <DisplayName>AM Set ISAMCall Inputs</DisplayName>
+    <AssignVariable>
+        <Name>isamcall.request.body</Name>
+        <Value>{wstrustRequestMsg.content}</Value>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>isamcall.request.contentType</Name>
+        <Value>application/soap+xml; charset=utf-8</Value>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>isamcall.target.url.primary</Name>
+        <Value>{isam.config.scheme}://{isam.config.host1}:{isam.config.port}{isam.config.path}</Value>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>isamcall.target.url.secondary</Name>
+        <Value>{isam.config.scheme}://{isam.config.host2}:{isam.config.port}{isam.config.path}</Value>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>isamcall.connectTimeoutMs</Name>
+        <Ref>isam.config.connectTimeoutMs</Ref>
+        <Value>5000</Value>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>isamcall.ioTimeoutMs</Name>
+        <Ref>isam.config.ioTimeoutMs</Ref>
+        <Value>10000</Value>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

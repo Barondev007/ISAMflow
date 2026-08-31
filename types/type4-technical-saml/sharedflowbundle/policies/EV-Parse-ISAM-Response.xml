@@ -1,0 +1,30 @@
+<ExtractVariables name="EV-Parse-ISAM-Response">
+    <DisplayName>EV Parse ISAM Response</DisplayName>
+    <!-- isamcall.response.body is a plain string (set by
+         ISAM-Common-CallISAM's AM-Coalesce-ISAM-Response), not a Message
+         object; ExtractVariables accepts that the same way it accepts
+         e.g. "request.content" as a Source: it parses whatever string value
+         the named variable holds. -->
+    <Source>isamcall.response.body</Source>
+    <VariablePrefix>isam.rstr</VariablePrefix>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <!--
+      Two candidates for the same reason documented at length in the
+      original WS-Trust bundle: ISAM's real element names are
+      RequestedSecurityTokenResponse/RequestedSecurityToken (not the WS-Trust
+      spec's RequestSecurityTokenResponse), and it sometimes embeds the
+      assertion as XML-escaped text there instead of a real child element.
+      AM-Coalesce-SAML-Assertion (next step) picks whichever matched.
+    -->
+    <XMLPayload stopPayloadProcessing="false">
+        <Variable name="assertion.nodeset" type="nodeset">
+            <XPath>//*[local-name()='RequestedSecurityToken']/*[local-name()='Assertion']</XPath>
+        </Variable>
+        <Variable name="assertion.text" type="string">
+            <XPath>//*[local-name()='RequestedSecurityToken']</XPath>
+        </Variable>
+        <Variable name="fault" type="string">
+            <XPath>//*[local-name()='Fault']//*[local-name()='Text' or local-name()='faultstring']</XPath>
+        </Variable>
+    </XMLPayload>
+</ExtractVariables>

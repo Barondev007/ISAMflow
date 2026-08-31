@@ -65,17 +65,19 @@
                     </archive>
                 </configuration>
             </plugin>
-            <!-- Drops the built jar into BOTH shared flow bundles' resources/java/
-                 directories so it deploys with either one: the same two callouts
-                 (property-configurable variable names) are used unchanged by
-                 sharedflowbundle (WS-Trust) and sharedflowbundle-json (JSON). -->
+            <!-- Drops the built jar into the two common shared flow bundles that
+                 actually reference it: ISAM-Common-ValidateSignature and
+                 ISAM-Common-CompressAssertion. None of the six type-specific
+                 bundles need their own copy; they call those two common
+                 bundles via FlowCallout rather than invoking the Java callouts
+                 directly, which is exactly the point of factoring them out. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <version>3.1.0</version>
                 <executions>
                     <execution>
-                        <id>copy-jar-to-sharedflowbundles</id>
+                        <id>copy-jar-to-common-bundles</id>
                         <phase>package</phase>
                         <goals>
                             <goal>run</goal>
@@ -84,11 +86,11 @@
                             <target>
                                 <copy
                                     file="${project.build.directory}/${project.build.finalName}.jar"
-                                    todir="${project.basedir}/../../sharedflowbundle/resources/java"
+                                    todir="${project.basedir}/../../common/ISAM-Common-ValidateSignature/sharedflowbundle/resources/java"
                                     overwrite="true"/>
                                 <copy
                                     file="${project.build.directory}/${project.build.finalName}.jar"
-                                    todir="${project.basedir}/../../sharedflowbundle-json/resources/java"
+                                    todir="${project.basedir}/../../common/ISAM-Common-CompressAssertion/sharedflowbundle/resources/java"
                                     overwrite="true"/>
                             </target>
                         </configuration>

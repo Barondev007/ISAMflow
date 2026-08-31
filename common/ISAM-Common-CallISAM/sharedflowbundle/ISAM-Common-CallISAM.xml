@@ -1,0 +1,42 @@
+<SharedFlowBundle revision="1" name="ISAM-Common-CallISAM">
+    <ConfigurationVersion majorVersion="4" minorVersion="0"/>
+    <CreatedAt>1735689600000</CreatedAt>
+    <LastModifiedAt>1735689600000</LastModifiedAt>
+    <Description>
+        Reusable building block: POSTs a pre-built request body to a primary
+        ISAM host, failing over to a secondary host on transport failure or
+        HTTP 500; exactly the "call itself to the ISAM endpoint is the same"
+        part shared by every SAML/JWT type. Every other type-specific shared
+        flow (ISAM-SAML-Light, ISAM-SAML-User, ISAM-SAML-TP,
+        ISAM-SAML-Technical, ISAM-JWT-SAML, ISAM-JWT-Token) calls this one via
+        FlowCallout instead of duplicating the failover logic.
+
+        INPUT variables (set these before the FlowCallout):
+          isamcall.request.body          string; the request payload to POST
+          isamcall.request.contentType   string; e.g. "application/soap+xml; charset=utf-8" or "application/json"
+          isamcall.target.url.primary    string; full URL of the primary ISAM host
+          isamcall.target.url.secondary  string; full URL of the secondary ISAM host
+          isamcall.connectTimeoutMs      string, optional (default: Apigee ServiceCallout default if unresolved)
+          isamcall.ioTimeoutMs           string, optional
+
+        OUTPUT variables (read these after the FlowCallout returns):
+          isamcall.response.body         string; whichever host actually responded
+          isamcall.response.statusCode   string; that host's HTTP status
+
+        This flow raises its own fault (RF-ISAM-Unavailable, HTTP 502) if
+        both hosts failed or 500'd; the caller never sees that case as a
+        normal return. Any other status (200, 400, other 5xx) returns
+        normally with isamcall.response.statusCode set accordingly; it's the
+        caller's job to decide what a non-200 response means for its own
+        response shape.
+    </Description>
+    <Policies>
+        <Policy>SC-Call-ISAM-Primary</Policy>
+        <Policy>SC-Call-ISAM-Secondary</Policy>
+        <Policy>RF-ISAM-Unavailable</Policy>
+        <Policy>AM-Coalesce-ISAM-Response</Policy>
+    </Policies>
+    <SharedFlows>
+        <SharedFlow>default</SharedFlow>
+    </SharedFlows>
+</SharedFlowBundle>

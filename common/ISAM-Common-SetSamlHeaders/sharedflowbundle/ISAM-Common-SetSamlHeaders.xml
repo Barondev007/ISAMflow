@@ -1,0 +1,24 @@
+<SharedFlowBundle revision="1" name="ISAM-Common-SetSamlHeaders">
+    <ConfigurationVersion majorVersion="4" minorVersion="0"/>
+    <CreatedAt>1735689600000</CreatedAt>
+    <LastModifiedAt>1735689600000</LastModifiedAt>
+    <Description>
+        Reusable building block: sets the final X-SAML-Assertion /
+        X-SAML-Assertion-Compressed / X-SAML-Subject-Id request headers and
+        mirrors subject/lifetime into isam.exchanged.* variables. Used by
+        every SAML-bearing type after ISAM-Common-CompressAssertion;
+        NOT by ISAM-JWT-Token (type 6), which sets its own X-Access-Token
+        header directly since there's no SAML assertion involved.
+
+        INPUT variables (already set by ISAM-Common-ValidateSignature /
+        ISAM-Common-CompressAssertion by the time a caller reaches this flow):
+          saml.assertion.output, saml.assertion.compressed, saml.subject.id,
+          saml.assertion.notBefore, saml.assertion.notOnOrAfter
+    </Description>
+    <Policies>
+        <Policy>AM-Set-SAML-Response-Header</Policy>
+    </Policies>
+    <SharedFlows>
+        <SharedFlow>default</SharedFlow>
+    </SharedFlows>
+</SharedFlowBundle>

@@ -1,0 +1,25 @@
+<ServiceCallout name="SC-Call-ISAM-Secondary" continueOnError="true">
+    <DisplayName>SC Call ISAM Secondary</DisplayName>
+    <Request clearPayload="true" variable="isamcall.callout.request.secondary">
+        <Set>
+            <Verb>POST</Verb>
+            <Headers>
+                <Header name="Accept">{isamcall.request.contentType}</Header>
+            </Headers>
+            <Payload contentType="{isamcall.request.contentType}">{isamcall.request.body}</Payload>
+        </Set>
+    </Request>
+    <Response>isamCallSecondaryResponse</Response>
+    <Timeout>10000</Timeout>
+    <HTTPTargetConnection>
+        <URL>{isamcall.target.url.secondary}</URL>
+        <SSLInfo>
+            <Enabled>true</Enabled>
+            <TrustStore>ref://isam-truststore-ref</TrustStore>
+        </SSLInfo>
+        <Properties>
+            <Property name="connect.timeout.millis">{isamcall.connectTimeoutMs}</Property>
+            <Property name="io.timeout.millis">{isamcall.ioTimeoutMs}</Property>
+        </Properties>
+    </HTTPTargetConnection>
+</ServiceCallout>

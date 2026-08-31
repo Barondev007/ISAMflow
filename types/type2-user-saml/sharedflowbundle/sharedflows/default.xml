@@ -1,0 +1,61 @@
+<SharedFlow name="default">
+    <Step>
+        <Name>KVM-Get-ISAMConfig</Name>
+    </Step>
+    <Step>
+        <Condition>isam.config.host1 = null OR isam.config.host2 = null OR isam.config.port = null OR isam.config.scheme = null OR isam.config.path = null OR isam.config.appliesTo = null OR isam.config.tokenType = null OR isam.config.keyType = null OR isam.config.requestType = null</Condition>
+        <Name>RF-ISAM-Config-Missing</Name>
+    </Step>
+
+    <Step>
+        <Name>EV-Extract-BearerToken</Name>
+    </Step>
+    <Step>
+        <Condition>bearer.token = null</Condition>
+        <Name>RF-Missing-Bearer-Token</Name>
+    </Step>
+
+    <Step>
+        <Condition>compressSaml = null</Condition>
+        <Name>AM-Set-Default-CompressSaml</Name>
+    </Step>
+
+    <Step>
+        <Name>AM-Build-WSTrust-Request</Name>
+    </Step>
+    <Step>
+        <Name>AM-Set-ISAMCall-Inputs</Name>
+    </Step>
+
+    <!-- Call ISAM (failover on 500 is handled entirely inside this common flow). -->
+    <Step>
+        <Name>FC-Call-ISAM</Name>
+    </Step>
+
+    <Step>
+        <Name>EV-Parse-ISAM-Response</Name>
+    </Step>
+    <Step>
+        <Name>AM-Coalesce-SAML-Assertion</Name>
+    </Step>
+
+    <!-- No SAML assertion extracted (SOAP fault, unexpected shape, or ISAM
+         returned a non-200 that didn't trip the common flow's own
+         RF-ISAM-Unavailable). -->
+    <Step>
+        <Condition>saml.assertion.xml = null OR saml.assertion.xml = ""</Condition>
+        <Name>RF-WSTrust-Fault</Name>
+    </Step>
+
+    <!-- Signature validation and compression are shared building blocks too
+         (failover on invalid signature is handled entirely inside them). -->
+    <Step>
+        <Name>FC-Validate-Signature</Name>
+    </Step>
+    <Step>
+        <Name>FC-Compress-Assertion</Name>
+    </Step>
+    <Step>
+        <Name>FC-Set-SAML-Headers</Name>
+    </Step>
+</SharedFlow>

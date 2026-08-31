@@ -1,0 +1,63 @@
+<SharedFlow name="default">
+    <Step>
+        <Name>KVM-Get-ISAMConfig</Name>
+    </Step>
+    <Step>
+        <Condition>isam.config.host1 = null OR isam.config.host2 = null OR isam.config.port = null OR isam.config.scheme = null OR isam.config.path = null OR isam.config.appliesTo = null OR isam.config.tokenType = null OR isam.config.keyType = null OR isam.config.requestType = null</Condition>
+        <Name>RF-ISAM-Config-Missing</Name>
+    </Step>
+
+    <Step>
+        <Name>EV-Extract-BearerToken</Name>
+    </Step>
+    <Step>
+        <Condition>bearer.token = null</Condition>
+        <Name>RF-Missing-Bearer-Token</Name>
+    </Step>
+
+    <Step>
+        <Condition>compressSaml = null</Condition>
+        <Name>AM-Set-Default-CompressSaml</Name>
+    </Step>
+
+    <Step>
+        <Name>AM-Build-JSON-Request</Name>
+    </Step>
+    <Step>
+        <Name>AM-Set-ISAMCall-Inputs</Name>
+    </Step>
+
+    <Step>
+        <Name>FC-Call-ISAM</Name>
+    </Step>
+
+    <Step>
+        <Name>EV-Parse-ISAM-Response</Name>
+    </Step>
+    <Step>
+        <Name>AM-Coalesce-SAML-Assertion</Name>
+    </Step>
+
+    <Step>
+        <Condition>saml.assertion.xml = null OR saml.assertion.xml = ""</Condition>
+        <Name>RF-JSON-Fault</Name>
+    </Step>
+
+    <Step>
+        <Name>FC-Validate-Signature</Name>
+    </Step>
+
+    <!-- Prefer the assumed JSON response fields for subject/lifetime; fall
+         back to what FC-Validate-Signature already parsed out of the
+         assertion XML if those fields don't actually exist. -->
+    <Step>
+        <Name>AM-Coalesce-JSON-Metadata</Name>
+    </Step>
+
+    <Step>
+        <Name>FC-Compress-Assertion</Name>
+    </Step>
+    <Step>
+        <Name>FC-Set-SAML-Headers</Name>
+    </Step>
+</SharedFlow>

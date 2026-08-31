@@ -1,0 +1,30 @@
+<AssignMessage name="AM-Set-ISAMCall-Inputs">
+    <DisplayName>AM Set ISAMCall Inputs</DisplayName>
+    <AssignVariable>
+        <Name>isamcall.request.body</Name>
+        <Value>{isamJsonRequestMsg.content}</Value>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>isamcall.request.contentType</Name>
+        <Value>application/json</Value>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>isamcall.target.url.primary</Name>
+        <Value>{isam.config.scheme}://{isam.config.host1}:{isam.config.port}{isam.config.path}</Value>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>isamcall.target.url.secondary</Name>
+        <Value>{isam.config.scheme}://{isam.config.host2}:{isam.config.port}{isam.config.path}</Value>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>isamcall.connectTimeoutMs</Name>
+        <Ref>isam.config.connectTimeoutMs</Ref>
+        <Value>5000</Value>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>isamcall.ioTimeoutMs</Name>
+        <Ref>isam.config.ioTimeoutMs</Ref>
+        <Value>10000</Value>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

@@ -1,0 +1,31 @@
+<!--
+  Generic ISAM callout: entirely driven by input variables set by whichever
+  type-specific shared flow calls this one, so there is nothing WS-Trust- or
+  JSON-specific here. See this bundle's root descriptor for the full
+  input/output contract.
+-->
+<ServiceCallout name="SC-Call-ISAM-Primary" continueOnError="true">
+    <DisplayName>SC Call ISAM Primary</DisplayName>
+    <Request clearPayload="true" variable="isamcall.callout.request">
+        <Set>
+            <Verb>POST</Verb>
+            <Headers>
+                <Header name="Accept">{isamcall.request.contentType}</Header>
+            </Headers>
+            <Payload contentType="{isamcall.request.contentType}">{isamcall.request.body}</Payload>
+        </Set>
+    </Request>
+    <Response>isamCallPrimaryResponse</Response>
+    <Timeout>10000</Timeout>
+    <HTTPTargetConnection>
+        <URL>{isamcall.target.url.primary}</URL>
+        <SSLInfo>
+            <Enabled>true</Enabled>
+            <TrustStore>ref://isam-truststore-ref</TrustStore>
+        </SSLInfo>
+        <Properties>
+            <Property name="connect.timeout.millis">{isamcall.connectTimeoutMs}</Property>
+            <Property name="io.timeout.millis">{isamcall.ioTimeoutMs}</Property>
+        </Properties>
+    </HTTPTargetConnection>
+</ServiceCallout>

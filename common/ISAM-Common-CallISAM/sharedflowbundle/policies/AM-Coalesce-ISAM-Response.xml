@@ -1,0 +1,21 @@
+<!--
+  Copies whichever of isamCallPrimaryResponse/isamCallSecondaryResponse
+  actually has a 200 into the canonical isamcall.response.* output
+  variables. Ref is tried first, only falling through to Value (the other
+  host) when the first is unresolved/not-200; mirrors the same
+  Ref-then-Value coalescing pattern used elsewhere in this project.
+-->
+<AssignMessage name="AM-Coalesce-ISAM-Response">
+    <DisplayName>AM Coalesce ISAM Response</DisplayName>
+    <AssignVariable>
+        <Name>isamcall.response.body</Name>
+        <Ref>isamCallPrimaryResponse.content</Ref>
+        <Value>{isamCallSecondaryResponse.content}</Value>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>isamcall.response.statusCode</Name>
+        <Ref>isamCallPrimaryResponse.status.code</Ref>
+        <Value>{isamCallSecondaryResponse.status.code}</Value>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

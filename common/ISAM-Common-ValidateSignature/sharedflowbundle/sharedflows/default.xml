@@ -1,0 +1,9 @@
+<SharedFlow name="default">
+    <Step>
+        <Name>JC-Validate-SAML-Signature</Name>
+    </Step>
+    <Step>
+        <Condition>saml.signature.valid = false</Condition>
+        <Name>RF-SAML-Signature-Invalid</Name>
+    </Step>
+</SharedFlow>

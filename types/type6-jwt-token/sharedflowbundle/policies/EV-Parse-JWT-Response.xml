@@ -1,0 +1,26 @@
+<ExtractVariables name="EV-Parse-JWT-Response">
+    <DisplayName>EV Parse JWT Response</DisplayName>
+    <Source>isamcall.response.body</Source>
+    <VariablePrefix>isam.jwt</VariablePrefix>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <!--
+      ASSUMED response field names; confirm the actual ISAM response shape
+      and adjust (see the top-level README "Notes / things to confirm with
+      the ISAM side"):
+        { "token": "<jwt>", "tokenType": "...", "expiresIn": ..., "error": "..." }
+    -->
+    <JSONPayload>
+        <Variable name="token" type="string">
+            <JSONPath>$.token</JSONPath>
+        </Variable>
+        <Variable name="tokenType" type="string">
+            <JSONPath>$.tokenType</JSONPath>
+        </Variable>
+        <Variable name="expiresIn" type="string">
+            <JSONPath>$.expiresIn</JSONPath>
+        </Variable>
+        <Variable name="fault" type="string">
+            <JSONPath>$.error</JSONPath>
+        </Variable>
+    </JSONPayload>
+</ExtractVariables>

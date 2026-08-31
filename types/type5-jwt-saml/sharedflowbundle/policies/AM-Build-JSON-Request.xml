@@ -1,0 +1,29 @@
+<!--
+  Type 5: JWT-style JSON request, SAML in the JSON response. Same request
+  shape/technique as the original standalone JSON bundle (escapeJSON/
+  createUuid message-template functions, bearer token sent raw since base64
+  was a WS-Security-specific convention).
+-->
+<AssignMessage name="AM-Build-JSON-Request">
+    <DisplayName>AM Build JSON Request</DisplayName>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <Set>
+        <Payload contentType="application/json">
+            {
+              "requestId": "{createUuid()}",
+              "requestType": "{escapeJSON(isam.config.requestType)}",
+              "tokenType": "{escapeJSON(isam.config.tokenType)}",
+              "keyType": "{escapeJSON(isam.config.keyType)}",
+              "appliesTo": "{escapeJSON(isam.config.appliesTo)}",
+              "bearerToken": "{escapeJSON(bearer.token)}",
+              "clientContext": {
+                "ip": "{escapeJSON(client.ip)}",
+                "forwardedFor": "{escapeJSON(request.header.X-Forwarded-For)}",
+                "userAgent": "{escapeJSON(request.header.User-Agent)}",
+                "clientCertificate": "{escapeJSON(request.header.X-Client-Cert)}"
+              }
+            }
+        </Payload>
+    </Set>
+    <AssignTo createNew="true" transport="http" type="request">isamJsonRequestMsg</AssignTo>
+</AssignMessage>

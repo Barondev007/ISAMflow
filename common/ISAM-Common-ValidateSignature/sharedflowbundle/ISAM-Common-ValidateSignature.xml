@@ -1,0 +1,39 @@
+<SharedFlowBundle revision="1" name="ISAM-Common-ValidateSignature">
+    <ConfigurationVersion majorVersion="4" minorVersion="0"/>
+    <CreatedAt>1735689600000</CreatedAt>
+    <LastModifiedAt>1735689600000</LastModifiedAt>
+    <Description>
+        Reusable building block: validates a SAML assertion's XML-DSig
+        signature against its own embedded certificate (optionally pinned).
+        Used by every SAML-bearing type (ISAM-SAML-Light, ISAM-SAML-User,
+        ISAM-SAML-TP, ISAM-SAML-Technical, ISAM-JWT-SAML); NOT by
+        ISAM-JWT-Token (type 6), which has no SAML assertion to validate.
+
+        INPUT variables:
+          saml.assertion.xml         string, required: the saml:Assertion XML
+          saml.trustedThumbprints    string, optional; comma-separated SHA-256
+                                      signing-cert thumbprints; empty = signature-only
+                                      validation, no pinning (see the top-level
+                                      README "Signature validation &amp; trust")
+
+        OUTPUT variables:
+          saml.signature.valid, .error, .cert.subject, .cert.issuer,
+          .cert.serial, .cert.expired, .cert.thumbprint, .pinned
+          saml.subject.id, saml.assertion.notBefore, saml.assertion.notOnOrAfter
+          (parsed from the assertion DOM regardless of signature outcome)
+
+        Raises RF-SAML-Signature-Invalid (HTTP 502) itself if the signature
+        doesn't validate; the caller never sees that case as a normal
+        return; if this flow returns normally, saml.signature.valid is true.
+    </Description>
+    <Policies>
+        <Policy>JC-Validate-SAML-Signature</Policy>
+        <Policy>RF-SAML-Signature-Invalid</Policy>
+    </Policies>
+    <SharedFlows>
+        <SharedFlow>default</SharedFlow>
+    </SharedFlows>
+    <Resources>
+        <Resource>java://isam-saml-callouts.jar</Resource>
+    </Resources>
+</SharedFlowBundle>

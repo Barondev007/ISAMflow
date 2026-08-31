@@ -1,0 +1,20 @@
+<!--
+  Picks whichever candidate EV-Parse-ISAM-Response actually populated, into
+  the canonical saml.assertion.xml (the contract variable name every common
+  building block reads). Also copies this type's own trustedThumbprints
+  config into the canonical saml.trustedThumbprints name.
+-->
+<AssignMessage name="AM-Coalesce-SAML-Assertion">
+    <DisplayName>AM Coalesce SAML Assertion</DisplayName>
+    <AssignVariable>
+        <Name>saml.assertion.xml</Name>
+        <Ref>isam.rstr.assertion.nodeset</Ref>
+        <Value>{isam.rstr.assertion.text}</Value>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>saml.trustedThumbprints</Name>
+        <Ref>isam.config.trustedThumbprints</Ref>
+        <Value></Value>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

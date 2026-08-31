@@ -1,0 +1,18 @@
+<RaiseFault name="RF-WSTrust-Fault">
+    <DisplayName>RF WSTrust Fault</DisplayName>
+    <FaultResponse>
+        <Set>
+            <Payload contentType="application/json">
+                {
+                  "error": "wstrust_exchange_failed",
+                  "message": "ISAM returned a SOAP Fault, or no saml:Assertion was present in the RequestedSecurityToken.",
+                  "isamFaultReason": "{isam.rstr.fault}",
+                  "isamStatusCode": "{isamcall.response.statusCode}"
+                }
+            </Payload>
+            <StatusCode>502</StatusCode>
+            <ReasonPhrase>Bad Gateway</ReasonPhrase>
+        </Set>
+    </FaultResponse>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</RaiseFault>

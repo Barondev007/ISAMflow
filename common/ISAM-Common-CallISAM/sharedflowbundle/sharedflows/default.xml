@@ -1,0 +1,24 @@
+<SharedFlow name="default">
+    <!-- Call the primary ISAM host. -->
+    <Step>
+        <Name>SC-Call-ISAM-Primary</Name>
+    </Step>
+
+    <!-- Only failover to the secondary host on a transport failure or an
+         explicit HTTP 500 from the primary, not on other 4xx/5xx, since
+         those would presumably fail identically on the secondary too. -->
+    <Step>
+        <Condition>SC-Call-ISAM-Primary.failed = true OR isamCallPrimaryResponse.status.code = 500</Condition>
+        <Name>SC-Call-ISAM-Secondary</Name>
+    </Step>
+
+    <!-- Both hosts genuinely unreachable / 500. -->
+    <Step>
+        <Condition>(SC-Call-ISAM-Primary.failed = true OR isamCallPrimaryResponse.status.code = 500) AND (SC-Call-ISAM-Secondary.failed = true OR isamCallSecondaryResponse.status.code = 500)</Condition>
+        <Name>RF-ISAM-Unavailable</Name>
+    </Step>
+
+    <Step>
+        <Name>AM-Coalesce-ISAM-Response</Name>
+    </Step>
+</SharedFlow>

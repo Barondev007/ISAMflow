@@ -1,0 +1,30 @@
+<!--
+  Type 6: same JWT-style JSON request shape as type 5; ISAM's JWT
+  request/response endpoint appears to be one endpoint family serving both
+  "give me a SAML assertion" and "give me a JWT" depending on config/path,
+  so the request shape is kept identical for consistency. Trim fields here
+  if ISAM's actual JWT-only endpoint turns out not to need all of them.
+-->
+<AssignMessage name="AM-Build-JSON-Request">
+    <DisplayName>AM Build JSON Request</DisplayName>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <Set>
+        <Payload contentType="application/json">
+            {
+              "requestId": "{createUuid()}",
+              "requestType": "{escapeJSON(isam.config.requestType)}",
+              "tokenType": "{escapeJSON(isam.config.tokenType)}",
+              "keyType": "{escapeJSON(isam.config.keyType)}",
+              "appliesTo": "{escapeJSON(isam.config.appliesTo)}",
+              "bearerToken": "{escapeJSON(bearer.token)}",
+              "clientContext": {
+                "ip": "{escapeJSON(client.ip)}",
+                "forwardedFor": "{escapeJSON(request.header.X-Forwarded-For)}",
+                "userAgent": "{escapeJSON(request.header.User-Agent)}",
+                "clientCertificate": "{escapeJSON(request.header.X-Client-Cert)}"
+              }
+            }
+        </Payload>
+    </Set>
+    <AssignTo createNew="true" transport="http" type="request">isamJsonRequestMsg</AssignTo>
+</AssignMessage>

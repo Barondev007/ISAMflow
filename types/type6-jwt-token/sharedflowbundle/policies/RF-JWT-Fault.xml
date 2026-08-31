@@ -1,0 +1,18 @@
+<RaiseFault name="RF-JWT-Fault">
+    <DisplayName>RF JWT Fault</DisplayName>
+    <FaultResponse>
+        <Set>
+            <Payload contentType="application/json">
+                {
+                  "error": "jwt_exchange_failed",
+                  "message": "ISAM returned an error, or no token field was present in the JSON response.",
+                  "isamFaultReason": "{isam.jwt.fault}",
+                  "isamStatusCode": "{isamcall.response.statusCode}"
+                }
+            </Payload>
+            <StatusCode>502</StatusCode>
+            <ReasonPhrase>Bad Gateway</ReasonPhrase>
+        </Set>
+    </FaultResponse>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</RaiseFault>

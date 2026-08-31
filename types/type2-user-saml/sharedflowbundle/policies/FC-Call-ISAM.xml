@@ -1,0 +1,4 @@
+<FlowCallout name="FC-Call-ISAM">
+    <DisplayName>FC Call ISAM</DisplayName>
+    <SharedFlowBundle>ISAM-Common-CallISAM</SharedFlowBundle>
+</FlowCallout>

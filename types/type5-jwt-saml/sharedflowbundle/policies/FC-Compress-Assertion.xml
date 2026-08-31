@@ -1,0 +1,4 @@
+<FlowCallout name="FC-Compress-Assertion">
+    <DisplayName>FC Compress Assertion</DisplayName>
+    <SharedFlowBundle>ISAM-Common-CompressAssertion</SharedFlowBundle>
+</FlowCallout>

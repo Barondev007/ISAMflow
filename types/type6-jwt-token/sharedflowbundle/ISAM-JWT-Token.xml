@@ -1,0 +1,30 @@
+<SharedFlowBundle revision="1" name="ISAM-JWT-Token">
+    <ConfigurationVersion majorVersion="4" minorVersion="0"/>
+    <CreatedAt>1735689600000</CreatedAt>
+    <LastModifiedAt>1735689600000</LastModifiedAt>
+    <Description>
+        Type 6: JWT request, JWT-is-the-token response. No SAML assertion
+        anywhere in this flow: the JWT ISAM returns in the JSON response
+        (assumed field "token"; not a confirmed ISAM contract, see the
+        top-level README) IS the token to use, as-is. Calls only
+        ISAM-Common-CallISAM for the actual ISAM callout -- deliberately
+        does NOT call ISAM-Common-ValidateSignature (XML-DSig doesn't apply
+        to a JWT) or ISAM-Common-CompressAssertion (nothing to compress).
+        The simplest of the six types.
+    </Description>
+    <Policies>
+        <Policy>KVM-Get-ISAMConfig</Policy>
+        <Policy>RF-ISAM-Config-Missing</Policy>
+        <Policy>EV-Extract-BearerToken</Policy>
+        <Policy>RF-Missing-Bearer-Token</Policy>
+        <Policy>AM-Build-JSON-Request</Policy>
+        <Policy>AM-Set-ISAMCall-Inputs</Policy>
+        <Policy>FC-Call-ISAM</Policy>
+        <Policy>EV-Parse-JWT-Response</Policy>
+        <Policy>RF-JWT-Fault</Policy>
+        <Policy>AM-Set-JWT-Response-Header</Policy>
+    </Policies>
+    <SharedFlows>
+        <SharedFlow>default</SharedFlow>
+    </SharedFlows>
+</SharedFlowBundle>

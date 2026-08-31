@@ -1,0 +1,5 @@
+<SharedFlow name="default">
+    <Step>
+        <Name>AM-Set-SAML-Response-Header</Name>
+    </Step>
+</SharedFlow>

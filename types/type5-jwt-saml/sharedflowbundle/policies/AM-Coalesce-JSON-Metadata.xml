@@ -1,0 +1,30 @@
+<!--
+  Defensive fallback for the same class of bug the WS-Trust types actually
+  hit: isamjson.response.subjectId/notBefore/notOnOrAfter are extracted via
+  JSONPath against ASSUMED top-level response fields that were never
+  confirmed against a real ISAM JSON contract. Runs AFTER FC-Validate-Signature,
+  so if those assumed fields turn out not to exist, this overwrites the
+  canonical saml.subject.id/notBefore/notOnOrAfter with... themselves;
+  i.e. falls back to what JC-Validate-SAML-Signature already parsed out of
+  the assertion XML directly, which doesn't depend on that assumption at all.
+  When the assumed fields DO exist, they take precedence (Ref is tried first).
+-->
+<AssignMessage name="AM-Coalesce-JSON-Metadata">
+    <DisplayName>AM Coalesce JSON Metadata</DisplayName>
+    <AssignVariable>
+        <Name>saml.subject.id</Name>
+        <Ref>isamjson.response.subjectId</Ref>
+        <Value>{saml.subject.id}</Value>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>saml.assertion.notBefore</Name>
+        <Ref>isamjson.response.notBefore</Ref>
+        <Value>{saml.assertion.notBefore}</Value>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>saml.assertion.notOnOrAfter</Name>
+        <Ref>isamjson.response.notOnOrAfter</Ref>
+        <Value>{saml.assertion.notOnOrAfter}</Value>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

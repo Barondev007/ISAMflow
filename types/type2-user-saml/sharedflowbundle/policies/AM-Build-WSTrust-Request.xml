@@ -1,0 +1,57 @@
+<!--
+  Type 2 (user SAML, with token): full WS-Trust RST with the bearer token
+  embedded both in wsse:Security and wst:OnBehalfOf. Built entirely natively
+  (escapeXML/createUuid/encodeBase64 message-template functions), same
+  technique as the original single-purpose WS-Trust bundle; see the
+  top-level README for why AssignMessage Payload templates (not
+  AssignVariable/Value) are used for the parts needing functions.
+-->
+<AssignMessage name="AM-Build-WSTrust-Request">
+    <DisplayName>AM Build WSTrust Request</DisplayName>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <Set>
+        <Payload contentType="application/soap+xml; charset=utf-8">
+            <soapenv:Envelope xmlns:soapenv="http://www.w3.org/2003/05/soap-envelope"
+                               xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"
+                               xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
+                               xmlns:wst="http://docs.oasis-open.org/ws-sx/ws-trust/200512"
+                               xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy"
+                               xmlns:wsc="http://schemas.xmlsoap.org/ws/2006/12/authorization"
+                               xmlns:wsa="http://www.w3.org/2005/08/addressing">
+                <soapenv:Header>
+                    <wsa:Action>http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue</wsa:Action>
+                    <wsa:MessageID>urn:uuid:{createUuid()}</wsa:MessageID>
+                    <wsse:Security soapenv:mustUnderstand="1">
+                        <wsse:BinarySecurityToken wsu:Id="bearerToken"
+                            ValueType="urn:ietf:params:oauth:token-type:jwt"
+                            EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary">{encodeBase64(bearer.token)}</wsse:BinarySecurityToken>
+                    </wsse:Security>
+                </soapenv:Header>
+                <soapenv:Body>
+                    <wst:RequestSecurityToken>
+                        <wst:RequestType>{escapeXML(isam.config.requestType)}</wst:RequestType>
+                        <wst:TokenType>{escapeXML(isam.config.tokenType)}</wst:TokenType>
+                        <wst:KeyType>{escapeXML(isam.config.keyType)}</wst:KeyType>
+                        <wsp:AppliesTo>
+                            <wsa:EndpointReference>
+                                <wsa:Address>{escapeXML(isam.config.appliesTo)}</wsa:Address>
+                            </wsa:EndpointReference>
+                        </wsp:AppliesTo>
+                        <wst:OnBehalfOf>
+                            <wsse:BinarySecurityToken
+                                ValueType="urn:ietf:params:oauth:token-type:jwt"
+                                EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary">{encodeBase64(bearer.token)}</wsse:BinarySecurityToken>
+                        </wst:OnBehalfOf>
+                        <wst:AdditionalContext xmlns="http://schemas.xmlsoap.org/ws/2006/12/authorization">
+                            <wsc:ContextItem Name="ip"><wsc:Value>{escapeXML(client.ip)}</wsc:Value></wsc:ContextItem>
+                            <wsc:ContextItem Name="forwardedFor"><wsc:Value>{escapeXML(request.header.X-Forwarded-For)}</wsc:Value></wsc:ContextItem>
+                            <wsc:ContextItem Name="userAgent"><wsc:Value>{escapeXML(request.header.User-Agent)}</wsc:Value></wsc:ContextItem>
+                            <wsc:ContextItem Name="clientCertificate"><wsc:Value>{escapeXML(request.header.X-Client-Cert)}</wsc:Value></wsc:ContextItem>
+                        </wst:AdditionalContext>
+                    </wst:RequestSecurityToken>
+                </soapenv:Body>
+            </soapenv:Envelope>
+        </Payload>
+    </Set>
+    <AssignTo createNew="true" transport="http" type="request">wstrustRequestMsg</AssignTo>
+</AssignMessage>

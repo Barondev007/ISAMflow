@@ -1,0 +1,33 @@
+<!--
+  No SAML assertion exists for type 6; the JWT ISAM returns IS the token
+  to use, as-is. No signature validation (that's XML-DSig, doesn't apply to
+  a JWT) and no compression (nothing to compress into a header; it's already
+  a compact string); see the top-level README for why this type skips both
+  ISAM-Common-ValidateSignature and ISAM-Common-CompressAssertion entirely.
+-->
+<AssignMessage name="AM-Set-JWT-Response-Header">
+    <DisplayName>AM Set JWT Response Header</DisplayName>
+    <Set>
+        <Headers>
+            <Header name="X-Access-Token">{isam.jwt.token}</Header>
+            <Header name="X-Access-Token-Type">{isam.jwt.tokenType}</Header>
+        </Headers>
+    </Set>
+    <AssignVariable>
+        <Name>isam.exchanged.token</Name>
+        <Ref>isam.jwt.token</Ref>
+        <Value></Value>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>isam.exchanged.token.type</Name>
+        <Ref>isam.jwt.tokenType</Ref>
+        <Value></Value>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>isam.exchanged.token.expiresIn</Name>
+        <Ref>isam.jwt.expiresIn</Ref>
+        <Value></Value>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <AssignTo createNew="false" transport="http" type="request"/>
+</AssignMessage>

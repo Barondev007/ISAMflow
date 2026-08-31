@@ -1,0 +1,45 @@
+<SharedFlow name="default">
+    <Step>
+        <Name>KVM-Get-ISAMConfig</Name>
+    </Step>
+    <Step>
+        <Condition>isam.config.host1 = null OR isam.config.host2 = null OR isam.config.port = null OR isam.config.scheme = null OR isam.config.path = null OR isam.config.appliesTo = null OR isam.config.tokenType = null OR isam.config.keyType = null OR isam.config.requestType = null</Condition>
+        <Name>RF-ISAM-Config-Missing</Name>
+    </Step>
+
+    <Step>
+        <Name>EV-Extract-BearerToken</Name>
+    </Step>
+    <Step>
+        <Condition>bearer.token = null</Condition>
+        <Name>RF-Missing-Bearer-Token</Name>
+    </Step>
+
+    <Step>
+        <Name>AM-Build-JSON-Request</Name>
+    </Step>
+    <Step>
+        <Name>AM-Set-ISAMCall-Inputs</Name>
+    </Step>
+
+    <!-- Call ISAM (failover on 500 is handled entirely inside this common flow). -->
+    <Step>
+        <Name>FC-Call-ISAM</Name>
+    </Step>
+
+    <Step>
+        <Name>EV-Parse-JWT-Response</Name>
+    </Step>
+
+    <!-- No token extracted (error field instead, or unexpected shape). -->
+    <Step>
+        <Condition>isam.jwt.token = null OR isam.jwt.token = ""</Condition>
+        <Name>RF-JWT-Fault</Name>
+    </Step>
+
+    <!-- No signature validation or compression for this type; see
+         AM-Set-JWT-Response-Header's own comment. -->
+    <Step>
+        <Name>AM-Set-JWT-Response-Header</Name>
+    </Step>
+</SharedFlow>

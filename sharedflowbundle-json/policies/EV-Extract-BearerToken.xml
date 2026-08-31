@@ -1,9 +1,0 @@
-<ExtractVariables name="EV-Extract-BearerToken">
-    <DisplayName>EV Extract Bearer Token</DisplayName>
-    <Source>request</Source>
-    <Header name="Authorization">
-        <Pattern ignoreCase="false">Bearer {token}</Pattern>
-    </Header>
-    <VariablePrefix>isamjson.bearer</VariablePrefix>
-    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
-</ExtractVariables>

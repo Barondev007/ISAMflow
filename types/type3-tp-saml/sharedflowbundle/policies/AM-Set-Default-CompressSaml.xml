@@ -1,0 +1,9 @@
+<AssignMessage name="AM-Set-Default-CompressSaml">
+    <DisplayName>AM Set Default CompressSaml</DisplayName>
+    <AssignVariable>
+        <Name>compressSaml</Name>
+        <Ref>isam.config.compressSaml</Ref>
+        <Value>false</Value>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

@@ -1,0 +1,21 @@
+<!--
+  Maps this type's own JSON-extracted fields into the canonical contract
+  variable names the ISAM-Common-* building blocks read (see their own
+  descriptions). Unlike the WS-Trust types, there's no nested-vs-escaped
+  ambiguity here: a JSON string field is always literal, so there's only
+  one candidate to coalesce.
+-->
+<AssignMessage name="AM-Coalesce-SAML-Assertion">
+    <DisplayName>AM Coalesce SAML Assertion</DisplayName>
+    <AssignVariable>
+        <Name>saml.assertion.xml</Name>
+        <Ref>isamjson.response.assertion</Ref>
+        <Value></Value>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>saml.trustedThumbprints</Name>
+        <Ref>isam.config.trustedThumbprints</Ref>
+        <Value></Value>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

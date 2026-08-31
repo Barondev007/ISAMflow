@@ -1,0 +1,33 @@
+<SharedFlowBundle revision="1" name="ISAM-JWT-SAML">
+    <ConfigurationVersion majorVersion="4" minorVersion="0"/>
+    <CreatedAt>1735689600000</CreatedAt>
+    <LastModifiedAt>1735689600000</LastModifiedAt>
+    <Description>
+        Type 5: JWT-style JSON request, with a SAML assertion embedded in the
+        JSON response (assumed field "saml"; not a confirmed ISAM contract,
+        see the top-level README). Calls the shared ISAM-Common-* building
+        blocks for the actual ISAM callout, signature validation, compression,
+        and header-setting -- same as the WS-Trust types, just with a JSON
+        request/response instead of SOAP/XML.
+    </Description>
+    <Policies>
+        <Policy>KVM-Get-ISAMConfig</Policy>
+        <Policy>RF-ISAM-Config-Missing</Policy>
+        <Policy>EV-Extract-BearerToken</Policy>
+        <Policy>RF-Missing-Bearer-Token</Policy>
+        <Policy>AM-Set-Default-CompressSaml</Policy>
+        <Policy>AM-Build-JSON-Request</Policy>
+        <Policy>AM-Set-ISAMCall-Inputs</Policy>
+        <Policy>FC-Call-ISAM</Policy>
+        <Policy>EV-Parse-ISAM-Response</Policy>
+        <Policy>AM-Coalesce-SAML-Assertion</Policy>
+        <Policy>RF-JSON-Fault</Policy>
+        <Policy>FC-Validate-Signature</Policy>
+        <Policy>AM-Coalesce-JSON-Metadata</Policy>
+        <Policy>FC-Compress-Assertion</Policy>
+        <Policy>FC-Set-SAML-Headers</Policy>
+    </Policies>
+    <SharedFlows>
+        <SharedFlow>default</SharedFlow>
+    </SharedFlows>
+</SharedFlowBundle>

@@ -1,10 +1,19 @@
 <!--
-  Sample policy for an API proxy that wants to call the
-  ISAM-WSTrust-TokenExchange shared flow, e.g. attached in PreFlow
-  before the proxy's own target logic.
+  Sample policy for an API proxy that wants to call one of the six
+  ISAM-* type-specific shared flows, e.g. attached in PreFlow before the
+  proxy's own target logic. Attach exactly the ONE type your proxy needs;
+  pick SharedFlowBundle from:
 
-  Optional: set compressSaml as a flow variable before this step to override
-  the KVM default for this one request, e.g. via a native AssignMessage step:
+    ISAM-SAML-Light        type 1: no bearer token, client cert only
+    ISAM-SAML-User         type 2: WS-Trust, user SAML, with bearer token
+    ISAM-SAML-TP           type 3: WS-Trust, tp/third-party SAML, with bearer token
+    ISAM-SAML-Technical    type 4: WS-Trust, technical SAML, with bearer token
+    ISAM-JWT-SAML          type 5: JSON request, SAML assertion in JSON response
+    ISAM-JWT-Token         type 6: JSON request, JWT itself is the token (no SAML)
+
+  Optional (types 1-5 only; type 6 has no compression): set compressSaml as
+  a flow variable before this step to override that type's KVM default for
+  this one request:
 
     <AssignVariable>
         <Name>compressSaml</Name>
@@ -12,27 +21,27 @@
     </AssignVariable>
 
   After this step runs:
-    - The shared flow has already set request headers X-SAML-Assertion
-      (base64, zipped or plain per compressSaml), X-SAML-Assertion-Compressed
-      (true/false), and X-SAML-Subject-Id, so if your target just needs
-      those forwarded as-is, there's nothing further to do.
-    - The following flow variables are also available if you'd rather read
-      them directly instead of relying on the headers this shared flow set:
-        isam.rstr.assertion.xml            raw <saml:Assertion> XML
-        isam.exchanged.subject.id          SAML subject (NameID)
-        isam.exchanged.assertion.notBefore / .notOnOrAfter
-        saml.assertion.output              base64 output (zipped or plain)
-        saml.assertion.compressed          bool
-        saml.signature.valid               bool, true by the time this step
-                                            returns, since RF-SAML-Signature-Invalid
-                                            would otherwise have raised a fault
-        saml.signature.cert.subject / .issuer / .thumbprint
+    - Types 1-5 (SAML-bearing): the shared flow has already set request
+      headers X-SAML-Assertion (base64, zipped or plain per compressSaml),
+      X-SAML-Assertion-Compressed (true/false), and X-SAML-Subject-Id. Flow
+      variables saml.assertion.xml, isam.exchanged.subject.id,
+      isam.exchanged.assertion.notBefore/.notOnOrAfter, saml.assertion.output,
+      saml.signature.valid (true by the time this step returns, since
+      RF-SAML-Signature-Invalid would otherwise have raised a fault), and
+      saml.signature.cert.subject/.issuer/.thumbprint are also available if
+      you'd rather read them directly.
+    - Type 6 (JWT-only): the shared flow has set X-Access-Token and
+      X-Access-Token-Type request headers directly; no signature/compression
+      variables exist for this type since none of that applies. Flow
+      variables isam.exchanged.token/.token.type/.token.expiresIn are also
+      available.
 
-  Any fault before this step completes (missing config/bearer token, both
-  ISAM hosts down, SOAP fault, invalid signature) propagates up as a raised
-  fault; handle it in this proxy's DefaultFaultRule/FaultRules as needed.
+  Any fault before this step completes (missing config/bearer token/client
+  cert, both ISAM hosts down, bad response, invalid signature) propagates up
+  as a raised fault; handle it in this proxy's DefaultFaultRule/FaultRules
+  as needed.
 -->
-<FlowCallout name="FC-ISAM-WSTrust-TokenExchange">
-    <DisplayName>FC ISAM WSTrust Token Exchange</DisplayName>
-    <SharedFlowBundle>ISAM-WSTrust-TokenExchange</SharedFlowBundle>
+<FlowCallout name="FC-ISAM-Exchange">
+    <DisplayName>FC ISAM Exchange</DisplayName>
+    <SharedFlowBundle>ISAM-SAML-User</SharedFlowBundle>
 </FlowCallout>

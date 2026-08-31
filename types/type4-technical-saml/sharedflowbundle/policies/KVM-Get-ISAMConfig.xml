@@ -1,0 +1,21 @@
+<KeyValueMapOperations name="KVM-Get-ISAMConfig" mapIdentifier="ISAM.SamlTechnical.Config">
+    <DisplayName>KVM Get ISAM Config</DisplayName>
+    <Scope>environment</Scope>
+    <ExpiryTimeInSecs>300</ExpiryTimeInSecs>
+    <!-- Type 4: "technical" SAML, WS-Trust with a bearer token. Own KVM map, own
+         host1/host2; every type has fully independent ISAM host config,
+         not just a different path on shared hosts. -->
+    <Get assignTo="isam.config.host1"><Key><Parameter>isam.saml.technical.host1</Parameter></Key></Get>
+    <Get assignTo="isam.config.host2"><Key><Parameter>isam.saml.technical.host2</Parameter></Key></Get>
+    <Get assignTo="isam.config.port"><Key><Parameter>isam.saml.technical.port</Parameter></Key></Get>
+    <Get assignTo="isam.config.scheme"><Key><Parameter>isam.saml.technical.scheme</Parameter></Key></Get>
+    <Get assignTo="isam.config.path"><Key><Parameter>isam.saml.technical.path</Parameter></Key></Get>
+    <Get assignTo="isam.config.connectTimeoutMs"><Key><Parameter>isam.saml.technical.connectTimeoutMs</Parameter></Key></Get>
+    <Get assignTo="isam.config.ioTimeoutMs"><Key><Parameter>isam.saml.technical.ioTimeoutMs</Parameter></Key></Get>
+    <Get assignTo="isam.config.appliesTo"><Key><Parameter>isam.saml.technical.appliesTo</Parameter></Key></Get>
+    <Get assignTo="isam.config.tokenType"><Key><Parameter>isam.saml.technical.tokenType</Parameter></Key></Get>
+    <Get assignTo="isam.config.keyType"><Key><Parameter>isam.saml.technical.keyType</Parameter></Key></Get>
+    <Get assignTo="isam.config.requestType"><Key><Parameter>isam.saml.technical.requestType</Parameter></Key></Get>
+    <Get assignTo="isam.config.compressSaml"><Key><Parameter>isam.saml.technical.compressSaml</Parameter></Key></Get>
+    <Get assignTo="isam.config.trustedThumbprints"><Key><Parameter>isam.saml.technical.trustedSigningCertThumbprints</Parameter></Key></Get>
+</KeyValueMapOperations>

@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 #
-# Creates/updates the "ISAM.WSTrust.Config" environment-scoped KVM entry
+# Creates/updates the "ISAM.WSTrust.Config" environment-scoped KVM entries
 # consumed by the ISAM-WSTrust-TokenExchange shared flow (KVM-Get-ISAMConfig
-# policy). Requires an OAuth bearer token for the Apigee Management API.
+# policy). One KVM key per config field -- see the KEYS array below -- rather
+# than a single JSON blob, so the shared flow never needs to parse JSON.
+# Requires an OAuth bearer token for the Apigee Management API.
 #
 # Usage:
 #   ORG=my-org ENV=my-env TOKEN=$(gcloud auth print-access-token) \
 #     ./scripts/provision-kvm.sh
 #
-# Edit the CONFIG_JSON block below (or export CONFIG_JSON_FILE=path/to.json)
-# before running against a real environment.
+# Edit the KEYS array below before running against a real environment.
 
 set -euo pipefail
 
@@ -20,31 +21,26 @@ set -euo pipefail
 MAP_NAME="ISAM.WSTrust.Config"
 BASE_URL="https://apigee.googleapis.com/v1/organizations/${ORG}/environments/${ENV}/keyvaluemaps"
 
-if [[ -n "${CONFIG_JSON_FILE:-}" ]]; then
-    CONFIG_JSON="$(cat "${CONFIG_JSON_FILE}")"
-else
-    read -r -d '' CONFIG_JSON <<'JSON' || true
-{
-  "host1": "isam1.internal.example.com",
-  "host2": "isam2.internal.example.com",
-  "port": "443",
-  "scheme": "https",
-  "path": "/TrustServer/SecurityTokenService",
-  "connectTimeoutMs": "5000",
-  "ioTimeoutMs": "10000",
-  "appliesTo": "urn:isam:relying-party:my-service",
-  "tokenType": "urn:ietf:params:oauth:token-type:jwt",
-  "keyType": "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer",
-  "requestType": "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue",
-  "clientCertHeader": "X-Client-Cert",
-  "compressSaml": false,
-  "trustedSigningCertThumbprints": ""
-}
-JSON
-fi
-
-# Collapse to a single line so it can be embedded as one KVM entry value.
-CONFIG_JSON_COMPACT="$(printf '%s' "${CONFIG_JSON}" | tr -d '\n' | tr -s ' ')"
+# key -> value. Required: host1, host2, port, scheme, path, appliesTo,
+# tokenType, keyType, requestType. Optional (fine to leave blank/omit):
+# connectTimeoutMs, ioTimeoutMs, compressSaml, trustedSigningCertThumbprints.
+declare -A KEYS=(
+  [isam.sts.host1]="isam1.internal.example.com"
+  [isam.sts.host2]="isam2.internal.example.com"
+  [isam.sts.port]="443"
+  [isam.sts.scheme]="https"
+  [isam.sts.path]="/TrustServer/SecurityTokenService"
+  [isam.sts.connectTimeoutMs]="5000"
+  [isam.sts.ioTimeoutMs]="10000"
+  [isam.sts.appliesTo]="urn:isam:relying-party:my-service"
+  [isam.sts.tokenType]="urn:ietf:params:oauth:token-type:jwt"
+  [isam.sts.keyType]="http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer"
+  [isam.sts.requestType]="http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue"
+  [isam.sts.compressSaml]="false"
+  # Comma-separated SHA-256 thumbprints of ISAM's signing cert(s). Leave empty
+  # to skip pinning -- see README "Signature validation & trust".
+  [isam.sts.trustedSigningCertThumbprints]=""
+)
 
 echo "Ensuring KVM '${MAP_NAME}' exists in ${ORG}/${ENV} ..."
 curl -sS -o /dev/null -w '%{http_code}\n' -X POST "${BASE_URL}" \
@@ -52,24 +48,26 @@ curl -sS -o /dev/null -w '%{http_code}\n' -X POST "${BASE_URL}" \
     -H "Content-Type: application/json" \
     -d "{\"name\": \"${MAP_NAME}\"}" || true
 
-echo "Writing 'isam.sts.config' entry ..."
-# Try create first; if it already exists, fall back to update.
-CREATE_STATUS=$(curl -sS -o /tmp/kvm-create-resp.json -w '%{http_code}' -X POST \
-    "${BASE_URL}/${MAP_NAME}/entries" \
-    -H "Authorization: Bearer ${TOKEN}" \
-    -H "Content-Type: application/json" \
-    -d "$(python3 -c 'import json,sys; print(json.dumps({"name":"isam.sts.config","value": sys.argv[1]}))' "${CONFIG_JSON_COMPACT}")")
+for key in "${!KEYS[@]}"; do
+    value="${KEYS[$key]}"
+    echo "Writing '${key}' ..."
+    body=$(python3 -c 'import json,sys; print(json.dumps({"name": sys.argv[1], "value": sys.argv[2]}))' "${key}" "${value}")
 
-if [[ "${CREATE_STATUS}" == "409" ]]; then
-    echo "Entry exists, updating instead ..."
-    curl -sS -o /dev/null -w '%{http_code}\n' -X PUT \
-        "${BASE_URL}/${MAP_NAME}/entries/isam.sts.config" \
+    CREATE_STATUS=$(curl -sS -o /tmp/kvm-create-resp.json -w '%{http_code}' -X POST \
+        "${BASE_URL}/${MAP_NAME}/entries" \
         -H "Authorization: Bearer ${TOKEN}" \
         -H "Content-Type: application/json" \
-        -d "$(python3 -c 'import json,sys; print(json.dumps({"name":"isam.sts.config","value": sys.argv[1]}))' "${CONFIG_JSON_COMPACT}")"
-else
-    echo "Create response status: ${CREATE_STATUS}"
-    cat /tmp/kvm-create-resp.json
-fi
+        -d "${body}")
+
+    if [[ "${CREATE_STATUS}" == "409" ]]; then
+        curl -sS -o /dev/null -w '  updated (%{http_code})\n' -X PUT \
+            "${BASE_URL}/${MAP_NAME}/entries/${key}" \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "${body}"
+    else
+        echo "  created (${CREATE_STATUS})"
+    fi
+done
 
 echo "Done."

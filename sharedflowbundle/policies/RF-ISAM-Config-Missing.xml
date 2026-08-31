@@ -5,7 +5,7 @@
             <Payload contentType="application/json">
                 {
                   "error": "isam_config_missing",
-                  "message": "KVM entry 'isam.sts.config' is missing, empty, or not valid JSON. Provision it in the ISAM.WSTrust.Config KVM (see scripts/provision-kvm.sh)."
+                  "message": "One or more required entries are missing from the ISAM.WSTrust.Config KVM (see scripts/provision-kvm.sh)."
                 }
             </Payload>
             <StatusCode>500</StatusCode>

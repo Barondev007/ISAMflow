@@ -16,6 +16,13 @@ ISAM-issued SAML assertion via WS-Trust, with:
 - Conditional zip + base64 compression of the assertion, gated by a
   `compressSaml` flag
 
+**Built entirely from native Apigee policies (`KeyValueMapOperations`,
+`ExtractVariables`, `AssignMessage`, `ServiceCallout`, `RaiseFault`) — no
+JavaScript anywhere in the flow.** Two steps (XML signature verification, zip
+compression) use a small Java callout because Apigee has no native policy for
+either; see "Why Java is still here" below for exactly why, and what a
+JS-only alternative would have cost.
+
 ## Layout
 
 ```
@@ -23,53 +30,59 @@ sharedflowbundle/
   ISAM-WSTrust-TokenExchange.xml   # root bundle descriptor
   policies/                        # one XML file per policy, see below
   sharedflows/default.xml          # the flow, step order + conditions
-  resources/jsc/build-wstrust-request.js
   resources/java/                  # isam-saml-callouts.jar goes here (built, not checked in)
 java-callouts/isam-saml-callouts/  # Maven module for the two Java callouts
 examples/
   FlowCallout-Sample.xml           # how to call this from an API proxy
 scripts/
-  provision-kvm.sh                 # creates/updates the KVM entry
+  provision-kvm.sh                 # creates/updates the KVM entries
 ```
 
 ## Flow
 
-1. **KVM-Get-ISAMConfig** — `KeyValueMapOperations` reads a single JSON blob
-   (key `isam.sts.config`) from the environment-scoped KVM `ISAM.WSTrust.Config`
-   into `isam.config.raw`.
-2. **JS-Build-WSTrust-Request** — parses/validates that JSON, pulls the
-   `Authorization: Bearer …` header, `client.ip`, `User-Agent`, and (optionally)
-   a forwarded client certificate header off the request, resolves the
-   `compressSaml` flag (caller override else KVM default), and builds the
-   WS-Trust SOAP envelope (`wstrust.request.payload`) plus the two target URLs.
-3. **RF-ISAM-Config-Missing** / **RF-Missing-Bearer-Token** — short-circuit with
-   a clear error if the KVM entry is missing/invalid or there's no bearer token.
-4. **SC-Call-ISAM-Primary** — POSTs the SOAP request to the primary ISAM host
-   (`continueOnError="true"` so failure doesn't abort the flow outright).
-5. **SC-Call-ISAM-Secondary** — runs only if the primary call failed outright
+1. **KVM-Get-ISAMConfig** — one `KeyValueMapOperations` policy, one `<Get>`
+   per config field, reading directly from the environment-scoped KVM
+   `ISAM.WSTrust.Config` into `isam.config.*` variables. No JSON, no parsing.
+2. **RF-ISAM-Config-Missing** — raised if any required `isam.config.*`
+   variable came back null (a `Condition` on the step, no code).
+3. **EV-Extract-BearerToken** — native `ExtractVariables` with a `Header`
+   `Pattern` (`Bearer {token}`) on `Authorization`, setting
+   `wstrust.bearer.token`.
+4. **RF-Missing-Bearer-Token** — raised if that came back null.
+5. **AM-Set-Default-CompressSaml** — only runs if the calling proxy didn't
+   already set a `compressSaml` flow variable; copies the KVM default
+   (`isam.config.compressSaml`) in, or `false` if even that's unset.
+6. **AM-Build-WSTrust-Request** — a native `AssignMessage` that builds the
+   full WS-Trust SOAP envelope as literal nested XML, using Apigee's built-in
+   message-template functions (`escapeXML`, `createUuid`, `encodeBase64`) for
+   the parts that need them, into a new message variable `wstrustRequestMsg`.
+7. **SC-Call-ISAM-Primary** — POSTs `{wstrustRequestMsg.content}` to the
+   primary ISAM host (`continueOnError="true"` so failure doesn't abort the
+   flow outright).
+8. **SC-Call-ISAM-Secondary** — runs only if the primary call failed outright
    (transport error) or returned HTTP 500, POSTing the same payload to the
    secondary host. Any other primary error (4xx, other 5xx) is *not* retried
    against the secondary — see "Failover semantics" below.
-6. **RF-ISAM-Unavailable** — raised only if both hosts failed/500'd.
-7. **EV-Parse-Primary-Response** / **EV-Parse-Secondary-Response** — whichever
-   host returned HTTP 200 gets its RSTR parsed via XPath into:
-   - `isam.rstr.assertion.xml` — the full `<saml:Assertion>` XML fragment
-   - `isam.rstr.subject.id` — the assertion's `Subject/NameID` (or `NameIdentifier`)
-   - `isam.rstr.notBefore` / `isam.rstr.notOnOrAfter` — from `saml:Conditions`
-   - `isam.rstr.fault` — SOAP Fault reason text, if ISAM returned a fault instead
-   
-   These XPaths use `local-name()` throughout instead of hard namespace
-   bindings, so they keep working regardless of exact prefixes or whether the
-   RSTR is wrapped in a `RequestSecurityTokenResponseCollection`.
-8. **RF-WSTrust-Fault** — raised if no assertion was extracted (SOAP Fault, or
-   an unexpected response shape from either host).
-9. **JC-Validate-SAML-Signature** (Java callout) — verifies the assertion's
-   `ds:Signature` against the X.509 cert embedded in its own `ds:KeyInfo`.
-10. **RF-SAML-Signature-Invalid** — raised if the signature doesn't validate
+9. **RF-ISAM-Unavailable** — raised only if both hosts failed/500'd.
+10. **EV-Parse-Primary-Response** / **EV-Parse-Secondary-Response** — whichever
+    host returned HTTP 200 gets its RSTR parsed via XPath into:
+    - `isam.rstr.assertion.xml` — the full `<saml:Assertion>` XML fragment
+    - `isam.rstr.subject.id` — the assertion's `Subject/NameID` (or `NameIdentifier`)
+    - `isam.rstr.notBefore` / `isam.rstr.notOnOrAfter` — from `saml:Conditions`
+    - `isam.rstr.fault` — SOAP Fault reason text, if ISAM returned a fault instead
+
+    These XPaths use `local-name()` throughout instead of hard namespace
+    bindings, so they keep working regardless of exact prefixes or whether the
+    RSTR is wrapped in a `RequestSecurityTokenResponseCollection`.
+11. **RF-WSTrust-Fault** — raised if no assertion was extracted (SOAP Fault, or
+    an unexpected response shape from either host).
+12. **JC-Validate-SAML-Signature** (Java callout) — verifies the assertion's
+    `ds:Signature` against the X.509 cert embedded in its own `ds:KeyInfo`.
+13. **RF-SAML-Signature-Invalid** — raised if the signature doesn't validate
     (or, when pinning is configured, if the signing cert isn't a trusted one).
-11. **JC-Compress-SAML-Assertion** (Java callout) — zips (if `compressSaml`)
+14. **JC-Compress-SAML-Assertion** (Java callout) — zips (if `compressSaml`)
     and base64-encodes the assertion into `saml.assertion.output`.
-12. **AM-Set-SAML-Response-Header** — sets `X-SAML-Assertion`,
+15. **AM-Set-SAML-Response-Header** — sets `X-SAML-Assertion`,
     `X-SAML-Assertion-Compressed`, and `X-SAML-Subject-Id` request headers, and
     mirrors the subject/lifetime into `isam.exchanged.*` flow variables for
     the calling proxy to read directly instead, if preferred.
@@ -86,63 +99,110 @@ rather retry on any non-200, broaden the conditions in
 `sharedflowbundle/sharedflows/default.xml` (the two `SC-Call-ISAM-Secondary`
 and `RF-ISAM-Unavailable` steps) accordingly.
 
-## KVM config shape
+## Why Java is still here
 
-Single key `isam.sts.config` in KVM `ISAM.WSTrust.Config` (environment-scoped),
-value is a JSON string:
+Two steps could not be moved to native policies or JavaScript, because
+Apigee's JavaScript sandbox has no crypto or compression primitives (no
+`crypto`, no `zlib`/`Deflater`, no XML-canonicalization library) and there is
+no native Apigee policy for either operation:
 
-```json
-{
-  "host1": "isam1.internal.example.com",
-  "host2": "isam2.internal.example.com",
-  "port": "443",
-  "scheme": "https",
-  "path": "/TrustServer/SecurityTokenService",
-  "connectTimeoutMs": "5000",
-  "ioTimeoutMs": "10000",
-  "appliesTo": "urn:isam:relying-party:my-service",
-  "tokenType": "urn:ietf:params:oauth:token-type:jwt",
-  "keyType": "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer",
-  "requestType": "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue",
-  "clientCertHeader": "X-Client-Cert",
-  "compressSaml": false,
-  "trustedSigningCertThumbprints": ""
-}
-```
+- **`JC-Validate-SAML-Signature`** — verifying an XML-DSig `ds:Signature`
+  needs XML canonicalization (C14N) plus RSA/X.509 verification. This is
+  algorithmically substantial and security-sensitive; a hand-rolled
+  JavaScript version would be both a large amount of code and a real risk of
+  getting subtly wrong in a way that *looks* like it validates. The Java
+  version uses only JDK-standard `javax.xml.crypto.dsig` (JSR-105), no
+  third-party crypto library.
+- **`JC-Compress-SAML-Assertion`** — DEFLATE/zip has no native Apigee policy
+  either. It *could* be reimplemented in pure JavaScript (the algorithm
+  doesn't require native code), but that means porting/hand-writing a
+  compliant DEFLATE encoder — hundreds of lines, with its own correctness
+  risk, to replace three lines of `java.util.zip`. Java was kept here for
+  the same reason: it's the smaller, more reliable option once *some*
+  custom code is unavoidable.
 
-`host1`, `host2`, `port`, `scheme`, `path`, `appliesTo`, `tokenType`,
-`keyType`, and `requestType` are required; the rest have defaults.
-`trustedSigningCertThumbprints` is a comma-separated list of SHA-256
-certificate thumbprints (hex, colons optional) — see "Signature validation &
-trust" below.
+If you'd rather drop one or both of these than carry a Java callout, that's a
+real option, not just a footnote: signature validation could be deferred to
+whatever consumes `X-SAML-Assertion` downstream, and compression can simply
+be disabled everywhere (`compressSaml` always false, which needs no code at
+all — the "else" branch of `JC-Compress-SAML-Assertion` is just
+`encodeBase64()`, which is itself a native message-template function). Say
+the word and I'll cut over.
 
-Use `scripts/provision-kvm.sh` to create/update this entry:
+## KVM config
+
+Individual keys in KVM `ISAM.WSTrust.Config` (environment-scoped) — no JSON,
+each field is its own entry:
+
+| Key | Required | Example |
+|---|---|---|
+| `isam.sts.host1` | yes | `isam1.internal.example.com` |
+| `isam.sts.host2` | yes | `isam2.internal.example.com` |
+| `isam.sts.port` | yes | `443` |
+| `isam.sts.scheme` | yes | `https` |
+| `isam.sts.path` | yes | `/TrustServer/SecurityTokenService` |
+| `isam.sts.appliesTo` | yes | `urn:isam:relying-party:my-service` |
+| `isam.sts.tokenType` | yes | `urn:ietf:params:oauth:token-type:jwt` |
+| `isam.sts.keyType` | yes | `http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer` |
+| `isam.sts.requestType` | yes | `http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue` |
+| `isam.sts.connectTimeoutMs` | no (default 5000) | `5000` |
+| `isam.sts.ioTimeoutMs` | no (default 10000) | `10000` |
+| `isam.sts.compressSaml` | no (default false) | `false` |
+| `isam.sts.trustedSigningCertThumbprints` | no | comma-separated SHA-256 thumbprints |
+
+Use `scripts/provision-kvm.sh` to create/update these entries (edit the
+`KEYS` array at the top of the script first):
 
 ```bash
 ORG=my-org ENV=my-env TOKEN=$(gcloud auth print-access-token) \
   ./scripts/provision-kvm.sh
 ```
 
-Edit the JSON block in the script (or point `CONFIG_JSON_FILE` at a file)
-before running it against a real environment.
-
 ## Dynamic (per-request) attributes on the outbound WS-Trust request
 
 | WS-Trust element                                | Source                                                             |
 |--------------------------------------------------|----------------------------------------------------------------------|
-| `wsse:BinarySecurityToken` (header + OnBehalfOf) | `Authorization: Bearer <token>` request header                     |
-| `AdditionalContext/ContextItem[@Name='ip']`      | `client.ip`, falling back to first hop of `X-Forwarded-For`         |
-| `AdditionalContext/ContextItem[@Name='userAgent']` | `User-Agent` request header (omitted if absent)                   |
-| `AdditionalContext/ContextItem[@Name='clientCertificate']` | Header named by `clientCertHeader` in the KVM config (omitted if absent) |
-| `wsa:MessageID`                                   | Generated UUID per request                                          |
+| `wsse:BinarySecurityToken` (header + OnBehalfOf) | `Authorization: Bearer <token>` request header, base64-encoded via `encodeBase64()` |
+| `AdditionalContext/ContextItem[@Name='ip']`      | `client.ip` (Apigee-native)                                          |
+| `AdditionalContext/ContextItem[@Name='forwardedFor']` | `X-Forwarded-For` request header, passed through verbatim (not split — see below) |
+| `AdditionalContext/ContextItem[@Name='userAgent']` | `User-Agent` request header                                        |
+| `AdditionalContext/ContextItem[@Name='clientCertificate']` | `X-Client-Cert` request header (hard-coded name — see below)  |
+| `wsa:MessageID`                                   | `createUuid()` (Apigee-native)                                       |
 
-The client certificate is expected as a URL-encoded PEM in a header, which is
-the common convention when TLS/mTLS is terminated by a load balancer or NGINX
-in front of Apigee (e.g. NGINX's `$ssl_client_escaped_cert`, or an ALB's
-`X-Amzn-Mtls-Clientcert`). Confirm the actual header name/format with whoever
-terminates mTLS and set `clientCertHeader` accordingly. If Apigee itself
-terminates mutual TLS on the ProxyEndpoint, adjust `JS-Build-WSTrust-Request`
-to read the appropriate `ssl_info.*` flow variables instead.
+Any of these that are absent on the inbound request render as an empty
+`<wsc:Value/>` rather than omitting the `ContextItem` entirely — a
+deliberate simplification (conditionally omitting an XML element isn't
+something a single native `Payload` template can express; doing so would
+need branching logic, i.e. code).
+
+### Client IP: `ip` vs `forwardedFor`
+
+The original design tried to compute "the first hop of X-Forwarded-For" as a
+fallback for `client.ip`. That string-splitting is exactly the kind of thing
+that needs code, so instead both are now sent separately and verbatim:
+`ip` is Apigee's own view of the peer, `forwardedFor` is the raw
+`X-Forwarded-For` header (however many hops it has). Let ISAM's own mapping
+rule decide which one it trusts, rather than deciding client-side.
+
+### Client certificate header
+
+The header name is now **hard-coded to `X-Client-Cert`** in
+`AM-Build-WSTrust-Request.xml`, rather than configurable via KVM as in the
+JS version. This is a direct consequence of removing JavaScript: looking up
+a header by a name stored in *another* variable (`request.header.{headerNameVar}`)
+needs indirect variable resolution, which Apigee's native templating doesn't
+support — only JavaScript's `context.getVariable('request.header.' + name)`
+can do that. If your header name needs to vary, edit that one line in
+`AM-Build-WSTrust-Request.xml` directly.
+
+The value is also expected **pre-normalized to bare base64** (no
+`-----BEGIN CERTIFICATE-----` armor, no URL-encoding, no embedded newlines)
+by whatever terminates mTLS in front of Apigee — e.g. NGINX's
+`$ssl_client_escaped_cert` would need reformatting before it reaches Apigee.
+The JS version stripped PEM armor and newlines itself; doing that natively
+would mean chaining `replaceAll()` calls, which is more fragile than just
+fixing the upstream format once. Confirm the actual format with whoever
+terminates mTLS.
 
 ## Signature validation & trust
 
@@ -156,7 +216,7 @@ can inject a response into this flow from generating their own keypair,
 embedding their own self-signed certificate, and signing a forged assertion
 with it — the signature would validate perfectly, against the wrong signer.
 
-To close that gap, set `trustedSigningCertThumbprints` in the KVM config to
+To close that gap, set `isam.sts.trustedSigningCertThumbprints` in the KVM to
 the SHA-256 thumbprint(s) of ISAM's actual signing certificate(s) (both hosts,
 plus room for a rotation overlap). When set, `JC-Validate-SAML-Signature`
 additionally rejects any assertion whose signing cert isn't in that list —
@@ -183,7 +243,7 @@ receiver which case it is.
 The flag resolves in this order: a `compressSaml` flow variable set by the
 *calling* proxy before invoking this shared flow (see
 `examples/FlowCallout-Sample.xml`) wins; otherwise it falls back to
-`compressSaml` in the KVM config.
+`isam.sts.compressSaml` in the KVM (via `AM-Set-Default-CompressSaml`).
 
 ## TLS trust for the outbound call to ISAM
 
@@ -216,9 +276,8 @@ mvn -B package   # copies isam-saml-callouts.jar into sharedflowbundle/resources
 ```
 
 See `java-callouts/isam-saml-callouts/README.md` for the class/property
-reference. Apigee has no native XML-DSig or zip policy, which is why these
-two steps are Java rather than JavaScript or AssignMessage — Apigee's
-JavaScript sandbox doesn't expose the crypto/zip primitives needed for either.
+reference, and "Why Java is still here" above for why these two specifically
+couldn't move to native policies.
 
 ## Calling this shared flow from a proxy
 
@@ -254,9 +313,10 @@ apigeecli sharedflows deploy -n ISAM-WSTrust-TokenExchange \
 - `TokenType`, `KeyType`, `RequestType`, and `AppliesTo` are all pulled from
   KVM as static values — adjust them per relying party if you end up needing
   more than one profile.
-- Bearer token is embedded both in the WS-Security header (`wsse:Security`)
-  and in `wst:OnBehalfOf`; drop whichever one your ISAM STS chain doesn't
-  expect to keep the request minimal.
+- Bearer token is embedded, base64-encoded, both in the WS-Security header
+  (`wsse:Security`) and in `wst:OnBehalfOf`; drop whichever one your ISAM STS
+  chain doesn't expect to keep the request minimal, and confirm ISAM expects
+  base64 there at all rather than the raw JWT text.
 - The SAML extraction XPaths assume the assertion is reachable at
   `.../RequestedSecurityToken/saml:Assertion` (any namespace prefix, any
   wrapper around `RequestedSecurityToken`). If your ISAM STS wraps it

@@ -4,7 +4,7 @@
   before the proxy's own target logic.
 
   Optional: set compressSaml as a flow variable before this step to override
-  the KVM default for this one request, e.g. via an AssignMessage/JS step:
+  the KVM default for this one request, e.g. via a native AssignMessage step:
 
     <AssignVariable>
         <Name>compressSaml</Name>

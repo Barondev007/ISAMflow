@@ -3,15 +3,27 @@
         <Name>KVM-Get-ISAMConfig</Name>
     </Step>
     <Step>
-        <Name>JS-Build-WSTrust-Request</Name>
-    </Step>
-    <Step>
-        <Condition>isam.config.valid = false</Condition>
+        <Condition>isam.config.host1 = null OR isam.config.host2 = null OR isam.config.port = null OR isam.config.scheme = null OR isam.config.path = null OR isam.config.appliesTo = null OR isam.config.tokenType = null OR isam.config.keyType = null OR isam.config.requestType = null</Condition>
         <Name>RF-ISAM-Config-Missing</Name>
     </Step>
+
     <Step>
-        <Condition>wstrust.bearer.present = false</Condition>
+        <Name>EV-Extract-BearerToken</Name>
+    </Step>
+    <Step>
+        <Condition>wstrust.bearer.token = null</Condition>
         <Name>RF-Missing-Bearer-Token</Name>
+    </Step>
+
+    <!-- compressSaml: a calling proxy may set this flow variable before invoking
+         the FlowCallout to override the KVM default for this one request. -->
+    <Step>
+        <Condition>compressSaml = null</Condition>
+        <Name>AM-Set-Default-CompressSaml</Name>
+    </Step>
+
+    <Step>
+        <Name>AM-Build-WSTrust-Request</Name>
     </Step>
 
     <!-- Call the primary ISAM host. -->
@@ -51,7 +63,9 @@
     </Step>
 
     <!-- Validate the assertion's XML-DSig signature against its own embedded
-         certificate (optionally pinned against isam.config.trustedThumbprints). -->
+         certificate (optionally pinned against isam.config.trustedThumbprints).
+         No native Apigee policy exists for XML-DSig verification, so this one
+         step stays a Java callout; see README "Why Java is still here". -->
     <Step>
         <Name>JC-Validate-SAML-Signature</Name>
     </Step>
@@ -60,8 +74,9 @@
         <Name>RF-SAML-Signature-Invalid</Name>
     </Step>
 
-    <!-- Zip + base64 the assertion when compressSaml is true (KVM default,
-         overridable by the calling proxy); otherwise just base64 it. -->
+    <!-- Zip + base64 the assertion when compressSaml is true; otherwise just
+         base64 it. No native Apigee policy exists for zip compression either,
+         so this is the other Java callout; see README "Why Java is still here". -->
     <Step>
         <Name>JC-Compress-SAML-Assertion</Name>
     </Step>

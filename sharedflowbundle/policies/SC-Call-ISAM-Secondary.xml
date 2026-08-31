@@ -3,13 +3,13 @@
     <Request clearPayload="true" variable="wstrust.callout.request.secondary">
         <Set>
             <Verb>POST</Verb>
-            <Payload contentType="application/soap+xml; charset=utf-8">{wstrust.request.payload}</Payload>
+            <Payload contentType="application/soap+xml; charset=utf-8">{wstrustRequestMsg.content}</Payload>
         </Set>
     </Request>
     <Response>isamSecondaryResponse</Response>
     <Timeout>10000</Timeout>
     <HTTPTargetConnection>
-        <URL>{wstrust.target.url.secondary}</URL>
+        <URL>{isam.config.scheme}://{isam.config.host2}:{isam.config.port}{isam.config.path}</URL>
         <SSLInfo>
             <Enabled>true</Enabled>
             <TrustStore>ref://isam-truststore-ref</TrustStore>

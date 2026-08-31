@@ -2,12 +2,14 @@
     <ConfigurationVersion majorVersion="4" minorVersion="0"/>
     <CreatedAt>1735689600000</CreatedAt>
     <LastModifiedAt>1735689600000</LastModifiedAt>
-    <Description>Builds and sends a WS-Trust RequestSecurityToken to ISAM (with KVM-driven host failover on 500), extracts and validates the returned SAML assertion's signature, optionally zip-compresses it, and exposes it to the calling proxy.</Description>
+    <Description>Builds and sends a WS-Trust RequestSecurityToken to ISAM (with KVM-driven host failover on 500), extracts and validates the returned SAML assertion's signature, optionally zip-compresses it, and exposes it to the calling proxy. Built entirely from native Apigee policies except for two steps (XML-DSig signature verification, zip compression) that have no native Apigee equivalent.</Description>
     <Policies>
         <Policy>KVM-Get-ISAMConfig</Policy>
         <Policy>RF-ISAM-Config-Missing</Policy>
+        <Policy>EV-Extract-BearerToken</Policy>
         <Policy>RF-Missing-Bearer-Token</Policy>
-        <Policy>JS-Build-WSTrust-Request</Policy>
+        <Policy>AM-Set-Default-CompressSaml</Policy>
+        <Policy>AM-Build-WSTrust-Request</Policy>
         <Policy>SC-Call-ISAM-Primary</Policy>
         <Policy>SC-Call-ISAM-Secondary</Policy>
         <Policy>RF-ISAM-Unavailable</Policy>
@@ -23,7 +25,6 @@
         <SharedFlow>default</SharedFlow>
     </SharedFlows>
     <Resources>
-        <Resource>jsc://build-wstrust-request.js</Resource>
         <Resource>java://isam-saml-callouts.jar</Resource>
     </Resources>
 </SharedFlowBundle>

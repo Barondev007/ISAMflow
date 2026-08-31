@@ -13,17 +13,27 @@
         <Condition>wstrust.bearer.present = false</Condition>
         <Name>RF-Missing-Bearer-Token</Name>
     </Step>
+
+    <!-- Call the primary ISAM host. -->
     <Step>
         <Name>SC-Call-ISAM-Primary</Name>
     </Step>
+
+    <!-- Per spec: only failover to the secondary host on a transport failure
+         or an explicit HTTP 500 from the primary, not on other 4xx/5xx,
+         since those would presumably fail identically on the secondary too. -->
     <Step>
-        <Condition>SC-Call-ISAM-Primary.failed = true OR isamPrimaryResponse.status.code != 200</Condition>
+        <Condition>SC-Call-ISAM-Primary.failed = true OR isamPrimaryResponse.status.code = 500</Condition>
         <Name>SC-Call-ISAM-Secondary</Name>
     </Step>
+
+    <!-- Both hosts genuinely unreachable / 500. -->
     <Step>
-        <Condition>(SC-Call-ISAM-Primary.failed = true OR isamPrimaryResponse.status.code != 200) AND (SC-Call-ISAM-Secondary.failed = true OR isamSecondaryResponse.status.code != 200)</Condition>
+        <Condition>(SC-Call-ISAM-Primary.failed = true OR isamPrimaryResponse.status.code = 500) AND (SC-Call-ISAM-Secondary.failed = true OR isamSecondaryResponse.status.code = 500)</Condition>
         <Name>RF-ISAM-Unavailable</Name>
     </Step>
+
+    <!-- Parse whichever call actually succeeded (HTTP 200). -->
     <Step>
         <Condition>SC-Call-ISAM-Primary.failed = false AND isamPrimaryResponse.status.code = 200</Condition>
         <Name>EV-Parse-Primary-Response</Name>
@@ -32,11 +42,31 @@
         <Condition>(SC-Call-ISAM-Primary.failed = true OR isamPrimaryResponse.status.code != 200) AND SC-Call-ISAM-Secondary.failed = false AND isamSecondaryResponse.status.code = 200</Condition>
         <Name>EV-Parse-Secondary-Response</Name>
     </Step>
+
+    <!-- No SAML assertion extracted from either response (SOAP fault, unexpected
+         shape, or both calls failed without tripping RF-ISAM-Unavailable above). -->
     <Step>
-        <Condition>isam.rstr.token = null OR isam.rstr.token = ""</Condition>
+        <Condition>isam.rstr.assertion.xml = null OR isam.rstr.assertion.xml = ""</Condition>
         <Name>RF-WSTrust-Fault</Name>
     </Step>
+
+    <!-- Validate the assertion's XML-DSig signature against its own embedded
+         certificate (optionally pinned against isam.config.trustedThumbprints). -->
     <Step>
-        <Name>AM-Set-TokenExchange-Response</Name>
+        <Name>JC-Validate-SAML-Signature</Name>
+    </Step>
+    <Step>
+        <Condition>saml.signature.valid = false</Condition>
+        <Name>RF-SAML-Signature-Invalid</Name>
+    </Step>
+
+    <!-- Zip + base64 the assertion when compressSaml is true (KVM default,
+         overridable by the calling proxy); otherwise just base64 it. -->
+    <Step>
+        <Name>JC-Compress-SAML-Assertion</Name>
+    </Step>
+
+    <Step>
+        <Name>AM-Set-SAML-Response-Header</Name>
     </Step>
 </SharedFlow>

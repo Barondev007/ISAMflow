@@ -4,25 +4,25 @@
     <VariablePrefix>isam.rstr</VariablePrefix>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
     <XMLPayload stopPayloadProcessing="false">
-        <Namespaces>
-            <Namespace prefix="soapenv">http://www.w3.org/2003/05/soap-envelope</Namespace>
-            <Namespace prefix="wst">http://docs.oasis-open.org/ws-sx/ws-trust/200512</Namespace>
-            <Namespace prefix="wsu">http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd</Namespace>
-        </Namespaces>
-        <Variable name="token" type="string">
-            <XPath>/soapenv:Envelope/soapenv:Body/wst:RequestSecurityTokenResponseCollection/wst:RequestSecurityTokenResponse/wst:RequestedSecurityToken</XPath>
+        <!--
+          local-name() is used throughout instead of namespace-bound steps so this
+          keeps working regardless of the exact prefixes ISAM emits, and regardless
+          of whether the RSTR is wrapped in a RequestSecurityTokenResponseCollection.
+        -->
+        <Variable name="assertion.xml" type="nodeset">
+            <XPath>//*[local-name()='RequestedSecurityToken']/*[local-name()='Assertion']</XPath>
         </Variable>
-        <Variable name="tokenType" type="string">
-            <XPath>/soapenv:Envelope/soapenv:Body/wst:RequestSecurityTokenResponseCollection/wst:RequestSecurityTokenResponse/wst:TokenType</XPath>
+        <Variable name="subject.id" type="string">
+            <XPath>//*[local-name()='RequestedSecurityToken']/*[local-name()='Assertion']/*[local-name()='Subject']/*[local-name()='NameID' or local-name()='NameIdentifier']</XPath>
         </Variable>
-        <Variable name="created" type="string">
-            <XPath>/soapenv:Envelope/soapenv:Body/wst:RequestSecurityTokenResponseCollection/wst:RequestSecurityTokenResponse/wst:Lifetime/wsu:Created</XPath>
+        <Variable name="notBefore" type="string">
+            <XPath>//*[local-name()='RequestedSecurityToken']/*[local-name()='Assertion']/*[local-name()='Conditions']/@NotBefore</XPath>
         </Variable>
-        <Variable name="expires" type="string">
-            <XPath>/soapenv:Envelope/soapenv:Body/wst:RequestSecurityTokenResponseCollection/wst:RequestSecurityTokenResponse/wst:Lifetime/wsu:Expires</XPath>
+        <Variable name="notOnOrAfter" type="string">
+            <XPath>//*[local-name()='RequestedSecurityToken']/*[local-name()='Assertion']/*[local-name()='Conditions']/@NotOnOrAfter</XPath>
         </Variable>
         <Variable name="fault" type="string">
-            <XPath>/soapenv:Envelope/soapenv:Body/soapenv:Fault/soapenv:Reason/soapenv:Text</XPath>
+            <XPath>//*[local-name()='Fault']//*[local-name()='Text' or local-name()='faultstring']</XPath>
         </Variable>
     </XMLPayload>
 </ExtractVariables>

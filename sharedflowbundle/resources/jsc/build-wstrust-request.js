@@ -9,6 +9,8 @@
 // Outputs:
 //   isam.config.valid            boolean
 //   isam.config.host1/host2/...  individual config fields (for RaiseFault messages, logging)
+//   isam.config.trustedThumbprints  comma-separated SHA-256 cert thumbprints (signature pinning)
+//   compressSaml                  resolved true/false (caller override wins over KVM default)
 //   wstrust.bearer.present       boolean
 //   wstrust.request.payload      the SOAP XML to POST to ISAM
 //   wstrust.message.id           correlation id used as wsa:MessageID
@@ -110,6 +112,19 @@ context.setVariable('isam.config.host1', config.host1);
 context.setVariable('isam.config.host2', config.host2);
 context.setVariable('isam.config.connectTimeoutMs', config.connectTimeoutMs || '5000');
 context.setVariable('isam.config.ioTimeoutMs', config.ioTimeoutMs || '10000');
+
+// Signing-cert pinning for the SAML signature check (JC-Validate-SAML-Signature).
+// Optional: if left empty, the callout validates the signature against whatever
+// cert is embedded in the assertion but cannot confirm that cert is actually
+// ISAM's. See README "Signature validation & trust" for why this matters.
+context.setVariable('isam.config.trustedThumbprints', config.trustedSigningCertThumbprints || '');
+
+// compressSaml: a calling proxy may set this flow variable before invoking the
+// FlowCallout to override the KVM default on a per-request basis.
+var callerCompressFlag = context.getVariable('compressSaml');
+if (callerCompressFlag === null || callerCompressFlag === undefined || callerCompressFlag === '') {
+    context.setVariable('compressSaml', config.compressSaml === true || config.compressSaml === 'true');
+}
 
 var primaryUrl = config.scheme + '://' + config.host1 + ':' + config.port + config.path;
 var secondaryUrl = config.scheme + '://' + config.host2 + ':' + config.port + config.path;

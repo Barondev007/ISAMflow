@@ -36,7 +36,9 @@ else
   "tokenType": "urn:ietf:params:oauth:token-type:jwt",
   "keyType": "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer",
   "requestType": "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue",
-  "clientCertHeader": "X-Client-Cert"
+  "clientCertHeader": "X-Client-Cert",
+  "compressSaml": false,
+  "trustedSigningCertThumbprints": ""
 }
 JSON
 fi

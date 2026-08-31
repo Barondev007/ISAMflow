@@ -1,0 +1,10 @@
+<JavaCallout name="JC-Compress-SAML-Assertion">
+    <DisplayName>JC Compress SAML Assertion</DisplayName>
+    <Properties>
+        <Property name="assertionVariable">isam.rstr.assertion.xml</Property>
+        <!-- Boolean flag (from JS-Build-WSTrust-Request: caller override or KVM default). -->
+        <Property name="compressFlagVariable">compressSaml</Property>
+    </Properties>
+    <ClassName>com.example.isam.callout.SamlAssertionCompressor</ClassName>
+    <ResourceURL>java://isam-saml-callouts.jar</ResourceURL>
+</JavaCallout>

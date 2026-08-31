@@ -2,7 +2,7 @@
     <ConfigurationVersion majorVersion="4" minorVersion="0"/>
     <CreatedAt>1735689600000</CreatedAt>
     <LastModifiedAt>1735689600000</LastModifiedAt>
-    <Description>Builds and sends a WS-Trust RequestSecurityToken to ISAM, with KVM-driven host failover, and exposes the exchanged token to the calling proxy.</Description>
+    <Description>Builds and sends a WS-Trust RequestSecurityToken to ISAM (with KVM-driven host failover on 500), extracts and validates the returned SAML assertion's signature, optionally zip-compresses it, and exposes it to the calling proxy.</Description>
     <Policies>
         <Policy>KVM-Get-ISAMConfig</Policy>
         <Policy>RF-ISAM-Config-Missing</Policy>
@@ -14,12 +14,16 @@
         <Policy>EV-Parse-Primary-Response</Policy>
         <Policy>EV-Parse-Secondary-Response</Policy>
         <Policy>RF-WSTrust-Fault</Policy>
-        <Policy>AM-Set-TokenExchange-Response</Policy>
+        <Policy>JC-Validate-SAML-Signature</Policy>
+        <Policy>RF-SAML-Signature-Invalid</Policy>
+        <Policy>JC-Compress-SAML-Assertion</Policy>
+        <Policy>AM-Set-SAML-Response-Header</Policy>
     </Policies>
     <SharedFlows>
         <SharedFlow>default</SharedFlow>
     </SharedFlows>
     <Resources>
         <Resource>jsc://build-wstrust-request.js</Resource>
+        <Resource>java://isam-saml-callouts.jar</Resource>
     </Resources>
 </SharedFlowBundle>

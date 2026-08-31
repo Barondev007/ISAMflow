@@ -1,0 +1,42 @@
+<SharedFlow name="default">
+    <Step>
+        <Name>KVM-Get-ISAMConfig</Name>
+    </Step>
+    <Step>
+        <Name>JS-Build-WSTrust-Request</Name>
+    </Step>
+    <Step>
+        <Condition>isam.config.valid = false</Condition>
+        <Name>RF-ISAM-Config-Missing</Name>
+    </Step>
+    <Step>
+        <Condition>wstrust.bearer.present = false</Condition>
+        <Name>RF-Missing-Bearer-Token</Name>
+    </Step>
+    <Step>
+        <Name>SC-Call-ISAM-Primary</Name>
+    </Step>
+    <Step>
+        <Condition>SC-Call-ISAM-Primary.failed = true OR isamPrimaryResponse.status.code != 200</Condition>
+        <Name>SC-Call-ISAM-Secondary</Name>
+    </Step>
+    <Step>
+        <Condition>(SC-Call-ISAM-Primary.failed = true OR isamPrimaryResponse.status.code != 200) AND (SC-Call-ISAM-Secondary.failed = true OR isamSecondaryResponse.status.code != 200)</Condition>
+        <Name>RF-ISAM-Unavailable</Name>
+    </Step>
+    <Step>
+        <Condition>SC-Call-ISAM-Primary.failed = false AND isamPrimaryResponse.status.code = 200</Condition>
+        <Name>EV-Parse-Primary-Response</Name>
+    </Step>
+    <Step>
+        <Condition>(SC-Call-ISAM-Primary.failed = true OR isamPrimaryResponse.status.code != 200) AND SC-Call-ISAM-Secondary.failed = false AND isamSecondaryResponse.status.code = 200</Condition>
+        <Name>EV-Parse-Secondary-Response</Name>
+    </Step>
+    <Step>
+        <Condition>isam.rstr.token = null OR isam.rstr.token = ""</Condition>
+        <Name>RF-WSTrust-Fault</Name>
+    </Step>
+    <Step>
+        <Name>AM-Set-TokenExchange-Response</Name>
+    </Step>
+</SharedFlow>

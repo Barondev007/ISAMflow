@@ -1,0 +1,22 @@
+<ServiceCallout name="SC-Call-ISAM-Primary" continueOnError="true">
+    <DisplayName>SC Call ISAM Primary</DisplayName>
+    <Request clearPayload="true" variable="wstrust.callout.request">
+        <Set>
+            <Verb>POST</Verb>
+            <Payload contentType="application/soap+xml; charset=utf-8">{wstrust.request.payload}</Payload>
+        </Set>
+    </Request>
+    <Response>isamPrimaryResponse</Response>
+    <Timeout>10000</Timeout>
+    <HTTPTargetConnection>
+        <URL>{wstrust.target.url.primary}</URL>
+        <SSLInfo>
+            <Enabled>true</Enabled>
+            <TrustStore>ref://isam-truststore-ref</TrustStore>
+        </SSLInfo>
+        <Properties>
+            <Property name="connect.timeout.millis">{isam.config.connectTimeoutMs}</Property>
+            <Property name="io.timeout.millis">{isam.config.ioTimeoutMs}</Property>
+        </Properties>
+    </HTTPTargetConnection>
+</ServiceCallout>

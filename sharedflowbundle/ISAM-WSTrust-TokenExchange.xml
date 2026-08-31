@@ -1,0 +1,25 @@
+<SharedFlowBundle revision="1" name="ISAM-WSTrust-TokenExchange">
+    <ConfigurationVersion majorVersion="4" minorVersion="0"/>
+    <CreatedAt>1735689600000</CreatedAt>
+    <LastModifiedAt>1735689600000</LastModifiedAt>
+    <Description>Builds and sends a WS-Trust RequestSecurityToken to ISAM, with KVM-driven host failover, and exposes the exchanged token to the calling proxy.</Description>
+    <Policies>
+        <Policy>KVM-Get-ISAMConfig</Policy>
+        <Policy>RF-ISAM-Config-Missing</Policy>
+        <Policy>RF-Missing-Bearer-Token</Policy>
+        <Policy>JS-Build-WSTrust-Request</Policy>
+        <Policy>SC-Call-ISAM-Primary</Policy>
+        <Policy>SC-Call-ISAM-Secondary</Policy>
+        <Policy>RF-ISAM-Unavailable</Policy>
+        <Policy>EV-Parse-Primary-Response</Policy>
+        <Policy>EV-Parse-Secondary-Response</Policy>
+        <Policy>RF-WSTrust-Fault</Policy>
+        <Policy>AM-Set-TokenExchange-Response</Policy>
+    </Policies>
+    <SharedFlows>
+        <SharedFlow>default</SharedFlow>
+    </SharedFlows>
+    <Resources>
+        <Resource>jsc://build-wstrust-request.js</Resource>
+    </Resources>
+</SharedFlowBundle>

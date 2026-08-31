@@ -1,0 +1,23 @@
+<!--
+  Sample policy for an API proxy that wants to call the
+  ISAM-WSTrust-TokenExchange shared flow, e.g. attached in PreFlow
+  before the proxy's own target logic.
+
+  After this step runs, the exchanged token is available as the flow
+  variable "isam.exchanged.token" (plus isam.exchanged.token.type /
+  isam.exchanged.token.expires). Read it into whatever header your
+  backend expects, e.g.:
+
+    <AssignMessage name="AM-Set-Backend-Auth-Header">
+        <Set>
+            <Headers>
+                <Header name="Authorization">Bearer {isam.exchanged.token}</Header>
+            </Headers>
+        </Set>
+        <AssignTo createNew="false" transport="http" type="request"/>
+    </AssignMessage>
+-->
+<FlowCallout name="FC-ISAM-WSTrust-TokenExchange">
+    <DisplayName>FC ISAM WSTrust Token Exchange</DisplayName>
+    <SharedFlowBundle>ISAM-WSTrust-TokenExchange</SharedFlowBundle>
+</FlowCallout>

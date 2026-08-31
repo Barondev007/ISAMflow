@@ -1,0 +1,5 @@
+<Javascript name="JS-Build-WSTrust-Request" timeLimit="200">
+    <DisplayName>JS Build WSTrust Request</DisplayName>
+    <Properties/>
+    <ResourceURL>jsc://build-wstrust-request.js</ResourceURL>
+</Javascript>

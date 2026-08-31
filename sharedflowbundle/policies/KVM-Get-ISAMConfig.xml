@@ -1,0 +1,10 @@
+<KeyValueMapOperations name="KVM-Get-ISAMConfig" mapIdentifier="ISAM.WSTrust.Config">
+    <DisplayName>KVM Get ISAM Config</DisplayName>
+    <Scope>environment</Scope>
+    <ExpiryTimeInSecs>300</ExpiryTimeInSecs>
+    <Get assignTo="isam.config.raw" index="0">
+        <Key>
+            <Parameter>isam.sts.config</Parameter>
+        </Key>
+    </Get>
+</KeyValueMapOperations>

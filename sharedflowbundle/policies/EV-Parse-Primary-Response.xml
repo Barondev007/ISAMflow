@@ -1,0 +1,28 @@
+<ExtractVariables name="EV-Parse-Primary-Response">
+    <DisplayName>EV Parse Primary Response</DisplayName>
+    <Source>isamPrimaryResponse</Source>
+    <VariablePrefix>isam.rstr</VariablePrefix>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <XMLPayload stopPayloadProcessing="false">
+        <Namespaces>
+            <Namespace prefix="soapenv">http://www.w3.org/2003/05/soap-envelope</Namespace>
+            <Namespace prefix="wst">http://docs.oasis-open.org/ws-sx/ws-trust/200512</Namespace>
+            <Namespace prefix="wsu">http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd</Namespace>
+        </Namespaces>
+        <Variable name="token" type="string">
+            <XPath>/soapenv:Envelope/soapenv:Body/wst:RequestSecurityTokenResponseCollection/wst:RequestSecurityTokenResponse/wst:RequestedSecurityToken</XPath>
+        </Variable>
+        <Variable name="tokenType" type="string">
+            <XPath>/soapenv:Envelope/soapenv:Body/wst:RequestSecurityTokenResponseCollection/wst:RequestSecurityTokenResponse/wst:TokenType</XPath>
+        </Variable>
+        <Variable name="created" type="string">
+            <XPath>/soapenv:Envelope/soapenv:Body/wst:RequestSecurityTokenResponseCollection/wst:RequestSecurityTokenResponse/wst:Lifetime/wsu:Created</XPath>
+        </Variable>
+        <Variable name="expires" type="string">
+            <XPath>/soapenv:Envelope/soapenv:Body/wst:RequestSecurityTokenResponseCollection/wst:RequestSecurityTokenResponse/wst:Lifetime/wsu:Expires</XPath>
+        </Variable>
+        <Variable name="fault" type="string">
+            <XPath>/soapenv:Envelope/soapenv:Body/soapenv:Fault/soapenv:Reason/soapenv:Text</XPath>
+        </Variable>
+    </XMLPayload>
+</ExtractVariables>

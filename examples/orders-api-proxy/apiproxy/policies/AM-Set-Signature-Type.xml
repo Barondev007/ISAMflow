@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Tells SF-Signature-Router which signature scheme to apply and stages
+    the one dynamic claim this proxy's JOSE header template references
+    (see examples/kvm/orders-api.signature.jwt-header.json: "x-txn-id":
+    "${orders.txnId}"). signature.payload is left unset on purpose, so
+    the shared flow falls back to signing the request body (message.content).
+-->
+<AssignMessage name="AM-Set-Signature-Type">
+    <DisplayName>AM-Set-Signature-Type</DisplayName>
+    <AssignVariable>
+        <Name>signature.type</Name>
+        <Value>jwt</Value>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>orders.txnId</Name>
+        <Template>{request.header.x-txn-id}</Template>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

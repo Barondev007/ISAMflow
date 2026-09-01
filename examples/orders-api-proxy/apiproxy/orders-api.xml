@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<APIProxy revision="1" name="orders-api">
+    <ConfigurationVersion majorVersion="4" minorVersion="0"/>
+    <DisplayName>orders-api</DisplayName>
+    <Description>
+        Example proxy showing how to call SF-Signature-Router to sign a
+        request payload as a JWT. See ../../kvm for the matching KVM.
+    </Description>
+    <Policies>
+        <Policy>AM-Set-Signature-Type</Policy>
+        <Policy>FC-Sign-JWT</Policy>
+    </Policies>
+    <ProxyEndpoints>
+        <ProxyEndpoint>default</ProxyEndpoint>
+    </ProxyEndpoints>
+    <TargetEndpoints>
+        <TargetEndpoint>default</TargetEndpoint>
+    </TargetEndpoints>
+</APIProxy>

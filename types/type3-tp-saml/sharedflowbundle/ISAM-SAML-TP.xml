@@ -20,6 +20,7 @@
         <Policy>FC-Call-ISAM</Policy>
         <Policy>EV-Parse-ISAM-Response</Policy>
         <Policy>AM-Coalesce-SAML-Assertion</Policy>
+        <Policy>AM-Coalesce-SAML-Assertion-Fallback</Policy>
         <Policy>RF-WSTrust-Fault</Policy>
         <Policy>FC-Validate-Signature</Policy>
         <Policy>FC-Compress-Assertion</Policy>

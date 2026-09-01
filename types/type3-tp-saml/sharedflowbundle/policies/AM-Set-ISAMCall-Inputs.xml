@@ -1,17 +1,21 @@
 <!--
   Bridges this type's own config/request into the ISAM-Common-CallISAM
   contract (see that bundle's own description for the full input/output
-  list). Kept as a separate, plain-variable-only step from
-  AM-Build-WSTrust-Request specifically so it never has to guess whether
-  AssignVariable's Value supports message-template functions; it doesn't
-  need to, here, since {wstrustRequestMsg.content} is a single plain
-  variable reference.
+  list). AssignVariable's <Value> is ALWAYS a literal string, never
+  message-template-substituted, regardless of whether it contains {..} or
+  not; only <Template> does {..} substitution, and <Ref> does a plain
+  variable-to-variable copy. A single-variable copy (the request body) uses
+  Ref; a multi-token concatenation (the target URLs) uses Template; a real
+  literal (the content type, the timeout defaults) uses Value. Mixing these
+  up is exactly the bug this file had before: {isam.config.scheme}://...
+  inside a <Value> came out as that literal unsubstituted text, not the
+  real host.
 -->
 <AssignMessage name="AM-Set-ISAMCall-Inputs">
     <DisplayName>AM Set ISAMCall Inputs</DisplayName>
     <AssignVariable>
         <Name>isamcall.request.body</Name>
-        <Value>{wstrustRequestMsg.content}</Value>
+        <Ref>wstrustRequestMsg.content</Ref>
     </AssignVariable>
     <AssignVariable>
         <Name>isamcall.request.contentType</Name>
@@ -19,11 +23,11 @@
     </AssignVariable>
     <AssignVariable>
         <Name>isamcall.target.url.primary</Name>
-        <Value>{isam.config.scheme}://{isam.config.host1}:{isam.config.port}{isam.config.path}</Value>
+        <Template>{isam.config.scheme}://{isam.config.host1}:{isam.config.port}{isam.config.path}</Template>
     </AssignVariable>
     <AssignVariable>
         <Name>isamcall.target.url.secondary</Name>
-        <Value>{isam.config.scheme}://{isam.config.host2}:{isam.config.port}{isam.config.path}</Value>
+        <Template>{isam.config.scheme}://{isam.config.host2}:{isam.config.port}{isam.config.path}</Template>
     </AssignVariable>
     <AssignVariable>
         <Name>isamcall.connectTimeoutMs</Name>

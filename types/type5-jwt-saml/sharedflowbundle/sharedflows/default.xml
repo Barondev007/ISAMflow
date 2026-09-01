@@ -47,10 +47,12 @@
         <Name>FC-Validate-Signature</Name>
     </Step>
 
-    <!-- Prefer the assumed JSON response fields for subject/lifetime; fall
-         back to what FC-Validate-Signature already parsed out of the
-         assertion XML if those fields don't actually exist. -->
+    <!-- Prefer the assumed JSON response fields for subject/lifetime; only
+         runs when they're actually present, so it never has to overwrite
+         what FC-Validate-Signature already parsed out of the assertion XML
+         with something unresolved. -->
     <Step>
+        <Condition>isamjson.response.subjectId != null</Condition>
         <Name>AM-Coalesce-JSON-Metadata</Name>
     </Step>
 

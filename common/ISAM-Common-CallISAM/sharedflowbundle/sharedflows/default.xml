@@ -19,6 +19,10 @@
     </Step>
 
     <Step>
-        <Name>AM-Coalesce-ISAM-Response</Name>
+        <Name>AM-Coalesce-ISAM-Response-Primary</Name>
+    </Step>
+    <Step>
+        <Condition>isamcall.response.body = null</Condition>
+        <Name>AM-Coalesce-ISAM-Response-Secondary</Name>
     </Step>
 </SharedFlow>

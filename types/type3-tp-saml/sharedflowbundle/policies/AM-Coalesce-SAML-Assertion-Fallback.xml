@@ -1,0 +1,13 @@
+<!--
+  Only reached (see sharedflows/default.xml's Condition) if
+  AM-Coalesce-SAML-Assertion left saml.assertion.xml unset; i.e. no real
+  nested element was found, so fall back to the escaped-text candidate.
+-->
+<AssignMessage name="AM-Coalesce-SAML-Assertion-Fallback">
+    <DisplayName>AM Coalesce SAML Assertion Fallback</DisplayName>
+    <AssignVariable>
+        <Name>saml.assertion.xml</Name>
+        <Ref>isam.rstr.assertion.text</Ref>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

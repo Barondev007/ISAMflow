@@ -1,0 +1,26 @@
+<!--
+  Copies the primary host's response into the canonical isamcall.response.*
+  output variables, if it actually has one. A plain <Ref> copy, not
+  <Value>/<Template>, since this is a straight variable-to-variable copy
+  with no literal text mixed in.
+
+  AM-Coalesce-ISAM-Response-Secondary (Condition-gated in sharedflows/
+  default.xml on isamcall.response.body still being null after this step)
+  covers the case where the primary call never returned anything usable;
+  AssignVariable has no per-block conditional, so "prefer A, else B" across
+  two DIFFERENT source variables has to be two Flow-level steps, not one
+  AssignVariable with a Ref/Value pair (Value is always a literal, never a
+  variable reference, however it's written).
+-->
+<AssignMessage name="AM-Coalesce-ISAM-Response-Primary">
+    <DisplayName>AM Coalesce ISAM Response Primary</DisplayName>
+    <AssignVariable>
+        <Name>isamcall.response.body</Name>
+        <Ref>isamCallPrimaryResponse.content</Ref>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>isamcall.response.statusCode</Name>
+        <Ref>isamCallPrimaryResponse.status.code</Ref>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

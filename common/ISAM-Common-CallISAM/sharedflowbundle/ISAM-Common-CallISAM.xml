@@ -34,7 +34,8 @@
         <Policy>SC-Call-ISAM-Primary</Policy>
         <Policy>SC-Call-ISAM-Secondary</Policy>
         <Policy>RF-ISAM-Unavailable</Policy>
-        <Policy>AM-Coalesce-ISAM-Response</Policy>
+        <Policy>AM-Coalesce-ISAM-Response-Primary</Policy>
+        <Policy>AM-Coalesce-ISAM-Response-Secondary</Policy>
     </Policies>
     <SharedFlows>
         <SharedFlow>default</SharedFlow>

@@ -1,0 +1,18 @@
+<!--
+  Only reached (see sharedflows/default.xml's Condition) if
+  AM-Coalesce-ISAM-Response-Primary left isamcall.response.body unset;
+  i.e. the primary host genuinely didn't respond. Overwrites with the
+  secondary host's response the same way.
+-->
+<AssignMessage name="AM-Coalesce-ISAM-Response-Secondary">
+    <DisplayName>AM Coalesce ISAM Response Secondary</DisplayName>
+    <AssignVariable>
+        <Name>isamcall.response.body</Name>
+        <Ref>isamCallSecondaryResponse.content</Ref>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>isamcall.response.statusCode</Name>
+        <Ref>isamCallSecondaryResponse.status.code</Ref>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

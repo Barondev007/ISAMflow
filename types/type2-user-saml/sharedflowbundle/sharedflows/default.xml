@@ -38,6 +38,10 @@
     <Step>
         <Name>AM-Coalesce-SAML-Assertion</Name>
     </Step>
+    <Step>
+        <Condition>saml.assertion.xml = null</Condition>
+        <Name>AM-Coalesce-SAML-Assertion-Fallback</Name>
+    </Step>
 
     <!-- No SAML assertion extracted (SOAP fault, unexpected shape, or ISAM
          returned a non-200 that didn't trip the common flow's own

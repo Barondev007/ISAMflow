@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Reads the JOSE header template for this proxy from KVM
+    "{apiproxy.name}.signature" (see AM-JWT-Set-KVM-Name), key "jwt.header".
+
+    The KVM value is a JSON object, e.g.:
+      {
+        "typ": "JWT",
+        "alg": "RS256",
+        "kid": "orders-api-2026-01",
+        "iss": "orders-api",
+        "iat": "${signature.jwt.iat}",
+        "exp": "${signature.jwt.exp}",
+        "jti": "${signature.jwt.jti}"
+      }
+
+    Static attributes (typ, alg, kid, iss above) are literal values used
+    as-is. Calculated attributes use "${flowVariableName}" and are
+    resolved at runtime by JS-Build-JWT-Signing-String, which also
+    auto-populates signature.jwt.iat / .exp / .jti with sensible
+    defaults if the calling proxy hasn't already set them. Any other
+    flow variable set by the calling proxy earlier in its own flow can
+    be referenced the same way, e.g. "${myproxy.customClaim}".
+
+    continueOnError lets the flow proceed past a missing KVM/key so
+    RF-JWT-Header-Config-Missing can raise a clear configuration error
+    instead of Apigee's generic KVM fault.
+-->
+<KeyValueMapOperations name="KVM-Get-JWT-Header-Template" mapIdentifier="{signature.kvm.name}" continueOnError="true">
+    <DisplayName>KVM-Get-JWT-Header-Template</DisplayName>
+    <Scope>environment</Scope>
+    <Get assignTo="signature.jwt.header.template" index="1">
+        <Key>
+            <Parameter>jwt.header</Parameter>
+        </Key>
+    </Get>
+</KeyValueMapOperations>

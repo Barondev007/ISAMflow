@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Placeholder for the remaining JWT sub-step: send
+    signature.jwt.signing.string to the external signature API,
+    take back the signature value, base64url-encode it, and assemble
+    the compact JWS (signature.jwt.header.encoded + "." +
+    signature.jwt.payload.encoded + "." + <encoded signature>).
+    Replace this policy with a ServiceCallout + AssignMessage chain
+    when the signing API contract is defined.
+-->
+<RaiseFault name="NI-Signature-JWT-Sign">
+    <DisplayName>NI-Signature-JWT-Sign</DisplayName>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <FaultResponse>
+        <Set>
+            <StatusCode>501</StatusCode>
+            <ReasonPhrase>Not Implemented</ReasonPhrase>
+            <Payload contentType="application/json">{
+    "error": "not_implemented",
+    "message": "JWT signing string built successfully but the call to the signature API is not implemented yet.",
+    "signingString": "{signature.jwt.signing.string}"
+}</Payload>
+        </Set>
+    </FaultResponse>
+</RaiseFault>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Javascript name="JS-Build-JWT-Signing-String" timeLimit="200">
+    <DisplayName>JS-Build-JWT-Signing-String</DisplayName>
+    <IncludeURL>jsc://base64url.js</IncludeURL>
+    <ResourceURL>jsc://jwt-build-header.js</ResourceURL>
+</Javascript>

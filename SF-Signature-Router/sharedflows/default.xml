@@ -13,13 +13,31 @@
 
     <!-- ================================================================
          1) JWT Signature
-         TODO: replace the NI-Signature-JWT step below with the real
-         sub-step policy chain (e.g. AssignMessage to build the claim
-         set, ServiceCallout to the signing service, then AssignMessage
-         to attach the resulting JWT). Leave the Condition unchanged.
+         Builds the JOSE header from the per-proxy KVM
+         ({apiproxy.name}.signature, key "jwt.header") and produces the
+         signing string base64url(header) + "." + base64url(payload).
+         TODO: NI-Signature-JWT-Sign still needs to call the signing API
+         and assemble the final compact JWS. Leave the Condition on each
+         step unchanged.
          ================================================================ -->
     <Step>
-        <Name>NI-Signature-JWT</Name>
+        <Name>AM-JWT-Set-KVM-Name</Name>
+        <Condition>signature.type = "jwt"</Condition>
+    </Step>
+    <Step>
+        <Name>KVM-Get-JWT-Header-Template</Name>
+        <Condition>signature.type = "jwt"</Condition>
+    </Step>
+    <Step>
+        <Name>RF-JWT-Header-Config-Missing</Name>
+        <Condition>signature.type = "jwt" AND signature.jwt.header.template = null</Condition>
+    </Step>
+    <Step>
+        <Name>JS-Build-JWT-Signing-String</Name>
+        <Condition>signature.type = "jwt"</Condition>
+    </Step>
+    <Step>
+        <Name>NI-Signature-JWT-Sign</Name>
         <Condition>signature.type = "jwt"</Condition>
     </Step>
 

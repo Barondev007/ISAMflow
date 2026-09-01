@@ -10,7 +10,11 @@
     <Policies>
         <Policy>RF-Missing-Signature-Type</Policy>
         <Policy>RF-Unsupported-Signature-Type</Policy>
-        <Policy>NI-Signature-JWT</Policy>
+        <Policy>AM-JWT-Set-KVM-Name</Policy>
+        <Policy>KVM-Get-JWT-Header-Template</Policy>
+        <Policy>RF-JWT-Header-Config-Missing</Policy>
+        <Policy>JS-Build-JWT-Signing-String</Policy>
+        <Policy>NI-Signature-JWT-Sign</Policy>
         <Policy>NI-Signature-XMLDSig</Policy>
         <Policy>NI-Signature-Cavage</Policy>
     </Policies>

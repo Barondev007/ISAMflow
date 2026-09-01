@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RaiseFault name="RF-JWT-Header-Config-Missing">
+    <DisplayName>RF-JWT-Header-Config-Missing</DisplayName>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <FaultResponse>
+        <Set>
+            <StatusCode>500</StatusCode>
+            <ReasonPhrase>Internal Server Error</ReasonPhrase>
+            <Payload contentType="application/json">{
+    "error": "configuration_error",
+    "message": "No jwt.header entry found in KVM '{signature.kvm.name}'. Create the KVM and add a jwt.header key holding the JOSE header JSON template for this proxy."
+}</Payload>
+        </Set>
+    </FaultResponse>
+</RaiseFault>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Computes the name of the per-proxy KVM that holds the JWT header
+    config: "{apiproxy.name}.signature". Stored in signature.kvm.name so
+    KVM-Get-JWT-Header-Template can reference it via mapIdentifier="{signature.kvm.name}".
+-->
+<AssignMessage name="AM-JWT-Set-KVM-Name">
+    <DisplayName>AM-JWT-Set-KVM-Name</DisplayName>
+    <AssignVariable>
+        <Name>signature.kvm.name</Name>
+        <Template>{apiproxy.name}.signature</Template>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+</AssignMessage>

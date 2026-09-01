@@ -11,7 +11,9 @@
         "iss": "orders-api",
         "iat": "${signature.jwt.iat}",
         "exp": "${signature.jwt.exp}",
-        "jti": "${signature.jwt.jti}"
+        "jti": "${signature.jwt.jti}",
+        "x-txn-id": "${orders.txnId}",
+        "crit": ["x-txn-id"]
       }
 
     Static attributes (typ, alg, kid, iss above) are literal values used
@@ -21,6 +23,12 @@
     defaults if the calling proxy hasn't already set them. Any other
     flow variable set by the calling proxy earlier in its own flow can
     be referenced the same way, e.g. "${myproxy.customClaim}".
+
+    "crit" (RFC 7515 §4.1.11) is a plain JSON array naming extension
+    header parameters a verifier must understand (e.g. "x-txn-id"
+    above) — it is copied through as-is, not template-resolved, and
+    JS-Build-JWT-Signing-String rejects it if it's empty, lists itself,
+    or names a parameter that isn't present in the header.
 
     continueOnError lets the flow proceed past a missing KVM/key so
     RF-JWT-Header-Config-Missing can raise a clear configuration error

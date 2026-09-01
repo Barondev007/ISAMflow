@@ -22,6 +22,29 @@ function resolveTemplateValue(value) {
     });
 }
 
+// RFC 7515 §4.1.11: "crit" lists the names of extension header
+// parameters the header uses that a verifier MUST understand. Every
+// name it lists has to actually be present in the header, and it must
+// not list itself.
+function validateCrit(header) {
+    var crit = header.crit;
+    if (crit === undefined) {
+        return;
+    }
+    if (!(crit instanceof Array) || crit.length === 0) {
+        throw new Error('JOSE header "crit" must be a non-empty array of header parameter names.');
+    }
+    for (var i = 0; i < crit.length; i++) {
+        var name = crit[i];
+        if (name === 'crit') {
+            throw new Error('JOSE header "crit" must not list itself.');
+        }
+        if (!header.hasOwnProperty(name) || header[name] === undefined) {
+            throw new Error('JOSE header "crit" lists "' + name + '" but no such header parameter is present.');
+        }
+    }
+}
+
 (function buildJwtSigningString() {
     // 1) Calculated claims: reuse if the calling proxy already set them,
     //    otherwise compute sensible defaults.
@@ -59,6 +82,7 @@ function resolveTemplateValue(value) {
     if (!header.typ) {
         header.typ = 'JWT';
     }
+    validateCrit(header);
 
     var headerJson = JSON.stringify(header);
     context.setVariable('signature.jwt.header.json', headerJson);

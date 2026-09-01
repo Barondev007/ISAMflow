@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SharedFlow name="default">
+
+    <!-- ================================================================
+         Guard: the calling API proxy must set signature.type before
+         invoking this shared flow (e.g. via AssignMessage, then
+         FlowCallout with SharedFlowBundle="SF-Signature-Router").
+         ================================================================ -->
+    <Step>
+        <Name>RF-Missing-Signature-Type</Name>
+        <Condition>signature.type = null</Condition>
+    </Step>
+
+    <!-- ================================================================
+         1) JWT Signature
+         TODO: replace the NI-Signature-JWT step below with the real
+         sub-step policy chain (e.g. AssignMessage to build the claim
+         set, ServiceCallout to the signing service, then AssignMessage
+         to attach the resulting JWT). Leave the Condition unchanged.
+         ================================================================ -->
+    <Step>
+        <Name>NI-Signature-JWT</Name>
+        <Condition>signature.type = "jwt"</Condition>
+    </Step>
+
+    <!-- ================================================================
+         2) XML Signature (XML-DSig)
+         TODO: replace NI-Signature-XMLDSig with the real sub-step
+         policy chain. Leave the Condition unchanged.
+         ================================================================ -->
+    <Step>
+        <Name>NI-Signature-XMLDSig</Name>
+        <Condition>signature.type = "xmldsig"</Condition>
+    </Step>
+
+    <!-- ================================================================
+         3) HTTP Signature (Cavage / draft-cavage-http-signatures)
+         TODO: replace NI-Signature-Cavage with the real sub-step
+         policy chain. Leave the Condition unchanged.
+         ================================================================ -->
+    <Step>
+        <Name>NI-Signature-Cavage</Name>
+        <Condition>signature.type = "cavage"</Condition>
+    </Step>
+
+    <!-- ================================================================
+         Guard: reject anything that isn't one of the three known types.
+         ================================================================ -->
+    <Step>
+        <Name>RF-Unsupported-Signature-Type</Name>
+        <Condition>signature.type != "jwt" AND signature.type != "xmldsig" AND signature.type != "cavage"</Condition>
+    </Step>
+
+</SharedFlow>

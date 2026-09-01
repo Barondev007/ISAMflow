@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SharedFlowBundle name="SF-Signature-Router">
+    <ConfigurationVersion majorVersion="4" minorVersion="0"/>
+    <DisplayName>SF-Signature-Router</DisplayName>
+    <Description>
+        Single entry point for message signing. Calling API proxies set the
+        signature.type flow variable (jwt | xmldsig | cavage) and invoke this
+        shared flow via FlowCallout; it routes to the matching sub-step.
+    </Description>
+    <Policies>
+        <Policy>RF-Missing-Signature-Type</Policy>
+        <Policy>RF-Unsupported-Signature-Type</Policy>
+        <Policy>NI-Signature-JWT</Policy>
+        <Policy>NI-Signature-XMLDSig</Policy>
+        <Policy>NI-Signature-Cavage</Policy>
+    </Policies>
+    <SharedFlows>
+        <SharedFlow>default</SharedFlow>
+    </SharedFlows>
+</SharedFlowBundle>

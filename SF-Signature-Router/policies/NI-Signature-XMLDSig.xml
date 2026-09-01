@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Placeholder for the XML Signature (XML-DSig) sub-step.
+
+    This policy stands in for the Step wired up in
+    sharedflows/default.xml under Condition signature.type = "xmldsig".
+    Replace this single policy with the real chain (e.g. XSL/JavaScript
+    to canonicalize the XML, ServiceCallout to the signing API,
+    XMLToXML/AssignMessage to embed the <Signature> element) — or add
+    more <Step> entries with the same Condition to the flow if the
+    sub-step needs several policies. Do not change the Condition.
+-->
+<RaiseFault name="NI-Signature-XMLDSig">
+    <DisplayName>NI-Signature-XMLDSig</DisplayName>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <FaultResponse>
+        <Set>
+            <StatusCode>501</StatusCode>
+            <ReasonPhrase>Not Implemented</ReasonPhrase>
+            <Payload contentType="application/json">{
+    "error": "not_implemented",
+    "message": "XML signature sub-step is not implemented yet."
+}</Payload>
+        </Set>
+    </FaultResponse>
+</RaiseFault>

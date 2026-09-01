@@ -1,0 +1,4 @@
+<FlowCallout name="FC-Call-JwtSaml">
+    <DisplayName>FC Call JwtSaml</DisplayName>
+    <SharedFlowBundle>ISAM-JWT-SAML</SharedFlowBundle>
+</FlowCallout>

@@ -1,0 +1,4 @@
+<FlowCallout name="FC-Call-Light">
+    <DisplayName>FC Call Light</DisplayName>
+    <SharedFlowBundle>ISAM-SAML-Light</SharedFlowBundle>
+</FlowCallout>

@@ -1,0 +1,19 @@
+<!--
+  Type 6 (jwt-token) canned success response: JSON body where "token" IS
+  the token to use directly (this repo's ASSUMED response shape; see the
+  top-level README). Not a cryptographically real JWT; type 6 never
+  verifies it, so a plausible-looking string is enough for dev testing.
+-->
+<AssignMessage name="AM-Respond-JwtToken">
+    <DisplayName>AM Respond JwtToken</DisplayName>
+    <Set>
+        <StatusCode>200</StatusCode>
+        <ReasonPhrase>OK</ReasonPhrase>
+        <Payload contentType="application/json"><![CDATA[{
+  "token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJtb2NrLWp3dC11c2VyQGV4YW1wbGUuY29tIiwiaXNzIjoibW9jay1pc2FtIiwiZXhwIjoxOTAwMDAwMDAwfQ.mock-signature-not-cryptographically-real",
+  "tokenType": "urn:ietf:params:oauth:token-type:jwt",
+  "expiresIn": "3600"
+}]]></Payload>
+    </Set>
+    <AssignTo createNew="true" type="response"/>
+</AssignMessage>

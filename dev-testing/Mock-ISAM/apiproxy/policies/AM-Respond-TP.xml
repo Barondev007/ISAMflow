@@ -1,0 +1,48 @@
+<!--
+  Canned success response using the ESCAPED-TEXT representation; same idea
+  as AM-Respond-Light, see its comment.
+-->
+<AssignMessage name="AM-Respond-TP">
+    <DisplayName>AM Respond TP</DisplayName>
+    <Set>
+        <StatusCode>200</StatusCode>
+        <ReasonPhrase>OK</ReasonPhrase>
+        <Payload contentType="application/soap+xml; charset=utf-8"><![CDATA[<soapenv:Envelope xmlns:soapenv="http://www.w3.org/2003/05/soap-envelope" xmlns:wst="http://docs.oasis-open.org/ws-sx/ws-trust/200512">
+  <soapenv:Body>
+    <wst:RequestedSecurityTokenResponse>
+      <wst:RequestedSecurityToken>
+&lt;saml:Assertion xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" ID="_mock-tp-001" IssueInstant="2026-01-01T00:00:00Z" Version="2.0"&gt;
+  &lt;saml:Issuer&gt;https://mock-isam.dev.internal/issuer&lt;/saml:Issuer&gt;
+  &lt;saml:Subject&gt;
+    &lt;saml:NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"&gt;partner-acme@example.com&lt;/saml:NameID&gt;
+  &lt;/saml:Subject&gt;
+  &lt;saml:Conditions NotBefore="2026-01-01T00:00:00Z" NotOnOrAfter="2030-01-01T00:00:00Z"/&gt;
+  &lt;saml:AttributeStatement&gt;
+    &lt;saml:Attribute Name="mockType"&gt;&lt;saml:AttributeValue&gt;_mock-tp-001&lt;/saml:AttributeValue&gt;&lt;/saml:Attribute&gt;
+  &lt;/saml:AttributeStatement&gt;
+&lt;Signature xmlns="http://www.w3.org/2000/09/xmldsig#"&gt;&lt;SignedInfo&gt;&lt;CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/&gt;&lt;SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/&gt;&lt;Reference URI="#_mock-tp-001"&gt;&lt;Transforms&gt;&lt;Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/&gt;&lt;/Transforms&gt;&lt;DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/&gt;&lt;DigestValue&gt;CutaZjUzIpDp6QvFqBpflicPoUxzR+IBQKOei61B3zw=&lt;/DigestValue&gt;&lt;/Reference&gt;&lt;/SignedInfo&gt;&lt;SignatureValue&gt;UcZGGwfHbwCVUsVg/sci8xhIdKv0du7m9Js/u0dkZrT0kCBK3lEQxGdFXBvuEajep0lRw8smS1qp&amp;#13;
+vHBUGsk8/kbEFDSmipqCYsjqVPT/tKyk0RCFMiGtUWS9OIa57otmSt08xDdVHlsUjOnQIsbVrRu1&amp;#13;
+GEGsRkPL77EDTwQqnrRbr3NJ9OlZmKf1pQ+oG3h8nuroVf6iqwi5TIUshdeWrcdRyCdVrIP4VnH5&amp;#13;
+NT5Kw0vJg9Rx1ZZ56ZMC4FZ1DjnhNClRWQdgLrUiU3ewdVfwbVEE2GrtHCLmS+RlFMLlqoMWAGVg&amp;#13;
+OudxyKuH7kqIzSrAK+XmoJkB6OC4iK2A1xXxEg==&lt;/SignatureValue&gt;&lt;KeyInfo&gt;&lt;X509Data&gt;&lt;X509Certificate&gt;MIIDDTCCAfWgAwIBAgIIDpE5yebo2oEwDQYJKoZIhvcNAQEMBQAwNTEUMBIGA1UEChMLRGV2IFRl&amp;#13;
+c3RpbmcxHTAbBgNVBAMTFE1vY2sgSVNBTSBEZXYgU2lnbmVyMB4XDTI2MDkwMTEwNDkxOVoXDTQ2&amp;#13;
+MDgyNzEwNDkxOVowNTEUMBIGA1UEChMLRGV2IFRlc3RpbmcxHTAbBgNVBAMTFE1vY2sgSVNBTSBE&amp;#13;
+ZXYgU2lnbmVyMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsRbGV/1zlPisbs2baLt5&amp;#13;
+NRTk8zeaXIWxB1Er0KLUOLzKKJgkXja6+UF1MzbTV+zwYr+cRdUTZ2vNfkiKK9c653aGupTfgCtG&amp;#13;
+j90MeUyiii66wvg4ac1lCBURPFvqmvBJHX8N/GSYuaTJ/YeAVGy1KijI0RKlyjJ8b7k7ne4fxElC&amp;#13;
+F2KUFPWBb9fu+esQFgTwYhg1zPW2gQ9q5fxu9ovya9T9gZN7EXcoQEoG5kpSf1vkodgQ76//YbbB&amp;#13;
+q8rD4BiKV2Tpai8TMvRKb1H2FWIc1omyht0wiNcwREiLXTObJ3wMB3sG0VWQUXWRZHZOpVBqzPVz&amp;#13;
+cJtCgvgiFfxMg94QbwIDAQABoyEwHzAdBgNVHQ4EFgQUzXr+DA0Nt9aBuUmrkYc5+1zgntkwDQYJ&amp;#13;
+KoZIhvcNAQEMBQADggEBAIMQhlLgMmlLv06NUG7uTd+1HNYJOvKSdeGYa0J49V+CBBQ1g49OXDRO&amp;#13;
+AqJrdIx+lqIz3cTZwggB83yDpitZM3c2wNYSAElh+npJZj5mNZYSQh5qfVbE3s84YYvu4utZMgOs&amp;#13;
+7fPh+dIp9l/xxf9s7B6Wp2nkn6fyTcwRfnyoyOksEkLCpKKKM0SbzuumYdRjWselrl67QTcPUEqz&amp;#13;
+AZIIEw9gZyQW4fLWYVeizg46fxNS3M0TaIVj530FxL1pBIzMTv3cgeSxHAGGzDIxTdRjLlmpkqW/&amp;#13;
+hNSoXxC+Y0iTNy1BLWNewZ7Iw/0VC7P0DyMmjoAgKLrMngy5wI3jqcev4Ss=&lt;/X509Certificate&gt;&lt;/X509Data&gt;&lt;/KeyInfo&gt;&lt;/Signature&gt;&lt;/saml:Assertion&gt;
+      </wst:RequestedSecurityToken>
+      <wst:TokenType>urn:oasis:names:tc:SAML:2.0:assertion</wst:TokenType>
+    </wst:RequestedSecurityTokenResponse>
+  </soapenv:Body>
+</soapenv:Envelope>]]></Payload>
+    </Set>
+    <AssignTo createNew="true" type="response"/>
+</AssignMessage>

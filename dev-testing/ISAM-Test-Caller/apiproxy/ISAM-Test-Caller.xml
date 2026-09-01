@@ -1,0 +1,25 @@
+<APIProxy revision="1" name="ISAM-Test-Caller">
+    <ConfigurationVersion majorVersion="4" minorVersion="0"/>
+    <CreatedAt>1735689600000</CreatedAt>
+    <LastModifiedAt>1735689600000</LastModifiedAt>
+    <Description>
+        Dev-only proxy that calls each of the six ISAM-* type-specific
+        shared flows and reports the result as JSON, so you can exercise
+        every type from curl/Postman without writing a real client. See
+        dev-testing/ISAM-Test-Caller/README.md.
+    </Description>
+    <Policies>
+        <Policy>AM-Passthrough-CompressSaml</Policy>
+        <Policy>FC-Call-Light</Policy>
+        <Policy>FC-Call-User</Policy>
+        <Policy>FC-Call-TP</Policy>
+        <Policy>FC-Call-Technical</Policy>
+        <Policy>FC-Call-JwtSaml</Policy>
+        <Policy>FC-Call-JwtToken</Policy>
+        <Policy>AM-Build-Test-Response</Policy>
+        <Policy>AM-Respond-Help</Policy>
+    </Policies>
+    <ProxyEndpoints>
+        <ProxyEndpoint>default</ProxyEndpoint>
+    </ProxyEndpoints>
+</APIProxy>

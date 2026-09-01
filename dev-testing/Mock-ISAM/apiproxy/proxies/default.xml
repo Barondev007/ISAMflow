@@ -1,0 +1,83 @@
+<ProxyEndpoint name="default">
+    <Description>Dev-only mock ISAM backend for testing the ISAM-* shared flows. Never call this from anything but a local/dev environment.</Description>
+    <HTTPProxyConnection>
+        <BasePath>/mock-isam</BasePath>
+        <Properties/>
+    </HTTPProxyConnection>
+
+    <!-- No backend: every response is built directly by an AssignMessage
+         step (AssignTo type="response"), so there is nothing to route to. -->
+    <RouteRule name="NoRoute"/>
+
+    <PreFlow name="PreFlow">
+        <Request/>
+        <Response/>
+    </PreFlow>
+    <PostFlow name="PostFlow">
+        <Request/>
+        <Response/>
+    </PostFlow>
+
+    <Flows>
+        <!-- Checked first: any path ending in /fail or /tampered, regardless
+             of type, so these work no matter which type's KVM points here. -->
+        <Flow name="Fail">
+            <Condition>proxy.pathsuffix MatchesPath "**/fail"</Condition>
+            <Request>
+                <Step><Name>AM-Respond-Fail</Name></Step>
+            </Request>
+        </Flow>
+        <Flow name="Tampered">
+            <Condition>proxy.pathsuffix MatchesPath "**/tampered"</Condition>
+            <Request>
+                <Step><Name>AM-Respond-Tampered</Name></Step>
+            </Request>
+        </Flow>
+
+        <Flow name="Light">
+            <Condition>proxy.pathsuffix MatchesPath "/light"</Condition>
+            <Request>
+                <Step><Name>AM-Respond-Light</Name></Step>
+            </Request>
+        </Flow>
+        <Flow name="User">
+            <Condition>proxy.pathsuffix MatchesPath "/user"</Condition>
+            <Request>
+                <Step><Name>AM-Respond-User</Name></Step>
+            </Request>
+        </Flow>
+        <Flow name="TP">
+            <Condition>proxy.pathsuffix MatchesPath "/tp"</Condition>
+            <Request>
+                <Step><Name>AM-Respond-TP</Name></Step>
+            </Request>
+        </Flow>
+        <Flow name="Technical">
+            <Condition>proxy.pathsuffix MatchesPath "/technical"</Condition>
+            <Request>
+                <Step><Name>AM-Respond-Technical</Name></Step>
+            </Request>
+        </Flow>
+        <Flow name="JwtSaml">
+            <Condition>proxy.pathsuffix MatchesPath "/jwt-saml"</Condition>
+            <Request>
+                <Step><Name>AM-Respond-JwtSaml</Name></Step>
+            </Request>
+        </Flow>
+        <Flow name="JwtToken">
+            <Condition>proxy.pathsuffix MatchesPath "/jwt-token"</Condition>
+            <Request>
+                <Step><Name>AM-Respond-JwtToken</Name></Step>
+            </Request>
+        </Flow>
+
+        <!-- No Condition: matches anything not matched above (bare basepath,
+             a typo'd type name, etc). Must stay last; an unconditioned
+             Flow listed earlier would shadow every Flow after it. -->
+        <Flow name="Help">
+            <Request>
+                <Step><Name>AM-Respond-Help</Name></Step>
+            </Request>
+        </Flow>
+    </Flows>
+</ProxyEndpoint>

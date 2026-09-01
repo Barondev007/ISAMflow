@@ -1,0 +1,4 @@
+<FlowCallout name="FC-Call-Technical">
+    <DisplayName>FC Call Technical</DisplayName>
+    <SharedFlowBundle>ISAM-SAML-Technical</SharedFlowBundle>
+</FlowCallout>

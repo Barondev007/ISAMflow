@@ -1,0 +1,23 @@
+<AssignMessage name="AM-Respond-Help">
+    <DisplayName>AM Respond Help</DisplayName>
+    <Set>
+        <StatusCode>200</StatusCode>
+        <ReasonPhrase>OK</ReasonPhrase>
+        <Payload contentType="application/json">{
+  "service": "Mock-ISAM",
+  "purpose": "Dev-only stand-in for ISAM, for testing the ISAM-* shared flows.",
+  "routes": {
+    "/light": "type 1 success (WS-Trust, escaped-text assertion)",
+    "/user": "type 2 success (WS-Trust, nested-element assertion)",
+    "/tp": "type 3 success (WS-Trust, escaped-text assertion)",
+    "/technical": "type 4 success (WS-Trust, nested-element assertion)",
+    "/jwt-saml": "type 5 success (JSON, saml field)",
+    "/jwt-token": "type 6 success (JSON, token field)",
+    "/{anything}/fail": "always HTTP 500 -- point a type's KVM host1 or host2 path here to test failover / RF-ISAM-Unavailable",
+    "/{anything}/tampered": "always returns a SAML assertion with an invalid signature -- point a type's KVM path here to test RF-SAML-Signature-Invalid"
+  },
+  "signingCertThumbprintSha256": "SEE dev-testing/Mock-ISAM/README.md"
+}</Payload>
+    </Set>
+    <AssignTo createNew="true" type="response"/>
+</AssignMessage>

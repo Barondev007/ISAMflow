@@ -1,0 +1,22 @@
+<AssignMessage name="AM-Respond-Help">
+    <DisplayName>AM Respond Help</DisplayName>
+    <Set>
+        <StatusCode>200</StatusCode>
+        <ReasonPhrase>OK</ReasonPhrase>
+        <Payload contentType="application/json">{
+  "service": "ISAM-Test-Caller",
+  "purpose": "Dev-only proxy that calls each ISAM-* shared flow and reports the result as JSON.",
+  "routes": {
+    "POST /light": "calls ISAM-SAML-Light (no bearer token needed; send X-Client-Cert header)",
+    "POST /user": "calls ISAM-SAML-User (send an Authorization Bearer header)",
+    "POST /tp": "calls ISAM-SAML-TP (send an Authorization Bearer header)",
+    "POST /technical": "calls ISAM-SAML-Technical (send an Authorization Bearer header)",
+    "POST /jwt-saml": "calls ISAM-JWT-SAML (send an Authorization Bearer header)",
+    "POST /jwt-token": "calls ISAM-JWT-Token (send an Authorization Bearer header)"
+  },
+  "optionalQueryParam": "?compressSaml=true or false overrides that type's KVM default for this one call (ignored by /jwt-token)",
+  "example": "curl -X POST https://YOUR-HOST/isam-test/user -H 'Authorization: Bearer test-token-123'"
+}</Payload>
+    </Set>
+    <AssignTo createNew="true" type="response"/>
+</AssignMessage>

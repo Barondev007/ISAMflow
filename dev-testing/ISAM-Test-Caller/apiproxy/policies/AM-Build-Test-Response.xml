@@ -1,0 +1,48 @@
+<!--
+  One generic response builder reused after every type's FlowCallout.
+  Covers both output shapes (SAML-bearing types 1-5, and JWT-only type 6);
+  IgnoreUnresolvedVariables means whichever fields don't apply to the type
+  that actually ran just come out empty rather than erroring.
+
+  Reads the underlying saml.*/isam.jwt.* flow variables directly rather than
+  the X-SAML-Assertion/X-Access-Token headers the shared flow also sets:
+  those land on the "request" message (for a real downstream target to
+  consume), not on this proxy's client-facing "response", since this proxy
+  has no target of its own. Same data either way; inspect
+  request.header.X-SAML-Assertion etc. yourself if you want to confirm the
+  header-setting step specifically, rather than just the underlying value.
+-->
+<AssignMessage name="AM-Build-Test-Response">
+    <DisplayName>AM Build Test Response</DisplayName>
+    <Set>
+        <StatusCode>200</StatusCode>
+        <ReasonPhrase>OK</ReasonPhrase>
+        <Payload contentType="application/json">
+            {
+              "ok": true,
+              "saml": {
+                "assertionBase64": "{saml.assertion.output}",
+                "assertionCompressed": "{saml.assertion.compressed}",
+                "subjectId": "{saml.subject.id}",
+                "notBefore": "{saml.assertion.notBefore}",
+                "notOnOrAfter": "{saml.assertion.notOnOrAfter}"
+              },
+              "signature": {
+                "valid": "{saml.signature.valid}",
+                "certSubject": "{saml.signature.cert.subject}",
+                "certIssuer": "{saml.signature.cert.issuer}",
+                "certThumbprint": "{saml.signature.cert.thumbprint}",
+                "pinned": "{saml.signature.pinned}"
+              },
+              "jwt": {
+                "accessToken": "{isam.jwt.token}",
+                "accessTokenType": "{isam.jwt.tokenType}",
+                "expiresIn": "{isam.jwt.expiresIn}"
+              },
+              "isamStatusCode": "{isamcall.response.statusCode}"
+            }
+        </Payload>
+    </Set>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <AssignTo createNew="true" type="response"/>
+</AssignMessage>

@@ -1,0 +1,19 @@
+<!--
+  Generic 500, regardless of type. Matched by ANY path ending in "/fail"
+  (see proxies/default.xml's Condition), so it works for every type: point
+  a type's KVM host1 path at ".../fail" and host2 at the normal path to
+  test primary-fails-secondary-succeeds failover, or point both at
+  ".../fail" to test the both-hosts-unavailable case (RF-ISAM-Unavailable).
+-->
+<AssignMessage name="AM-Respond-Fail">
+    <DisplayName>AM Respond Fail</DisplayName>
+    <Set>
+        <StatusCode>500</StatusCode>
+        <ReasonPhrase>Internal Server Error</ReasonPhrase>
+        <Payload contentType="application/json">{
+  "error": "mock_isam_simulated_failure",
+  "message": "This is the Mock-ISAM /fail route -- always returns 500, for testing failover."
+}</Payload>
+    </Set>
+    <AssignTo createNew="true" type="response"/>
+</AssignMessage>

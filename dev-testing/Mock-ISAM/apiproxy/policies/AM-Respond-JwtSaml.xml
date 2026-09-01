@@ -1,0 +1,20 @@
+<!--
+  Type 5 (jwt-saml) canned success response: JSON body with the SAML
+  assertion embedded as a JSON string in the "saml" field (this repo's
+  ASSUMED response shape; see the top-level README).
+-->
+<AssignMessage name="AM-Respond-JwtSaml">
+    <DisplayName>AM Respond JwtSaml</DisplayName>
+    <Set>
+        <StatusCode>200</StatusCode>
+        <ReasonPhrase>OK</ReasonPhrase>
+        <Payload contentType="application/json"><![CDATA[{
+  "saml": 
+"<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_mock-jwtsaml-001\" IssueInstant=\"2026-01-01T00:00:00Z\" Version=\"2.0\">\n  <saml:Issuer>https://mock-isam.dev.internal/issuer</saml:Issuer>\n  <saml:Subject>\n    <saml:NameID Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress\">jwtuser@example.com</saml:NameID>\n  </saml:Subject>\n  <saml:Conditions NotBefore=\"2026-01-01T00:00:00Z\" NotOnOrAfter=\"2030-01-01T00:00:00Z\"/>\n  <saml:AttributeStatement>\n    <saml:Attribute Name=\"mockType\"><saml:AttributeValue>_mock-jwtsaml-001</saml:AttributeValue></saml:Attribute>\n  </saml:AttributeStatement>\n<Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/><SignatureMethod Algorithm=\"http://www.w3.org/2001/04/xmldsig-more#rsa-sha256\"/><Reference URI=\"#_mock-jwtsaml-001\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#sha256\"/><DigestValue>o0fuSVvb5y+/pc+hq5z3M/OXRj8kgL33mStLtDhRR00=</DigestValue></Reference></SignedInfo><SignatureValue>hXhn/rYDdSIZDsxgOksnmcqIjh8/CFnXCjkWpB8883TEVnPxs5YEtOp6VIvlNx46CnlkCOK5kYVe&#13;\n/sWezURToEuTOJ42CRI4Mw0OWv00JIc1f43i2kzsBqgBFA7h505iD7pnDG33/Xr/bag+9UQreGcr&#13;\nV5eR/UNMYt+cPckE5LrkaSw7nnuwIxYxNzVma/JxPjHHQGiH4nAcYZU4fcCdPXEDgtIE8sL5N1th&#13;\newdbMIN/Us9jR7NyxU8FCzV/23ifdQup5peVkxGSGei6GEdHnqpi9aMm1JwmXUt/n8/kYMlDvPLC&#13;\nRx6GA3YrQEExb9/WPbYUe+C48+nZmn29GnQHlw==</SignatureValue><KeyInfo><X509Data><X509Certificate>MIIDDTCCAfWgAwIBAgIIDpE5yebo2oEwDQYJKoZIhvcNAQEMBQAwNTEUMBIGA1UEChMLRGV2IFRl&#13;\nc3RpbmcxHTAbBgNVBAMTFE1vY2sgSVNBTSBEZXYgU2lnbmVyMB4XDTI2MDkwMTEwNDkxOVoXDTQ2&#13;\nMDgyNzEwNDkxOVowNTEUMBIGA1UEChMLRGV2IFRlc3RpbmcxHTAbBgNVBAMTFE1vY2sgSVNBTSBE&#13;\nZXYgU2lnbmVyMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsRbGV/1zlPisbs2baLt5&#13;\nNRTk8zeaXIWxB1Er0KLUOLzKKJgkXja6+UF1MzbTV+zwYr+cRdUTZ2vNfkiKK9c653aGupTfgCtG&#13;\nj90MeUyiii66wvg4ac1lCBURPFvqmvBJHX8N/GSYuaTJ/YeAVGy1KijI0RKlyjJ8b7k7ne4fxElC&#13;\nF2KUFPWBb9fu+esQFgTwYhg1zPW2gQ9q5fxu9ovya9T9gZN7EXcoQEoG5kpSf1vkodgQ76//YbbB&#13;\nq8rD4BiKV2Tpai8TMvRKb1H2FWIc1omyht0wiNcwREiLXTObJ3wMB3sG0VWQUXWRZHZOpVBqzPVz&#13;\ncJtCgvgiFfxMg94QbwIDAQABoyEwHzAdBgNVHQ4EFgQUzXr+DA0Nt9aBuUmrkYc5+1zgntkwDQYJ&#13;\nKoZIhvcNAQEMBQADggEBAIMQhlLgMmlLv06NUG7uTd+1HNYJOvKSdeGYa0J49V+CBBQ1g49OXDRO&#13;\nAqJrdIx+lqIz3cTZwggB83yDpitZM3c2wNYSAElh+npJZj5mNZYSQh5qfVbE3s84YYvu4utZMgOs&#13;\n7fPh+dIp9l/xxf9s7B6Wp2nkn6fyTcwRfnyoyOksEkLCpKKKM0SbzuumYdRjWselrl67QTcPUEqz&#13;\nAZIIEw9gZyQW4fLWYVeizg46fxNS3M0TaIVj530FxL1pBIzMTv3cgeSxHAGGzDIxTdRjLlmpkqW/&#13;\nhNSoXxC+Y0iTNy1BLWNewZ7Iw/0VC7P0DyMmjoAgKLrMngy5wI3jqcev4Ss=</X509Certificate></X509Data></KeyInfo></Signature></saml:Assertion>",
+  "subjectId": "jwtuser@example.com",
+  "notBefore": "2026-01-01T00:00:00Z",
+  "notOnOrAfter": "2030-01-01T00:00:00Z"
+}]]></Payload>
+    </Set>
+    <AssignTo createNew="true" type="response"/>
+</AssignMessage>

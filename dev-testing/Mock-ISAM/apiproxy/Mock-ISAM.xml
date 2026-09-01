@@ -1,0 +1,26 @@
+<APIProxy revision="1" name="Mock-ISAM">
+    <ConfigurationVersion majorVersion="4" minorVersion="0"/>
+    <CreatedAt>1735689600000</CreatedAt>
+    <LastModifiedAt>1735689600000</LastModifiedAt>
+    <Description>
+        Dev-only stand-in for ISAM. Returns canned, genuinely-signed SAML
+        assertions and a mock JWT for the six ISAM-* type-specific shared
+        flows to call in place of a real ISAM instance. See
+        dev-testing/Mock-ISAM/README.md before deploying anywhere but a
+        throwaway dev/test environment.
+    </Description>
+    <Policies>
+        <Policy>AM-Respond-Fail</Policy>
+        <Policy>AM-Respond-Tampered</Policy>
+        <Policy>AM-Respond-Light</Policy>
+        <Policy>AM-Respond-User</Policy>
+        <Policy>AM-Respond-TP</Policy>
+        <Policy>AM-Respond-Technical</Policy>
+        <Policy>AM-Respond-JwtSaml</Policy>
+        <Policy>AM-Respond-JwtToken</Policy>
+        <Policy>AM-Respond-Help</Policy>
+    </Policies>
+    <ProxyEndpoints>
+        <ProxyEndpoint>default</ProxyEndpoint>
+    </ProxyEndpoints>
+</APIProxy>

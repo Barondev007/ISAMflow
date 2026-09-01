@@ -1,0 +1,4 @@
+<FlowCallout name="FC-Call-JwtToken">
+    <DisplayName>FC Call JwtToken</DisplayName>
+    <SharedFlowBundle>ISAM-JWT-Token</SharedFlowBundle>
+</FlowCallout>

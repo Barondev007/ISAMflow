@@ -1,0 +1,16 @@
+<!--
+  Lets a caller override compressSaml per-request via a query param, e.g.
+  ?compressSaml=true. If the query param isn't present, Ref stays
+  unresolved and no Value fallback is given, so no "compressSaml" variable
+  is set at all; each type's own AM-Set-Default-CompressSaml then applies
+  its KVM default normally. Harmless no-op for type 6, which has no
+  compression step to begin with.
+-->
+<AssignMessage name="AM-Passthrough-CompressSaml">
+    <DisplayName>AM Passthrough CompressSaml</DisplayName>
+    <AssignVariable>
+        <Name>compressSaml</Name>
+        <Ref>request.queryparam.compressSaml</Ref>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

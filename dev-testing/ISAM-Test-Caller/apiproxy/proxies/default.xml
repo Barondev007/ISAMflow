@@ -1,0 +1,76 @@
+<ProxyEndpoint name="default">
+    <Description>Dev-only proxy that calls each ISAM-* shared flow and reports the result as JSON, for testing without writing a real client.</Description>
+    <HTTPProxyConnection>
+        <BasePath>/isam-test</BasePath>
+        <Properties/>
+    </HTTPProxyConnection>
+
+    <!-- No backend: every response is built directly by an AssignMessage
+         step (AssignTo type="response"), so there is nothing to route to. -->
+    <RouteRule name="NoRoute"/>
+
+    <PreFlow name="PreFlow">
+        <Request>
+            <Step><Name>AM-Passthrough-CompressSaml</Name></Step>
+        </Request>
+        <Response/>
+    </PreFlow>
+    <PostFlow name="PostFlow">
+        <Request/>
+        <Response/>
+    </PostFlow>
+
+    <Flows>
+        <Flow name="Light">
+            <Condition>proxy.pathsuffix MatchesPath "/light"</Condition>
+            <Request>
+                <Step><Name>FC-Call-Light</Name></Step>
+                <Step><Name>AM-Build-Test-Response</Name></Step>
+            </Request>
+        </Flow>
+        <Flow name="User">
+            <Condition>proxy.pathsuffix MatchesPath "/user"</Condition>
+            <Request>
+                <Step><Name>FC-Call-User</Name></Step>
+                <Step><Name>AM-Build-Test-Response</Name></Step>
+            </Request>
+        </Flow>
+        <Flow name="TP">
+            <Condition>proxy.pathsuffix MatchesPath "/tp"</Condition>
+            <Request>
+                <Step><Name>FC-Call-TP</Name></Step>
+                <Step><Name>AM-Build-Test-Response</Name></Step>
+            </Request>
+        </Flow>
+        <Flow name="Technical">
+            <Condition>proxy.pathsuffix MatchesPath "/technical"</Condition>
+            <Request>
+                <Step><Name>FC-Call-Technical</Name></Step>
+                <Step><Name>AM-Build-Test-Response</Name></Step>
+            </Request>
+        </Flow>
+        <Flow name="JwtSaml">
+            <Condition>proxy.pathsuffix MatchesPath "/jwt-saml"</Condition>
+            <Request>
+                <Step><Name>FC-Call-JwtSaml</Name></Step>
+                <Step><Name>AM-Build-Test-Response</Name></Step>
+            </Request>
+        </Flow>
+        <Flow name="JwtToken">
+            <Condition>proxy.pathsuffix MatchesPath "/jwt-token"</Condition>
+            <Request>
+                <Step><Name>FC-Call-JwtToken</Name></Step>
+                <Step><Name>AM-Build-Test-Response</Name></Step>
+            </Request>
+        </Flow>
+
+        <!-- No Condition: matches anything not matched above. Must stay
+             last; an unconditioned Flow listed earlier would shadow every
+             Flow after it. -->
+        <Flow name="Help">
+            <Request>
+                <Step><Name>AM-Respond-Help</Name></Step>
+            </Request>
+        </Flow>
+    </Flows>
+</ProxyEndpoint>

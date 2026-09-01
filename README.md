@@ -74,6 +74,9 @@ java-callouts/isam-saml-callouts/         # the one Maven module backing
                                            # and ISAM-Common-CompressAssertion
 examples/
   FlowCallout-Sample.xml                  # how to call any of the six types
+dev-testing/
+  Mock-ISAM/                              # dev-only stand-in for ISAM
+  ISAM-Test-Caller/                       # dev-only proxy exercising all six types
 ```
 
 Every bundle is independently deployable — including the four common ones,
@@ -264,6 +267,15 @@ Any fault raised anywhere in the chain (missing config/bearer
 token/client-cert, both ISAM hosts down, bad response, invalid signature)
 propagates up as a raised fault for your proxy's own fault handling to
 catch.
+
+## Testing without a real ISAM
+
+`dev-testing/` has two throwaway proxies for exactly this: `Mock-ISAM`
+(returns canned, genuinely-signed SAML assertions/a mock JWT, plus routes to
+simulate failover and an invalid signature) and `ISAM-Test-Caller` (calls
+each of the six types and reports the result as JSON, so `curl` is enough
+to test with). See `dev-testing/README.md` for the quickstart. Deploy both
+only into a throwaway dev/test environment.
 
 ## Deploying
 

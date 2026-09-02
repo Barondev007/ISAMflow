@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Reads the JOSE header template for this proxy from KVM
-    "{apiproxy.name}.signature" (see AM-JWT-Set-KVM-Name), key "jwt.header".
+    Reads the JOSE header template for this proxy from the shared,
+    environment-scoped KVM "signature" (mapIdentifier must be a static
+    literal in Apigee, so it can't be per-proxy). The entry key is
+    per-proxy instead: "{apiproxy.name}.jwt.header", computed by
+    AM-JWT-Set-KVM-Key into signature.kvm.key and looked up here via
+    <Parameter ref="signature.kvm.key"/>, which does support a runtime
+    variable.
 
-    The KVM value is a JSON object, e.g.:
+    The entry value is a JSON object, e.g.:
       {
         "typ": "JWT",
         "alg": "RS256",
@@ -30,16 +35,16 @@
     JS-Build-JWT-Signing-String rejects it if it's empty, lists itself,
     or names a parameter that isn't present in the header.
 
-    continueOnError lets the flow proceed past a missing KVM/key so
+    continueOnError lets the flow proceed past a missing key so
     RF-JWT-Header-Config-Missing can raise a clear configuration error
     instead of Apigee's generic KVM fault.
 -->
-<KeyValueMapOperations name="KVM-Get-JWT-Header-Template" mapIdentifier="{signature.kvm.name}" continueOnError="true">
+<KeyValueMapOperations name="KVM-Get-JWT-Header-Template" mapIdentifier="signature" continueOnError="true">
     <DisplayName>KVM-Get-JWT-Header-Template</DisplayName>
     <Scope>environment</Scope>
     <Get assignTo="signature.jwt.header.template" index="1">
         <Key>
-            <Parameter>jwt.header</Parameter>
+            <Parameter ref="signature.kvm.key"/>
         </Key>
     </Get>
 </KeyValueMapOperations>

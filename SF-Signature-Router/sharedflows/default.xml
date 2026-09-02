@@ -13,15 +13,15 @@
 
     <!-- ================================================================
          1) JWT Signature
-         Builds the JOSE header from the per-proxy KVM
-         ({apiproxy.name}.signature, key "jwt.header") and produces the
-         signing string base64url(header) + "." + base64url(payload).
+         Builds the JOSE header from the shared KVM "signature" (entry
+         key "{apiproxy.name}.jwt.header") and produces the signing
+         string base64url(header) + "." + base64url(payload).
          TODO: NI-Signature-JWT-Sign still needs to call the signing API
          and assemble the final compact JWS. Leave the Condition on each
          step unchanged.
          ================================================================ -->
     <Step>
-        <Name>AM-JWT-Set-KVM-Name</Name>
+        <Name>AM-JWT-Set-KVM-Key</Name>
         <Condition>signature.type = "jwt"</Condition>
     </Step>
     <Step>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    KeyValueMapOperations' mapIdentifier must be a static literal in
+    Apigee (it does not support "{variable}" substitution), so the KVM
+    itself is one fixed, environment-scoped map named "signature"
+    shared by every proxy that calls this shared flow. Per-proxy
+    isolation happens on the entry KEY instead, which DOES support a
+    runtime variable via <Parameter ref="...">. This computes that key:
+    "{apiproxy.name}.jwt.header".
+-->
+<AssignMessage name="AM-JWT-Set-KVM-Key">
+    <DisplayName>AM-JWT-Set-KVM-Key</DisplayName>
+    <AssignVariable>
+        <Name>signature.kvm.key</Name>
+        <Template>{apiproxy.name}.jwt.header</Template>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+</AssignMessage>

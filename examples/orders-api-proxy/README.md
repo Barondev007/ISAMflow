@@ -1,7 +1,8 @@
 # Example proxy: orders-api
 
 Shows how a proxy calls `SF-Signature-Router` to JWT-sign its request
-body. See `../kvm` for the matching `orders-api.signature` KVM.
+body. See `../kvm` for the matching `orders-api.jwt.header` entry in
+the shared `signature` KVM.
 
 PreFlow (request):
 1. `AM-Set-Signature-Type` — sets `signature.type = jwt` and stages

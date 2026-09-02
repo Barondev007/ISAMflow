@@ -8,7 +8,7 @@
             <ReasonPhrase>Internal Server Error</ReasonPhrase>
             <Payload contentType="application/json">{
     "error": "configuration_error",
-    "message": "No jwt.header entry found in KVM '{signature.kvm.name}'. Create the KVM and add a jwt.header key holding the JOSE header JSON template for this proxy."
+    "message": "No entry '{signature.kvm.key}' found in KVM 'signature'. Add an entry with that key holding the JOSE header JSON template for this proxy."
 }</Payload>
         </Set>
     </FaultResponse>

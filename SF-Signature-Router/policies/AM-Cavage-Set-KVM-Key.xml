@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Same pattern as AM-JWT-Set-KVM-Key: the KVM name itself must be
+    static ("signature"), so per-proxy config lives on the entry key
+    instead: "{apiproxy.name}.cavage.headers".
+-->
+<AssignMessage name="AM-Cavage-Set-KVM-Key">
+    <DisplayName>AM-Cavage-Set-KVM-Key</DisplayName>
+    <AssignVariable>
+        <Name>signature.kvm.key</Name>
+        <Template>{apiproxy.name}.cavage.headers</Template>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+</AssignMessage>

@@ -53,11 +53,32 @@
 
     <!-- ================================================================
          3) HTTP Signature (Cavage / draft-cavage-http-signatures)
-         TODO: replace NI-Signature-Cavage with the real sub-step
-         policy chain. Leave the Condition unchanged.
+         Builds the signing string from the current request and the
+         shared KVM "signature" (entry key
+         "{apiproxy.name}.cavage.headers"): one "name: value" line per
+         configured header, joined by "\n".
+         TODO: NI-Signature-Cavage-Sign still needs to call the signing
+         API and assemble the Signature/Authorization header. Leave the
+         Condition on each step unchanged.
          ================================================================ -->
     <Step>
-        <Name>NI-Signature-Cavage</Name>
+        <Name>AM-Cavage-Set-KVM-Key</Name>
+        <Condition>signature.type = "cavage"</Condition>
+    </Step>
+    <Step>
+        <Name>KVM-Get-Cavage-Headers-Template</Name>
+        <Condition>signature.type = "cavage"</Condition>
+    </Step>
+    <Step>
+        <Name>RF-Cavage-Headers-Config-Missing</Name>
+        <Condition>signature.type = "cavage" AND signature.cavage.headers.template = null</Condition>
+    </Step>
+    <Step>
+        <Name>JS-Build-Cavage-Signing-String</Name>
+        <Condition>signature.type = "cavage"</Condition>
+    </Step>
+    <Step>
+        <Name>NI-Signature-Cavage-Sign</Name>
         <Condition>signature.type = "cavage"</Condition>
     </Step>
 

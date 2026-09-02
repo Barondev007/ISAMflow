@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RaiseFault name="RF-Cavage-Headers-Config-Missing">
+    <DisplayName>RF-Cavage-Headers-Config-Missing</DisplayName>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <FaultResponse>
+        <Set>
+            <StatusCode>500</StatusCode>
+            <ReasonPhrase>Internal Server Error</ReasonPhrase>
+            <Payload contentType="application/json">{
+    "error": "configuration_error",
+    "message": "No entry '{signature.kvm.key}' found in KVM 'signature'. Add an entry with that key holding the JSON array of header names to sign for this proxy."
+}</Payload>
+        </Set>
+    </FaultResponse>
+</RaiseFault>

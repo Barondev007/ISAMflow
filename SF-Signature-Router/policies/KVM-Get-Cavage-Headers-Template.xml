@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Reads the ordered list of headers to sign for this proxy from the
+    shared KVM "signature" (see KVM-Get-JWT-Header-Template for why the
+    KVM name is fixed and the entry key carries the per-proxy part),
+    entry key "{apiproxy.name}.cavage.headers".
+
+    The entry value is a JSON array of header names, lower-case, in the
+    exact order to include in the signing string, e.g.:
+      ["(request-target)", "(created)", "(expires)", "host", "x-request-id", "digest"]
+
+    "(request-target)", "(created)" and "(expires)" are the HTTP
+    signature pseudo-headers (RFC draft-cavage-http-signatures §2.3):
+    JS-Build-Cavage-Signing-String computes their values itself
+    ((created)/(expires) auto-populate signature.cavage.created /
+    .expires with sensible defaults if the calling proxy hasn't already
+    set them). Any other name must match an actual request header;
+    "digest" is computed automatically (SHA-256 of the body) if the
+    request doesn't already carry a Digest header.
+
+    continueOnError lets the flow proceed past a missing key so
+    RF-Cavage-Headers-Config-Missing can raise a clear configuration
+    error instead of Apigee's generic KVM fault.
+-->
+<KeyValueMapOperations name="KVM-Get-Cavage-Headers-Template" mapIdentifier="signature" continueOnError="true">
+    <DisplayName>KVM-Get-Cavage-Headers-Template</DisplayName>
+    <Scope>environment</Scope>
+    <Get assignTo="signature.cavage.headers.template" index="1">
+        <Key>
+            <Parameter ref="signature.kvm.key"/>
+        </Key>
+    </Get>
+</KeyValueMapOperations>

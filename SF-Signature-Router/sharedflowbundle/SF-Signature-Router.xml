@@ -16,7 +16,11 @@
         <Policy>JS-Build-JWT-Signing-String</Policy>
         <Policy>NI-Signature-JWT-Sign</Policy>
         <Policy>NI-Signature-XMLDSig</Policy>
-        <Policy>NI-Signature-Cavage</Policy>
+        <Policy>AM-Cavage-Set-KVM-Key</Policy>
+        <Policy>KVM-Get-Cavage-Headers-Template</Policy>
+        <Policy>RF-Cavage-Headers-Config-Missing</Policy>
+        <Policy>JS-Build-Cavage-Signing-String</Policy>
+        <Policy>NI-Signature-Cavage-Sign</Policy>
     </Policies>
     <SharedFlows>
         <SharedFlow>default</SharedFlow>

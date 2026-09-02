@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Javascript name="JS-Build-Cavage-Signing-String" timeLimit="200">
+    <DisplayName>JS-Build-Cavage-Signing-String</DisplayName>
+    <IncludeURL>jsc://base64url.js</IncludeURL>
+    <IncludeURL>jsc://sha256.js</IncludeURL>
+    <ResourceURL>jsc://cavage-build-signing-string.js</ResourceURL>
+</Javascript>

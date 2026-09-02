@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Placeholder for the remaining Cavage sub-step: send
+    signature.cavage.signing.string to the external signature API, take
+    back the signature value, base64-encode it, and assemble the
+    Signature/Authorization header, e.g.:
+      Signature keyId="...",algorithm="...",created={signature.cavage.created},
+        expires={signature.cavage.expires},headers="{signature.cavage.headers.list}",
+        signature="<base64 signature>"
+    Replace this policy with a ServiceCallout + AssignMessage chain
+    when the signing API contract is defined.
+-->
+<RaiseFault name="NI-Signature-Cavage-Sign">
+    <DisplayName>NI-Signature-Cavage-Sign</DisplayName>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <FaultResponse>
+        <Set>
+            <StatusCode>501</StatusCode>
+            <ReasonPhrase>Not Implemented</ReasonPhrase>
+            <!-- Plain text, not JSON: the signing string is multi-line
+                 (one "name: value" pair per header) and Apigee's {var}
+                 substitution doesn't JSON-escape it. -->
+            <Payload contentType="text/plain">not_implemented: Cavage signing string built successfully but the call to the signature API is not implemented yet.
+signingString:
+{signature.cavage.signing.string}</Payload>
+        </Set>
+    </FaultResponse>
+</RaiseFault>

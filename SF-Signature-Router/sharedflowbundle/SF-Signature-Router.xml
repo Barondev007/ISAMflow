@@ -15,6 +15,8 @@
         <Policy>RF-JWT-Header-Config-Missing</Policy>
         <Policy>JS-Build-JWT-Signing-String</Policy>
         <Policy>NI-Signature-JWT-Sign</Policy>
+        <Policy>AM-JWT-Assemble-JWS-Detached</Policy>
+        <Policy>AM-JWT-Assemble-JWS-Compact</Policy>
         <Policy>NI-Signature-XMLDSig</Policy>
         <Policy>AM-Cavage-Set-KVM-Key</Policy>
         <Policy>KVM-Get-Cavage-Headers-Template</Policy>

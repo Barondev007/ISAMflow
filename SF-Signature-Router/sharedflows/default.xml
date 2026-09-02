@@ -17,8 +17,12 @@
          key "{apiproxy.name}.jwt.header") and produces the signing
          string base64url(header) + "." + base64url(payload).
          TODO: NI-Signature-JWT-Sign still needs to call the signing API
-         and assemble the final compact JWS. Leave the Condition on each
-         step unchanged.
+         and set signature.jwt.signature.encoded. Once it does,
+         AM-JWT-Assemble-JWS-Compact / -Detached assemble the final JWS
+         into signature.jwt.jws — compact (header.payload.signature) by
+         default, or detached (header..signature) when the calling
+         proxy sets signature.jwt.detached = true. Leave the Condition
+         on each step unchanged.
          ================================================================ -->
     <Step>
         <Name>AM-JWT-Set-KVM-Key</Name>
@@ -39,6 +43,14 @@
     <Step>
         <Name>NI-Signature-JWT-Sign</Name>
         <Condition>signature.type = "jwt"</Condition>
+    </Step>
+    <Step>
+        <Name>AM-JWT-Assemble-JWS-Detached</Name>
+        <Condition>signature.type = "jwt" AND signature.jwt.detached = true</Condition>
+    </Step>
+    <Step>
+        <Name>AM-JWT-Assemble-JWS-Compact</Name>
+        <Condition>signature.type = "jwt" AND signature.jwt.detached != true</Condition>
     </Step>
 
     <!-- ================================================================

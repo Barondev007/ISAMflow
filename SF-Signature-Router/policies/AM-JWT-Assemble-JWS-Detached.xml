@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Detached-content JWS (RFC 7515 Appendix F): header..signature — the
+    payload segment is left empty since the payload isn't carried
+    inside the JWS itself. Runs when signature.jwt.detached = true.
+    Requires signature.jwt.signature.encoded (the signature,
+    base64url-encoded, no padding) to already be set by the signing-API
+    call — IgnoreUnresolvedVariables=false means this policy faults
+    with a clear "unresolved variable" error if it isn't.
+-->
+<AssignMessage name="AM-JWT-Assemble-JWS-Detached">
+    <DisplayName>AM-JWT-Assemble-JWS-Detached</DisplayName>
+    <AssignVariable>
+        <Name>signature.jwt.jws</Name>
+        <Template>{signature.jwt.header.encoded}..{signature.jwt.signature.encoded}</Template>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+</AssignMessage>

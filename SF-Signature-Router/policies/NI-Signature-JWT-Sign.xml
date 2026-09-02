@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
     Placeholder for the remaining JWT sub-step: send
-    signature.jwt.signing.string to the external signature API,
-    take back the signature value, base64url-encode it, and assemble
-    the compact JWS (signature.jwt.header.encoded + "." +
-    signature.jwt.payload.encoded + "." + <encoded signature>).
-    Replace this policy with a ServiceCallout + AssignMessage chain
-    when the signing API contract is defined.
+    signature.jwt.signing.string to the external signature API and take
+    back the signature value. Replace this policy with a ServiceCallout
+    (+ AssignMessage) chain when the signing API contract is defined —
+    it must set signature.jwt.signature.encoded (the signature,
+    base64url-encoded with no padding) before AM-JWT-Assemble-JWS-Compact
+    / -Detached run, which assemble the final JWS from it.
 -->
 <RaiseFault name="NI-Signature-JWT-Sign">
     <DisplayName>NI-Signature-JWT-Sign</DisplayName>

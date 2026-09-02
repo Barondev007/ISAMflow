@@ -1,0 +1,8 @@
+[
+  "(request-target)",
+  "(created)",
+  "(expires)",
+  "host",
+  "x-request-id",
+  "digest"
+]

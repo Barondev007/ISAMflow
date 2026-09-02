@@ -1,15 +1,21 @@
-# Example KVM entry: orders-api.jwt.header
+# Example KVM entries for orders-api
 
 `KeyValueMapOperations`'s `mapIdentifier` (the KVM/table name) must be
 a static literal in Apigee — it does not support `{variable}`
 substitution at runtime. So `SF-Signature-Router` uses **one fixed,
 environment-scoped KVM named `signature`**, shared by every proxy that
 calls it, and puts the per-proxy part on the **entry key** instead
-(`{apiproxy.name}.jwt.header`), which does support a runtime variable
-via `<Parameter ref="...">`.
+(`{apiproxy.name}.<sub-step>...`), which does support a runtime
+variable via `<Parameter ref="...">`.
 
-For the `orders-api` example proxy that means: KVM `signature`, entry
-key `orders-api.jwt.header`.
+For the `orders-api` example proxy that's two entries in the same KVM:
+
+| Sub-step | Entry key | Value |
+|---|---|---|
+| JWT | `orders-api.jwt.header` | JOSE header JSON template |
+| Cavage | `orders-api.cavage.headers` | JSON array of header names to sign |
+
+## JWT
 
 - `orders-api.signature.jwt-header.json` — the JOSE header template,
   for readability. Static fields (`typ`, `alg`, `kid`, `iss`) are
@@ -23,7 +29,19 @@ key `orders-api.jwt.header`.
   the KVM entry (an entry value is always a string, so the JSON object
   has to be serialized before it's stored).
 
-## Create the KVM (once per environment) and entry (per proxy)
+## Cavage
+
+- `orders-api.cavage-headers.json` — the ordered header list, for
+  readability: `(request-target)`, `(created)` and `(expires)` are
+  computed by the shared flow; `host` and `x-request-id` are read
+  as-is from the request; `digest` is reused if the request already
+  carries a `Digest` header, otherwise computed (SHA-256 of the body)
+  and attached.
+- `orders-api.cavage-headers.entry.json` — the same array minified
+  into a single string under key `orders-api.cavage.headers`, ready to
+  POST as the KVM entry.
+
+## Create the KVM (once per environment) and entries (per proxy)
 
 ```bash
 ORG=your-org
@@ -36,23 +54,33 @@ curl -s -X POST \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{"name": "signature"}'
 
-# 2) Create this proxy's entry
+# 2) Create this proxy's entries
 curl -s -X POST \
   "https://apigee.googleapis.com/v1/organizations/$ORG/environments/$ENV/keyvaluemaps/signature/entries" \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d @orders-api.jwt-header.entry.json
+
+curl -s -X POST \
+  "https://apigee.googleapis.com/v1/organizations/$ORG/environments/$ENV/keyvaluemaps/signature/entries" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d @orders-api.cavage-headers.entry.json
 ```
 
-To change the header later, update the entry (`PUT` the same URL with
-`/entries/orders-api.jwt.header`) — no proxy or shared flow redeploy
-needed. Adding a new proxy just adds a new entry (`{proxyName}.jwt.header`)
-to this same KVM.
+To change an entry later, update it (`PUT` the same URL with
+`/entries/<key>`) — no proxy or shared flow redeploy needed. Adding a
+new proxy just adds new entries (`{proxyName}.jwt.header`,
+`{proxyName}.cavage.headers`) to this same KVM.
 
 ## Or with apigeecli
 
 ```bash
 apigeecli kvms create -n signature -o "$ORG" -e "$ENV" --token "$TOKEN"
+
 apigeecli kvms entries create -m signature -k orders-api.jwt.header \
   -v "$(jq -c . orders-api.signature.jwt-header.json)" \
+  -o "$ORG" -e "$ENV" --token "$TOKEN"
+
+apigeecli kvms entries create -m signature -k orders-api.cavage.headers \
+  -v "$(jq -c . orders-api.cavage-headers.json)" \
   -o "$ORG" -e "$ENV" --token "$TOKEN"
 ```

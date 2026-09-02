@@ -1,0 +1,4 @@
+{
+  "name": "orders-api.cavage.headers",
+  "value": "[\"(request-target)\",\"(created)\",\"(expires)\",\"host\",\"x-request-id\",\"digest\"]"
+}

@@ -8,6 +8,22 @@
 // each calling proxy (<Source>saml.assertion.xml</Source> + XPath
 // using local-name() so it's namespace-agnostic) — no generic runtime
 // engine needed since each proxy already knows its own SAML shape.
+//
+// Some IdPs embed raw, unescaped data in claim values — e.g. a
+// "user-agent" claim carrying a literal browser/bot UA string, which
+// often contains a bare "&" (a URL query separator in a UA like
+// "...+http://bot.example.com/info?id=1&ref=2)"). A bare "&" isn't
+// valid XML and aborts parsing of the whole document, not just that
+// claim, which is why an unrelated ExtractVariables step downstream
+// can fail on it. sanitizeStrayAmpersands fixes only that: any "&"
+// not already part of a real entity/character reference gets escaped
+// to "&amp;"; a "<" or ">" is left alone since a stray one there is
+// far more likely a genuine malformed-input problem than benign data,
+// and isn't safe to silently paper over the same way.
+
+function sanitizeStrayAmpersands(xml) {
+    return xml.replace(/&(?!amp;|lt;|gt;|quot;|apos;|#[0-9]+;|#x[0-9A-Fa-f]+;)/g, '&amp;');
+}
 
 (function decodeSamlAssertion() {
     var headerName = context.getVariable('saml.header.name');
@@ -24,5 +40,5 @@
     var trimmed = raw.replace(/^\s+|\s+$/g, '');
     var xml = trimmed.charAt(0) === '<' ? trimmed : byteStringToUtf8(base64Decode(trimmed));
 
-    context.setVariable('saml.assertion.xml', xml);
+    context.setVariable('saml.assertion.xml', sanitizeStrayAmpersands(xml));
 })();

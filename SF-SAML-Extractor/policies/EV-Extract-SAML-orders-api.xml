@@ -29,6 +29,9 @@
         <Variable name="saml.sessionIndex" type="string">
             <XPath>//*[local-name()='AuthnStatement']/@SessionIndex</XPath>
         </Variable>
+        <Variable name="saml.personId" type="string">
+            <XPath>//*[local-name()='Attribute'][@Name='personId']/*[local-name()='AttributeValue']/text()</XPath>
+        </Variable>
     </XMLPayload>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
 </ExtractVariables>

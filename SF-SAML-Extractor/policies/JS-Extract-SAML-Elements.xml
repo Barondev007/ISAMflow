@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Javascript name="JS-Extract-SAML-Elements" timeLimit="200">
+    <DisplayName>JS-Extract-SAML-Elements</DisplayName>
+    <IncludeURL>jsc://base64url.js</IncludeURL>
+    <IncludeURL>jsc://xml-mini-parser.js</IncludeURL>
+    <ResourceURL>jsc://saml-extract-elements.js</ResourceURL>
+</Javascript>

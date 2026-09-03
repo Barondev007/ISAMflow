@@ -1,4 +1,4 @@
 {
   "name": "orders-api.jwt.header",
-  "value": "{\"typ\":\"JWT\",\"alg\":\"RS256\",\"kid\":\"orders-api-2026-01\",\"iss\":\"orders-api\",\"iat\":\"${signature.jwt.iat}\",\"exp\":\"${signature.jwt.exp}\",\"jti\":\"${signature.jwt.jti}\",\"x-txn-id\":\"${orders.txnId}\",\"crit\":[\"x-txn-id\"]}"
+  "value": "{\"typ\":\"JWT\",\"alg\":\"RS256\",\"kid\":\"orders-api-2026-01\",\"iss\":\"orders-api\",\"iat\":\"${signature.jwt.iat}\",\"exp\":\"${signature.jwt.exp}\",\"jti\":\"${signature.jwt.jti}\",\"x-txn-id\":\"${orders.txnId}\",\"sub\":\"${saml.email}\",\"crit\":[\"x-txn-id\"]}"
 }

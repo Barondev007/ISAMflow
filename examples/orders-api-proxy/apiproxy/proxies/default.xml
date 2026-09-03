@@ -3,6 +3,9 @@
     <PreFlow name="PreFlow">
         <Request>
             <Step>
+                <Name>FC-Extract-SAML</Name>
+            </Step>
+            <Step>
                 <Name>AM-Set-Signature-Type</Name>
             </Step>
             <Step>

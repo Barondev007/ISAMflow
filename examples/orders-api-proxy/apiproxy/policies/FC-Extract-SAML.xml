@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Runs BEFORE FC-Sign-JWT: extracts elements from the SAML assertion
+    (see examples/kvm/orders-api.saml-elements.json) into flow
+    variables so the JWT header template can reference them, e.g.
+    "${saml.email}" in orders-api.signature.jwt-header.json.
+-->
+<FlowCallout name="FC-Extract-SAML">
+    <DisplayName>FC-Extract-SAML</DisplayName>
+    <SharedFlowBundle>SF-SAML-Extractor</SharedFlowBundle>
+</FlowCallout>

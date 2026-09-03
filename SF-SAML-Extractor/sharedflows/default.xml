@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SharedFlow name="default">
+
+    <!-- ================================================================
+         Reads the SAML assertion from the configured request header
+         (saml.header.name, default "X-SAML-Assertion" if the calling
+         proxy hasn't set it — raw XML or base64-encoded, auto-detected)
+         and extracts the elements listed for this proxy in the shared
+         KVM "saml" (entry key "{apiproxy.name}.saml.elements"), one
+         flow variable per rule. See KVM-Get-SAML-Elements-Template for
+         the rule format.
+
+         Call this shared flow BEFORE SF-Signature-Router if a signing
+         KVM template needs to reference one of the variables it sets
+         (e.g. a JWT header template with "someClaim": "${saml.email}").
+         ================================================================ -->
+    <Step>
+        <Name>AM-SAML-Set-KVM-Key</Name>
+    </Step>
+    <Step>
+        <Name>KVM-Get-SAML-Elements-Template</Name>
+    </Step>
+    <Step>
+        <Name>RF-SAML-Elements-Config-Missing</Name>
+        <Condition>saml.elements.template = null</Condition>
+    </Step>
+    <Step>
+        <Name>JS-Extract-SAML-Elements</Name>
+    </Step>
+
+</SharedFlow>

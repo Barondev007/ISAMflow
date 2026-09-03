@@ -7,5 +7,6 @@
   "exp": "${signature.jwt.exp}",
   "jti": "${signature.jwt.jti}",
   "x-txn-id": "${orders.txnId}",
+  "sub": "${saml.email}",
   "crit": ["x-txn-id"]
 }

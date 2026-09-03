@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    KeyValueMapOperations' mapIdentifier must be a static literal in
+    Apigee (see SF-Signature-Router/policies/KVM-Get-JWT-Header-Template.xml
+    for the full explanation), so this shared flow uses one fixed,
+    environment-scoped KVM named "saml", shared by every proxy that
+    calls it, with per-proxy isolation on the entry key instead:
+    "{apiproxy.name}.saml.elements".
+-->
+<AssignMessage name="AM-SAML-Set-KVM-Key">
+    <DisplayName>AM-SAML-Set-KVM-Key</DisplayName>
+    <AssignVariable>
+        <Name>saml.kvm.key</Name>
+        <Template>{apiproxy.name}.saml.elements</Template>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+</AssignMessage>

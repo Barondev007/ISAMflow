@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SharedFlowBundle name="SF-SAML-Extractor">
+    <ConfigurationVersion majorVersion="4" minorVersion="0"/>
+    <DisplayName>SF-SAML-Extractor</DisplayName>
+    <Description>
+        Reads a SAML assertion from a request header and extracts a
+        per-proxy configurable set of elements/attributes into flow
+        variables, so callers (e.g. SF-Signature-Router's JWT header
+        template) can reference them.
+    </Description>
+    <Policies>
+        <Policy>AM-SAML-Set-KVM-Key</Policy>
+        <Policy>KVM-Get-SAML-Elements-Template</Policy>
+        <Policy>RF-SAML-Elements-Config-Missing</Policy>
+        <Policy>JS-Extract-SAML-Elements</Policy>
+    </Policies>
+    <SharedFlows>
+        <SharedFlow>default</SharedFlow>
+    </SharedFlows>
+</SharedFlowBundle>

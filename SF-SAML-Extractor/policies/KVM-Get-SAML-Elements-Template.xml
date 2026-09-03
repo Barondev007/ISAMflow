@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Reads the ordered list of extraction rules for this proxy from the
+    shared KVM "saml", entry key "{apiproxy.name}.saml.elements".
+
+    The entry value is a JSON array of rules, e.g.:
+      [
+        {"variable": "saml.subject", "type": "element", "name": "NameID"},
+        {"variable": "saml.email", "type": "attribute", "name": "email"},
+        {"variable": "saml.sessionIndex", "type": "element", "name": "AuthnStatement", "attribute": "SessionIndex"}
+      ]
+
+    type "element": first element anywhere in the assertion whose local
+    name (namespace prefix ignored) is `name` — its text content, or
+    (if `attribute` is set) the value of that XML attribute on it.
+    type "attribute": the common SAML <Attribute Name="..."><AttributeValue>
+    pattern — the Attribute element whose Name = `name`, then its first
+    AttributeValue child's text.
+
+    Each rule's extracted value is set into the flow variable named by
+    "variable", so e.g. a JWT header template in SF-Signature-Router's
+    KVM can reference "${saml.email}" once this shared flow has run.
+
+    continueOnError lets the flow proceed past a missing key so
+    RF-SAML-Elements-Config-Missing can raise a clear configuration
+    error instead of Apigee's generic KVM fault.
+-->
+<KeyValueMapOperations name="KVM-Get-SAML-Elements-Template" mapIdentifier="saml" continueOnError="true">
+    <DisplayName>KVM-Get-SAML-Elements-Template</DisplayName>
+    <Scope>environment</Scope>
+    <Get assignTo="saml.elements.template" index="1">
+        <Key>
+            <Parameter ref="saml.kvm.key"/>
+        </Key>
+    </Get>
+</KeyValueMapOperations>

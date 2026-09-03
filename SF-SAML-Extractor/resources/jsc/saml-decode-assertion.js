@@ -37,7 +37,11 @@ function sanitizeStrayAmpersands(xml) {
         throw new Error('No SAML assertion found in request header "' + headerName + '".');
     }
 
-    var trimmed = raw.replace(/^\s+|\s+$/g, '');
+    // Strip a leading BOM too, not just whitespace — it isn't whitespace
+    // so \s+ wouldn't remove it, and it would otherwise make raw XML
+    // (which some tools prepend a BOM to) fail the charAt(0) === '<'
+    // check below and get wrongly treated as base64.
+    var trimmed = raw.replace(/^[\s\uFEFF]+|\s+$/g, '');
     var xml = trimmed.charAt(0) === '<' ? trimmed : byteStringToUtf8(base64Decode(trimmed));
 
     context.setVariable('saml.assertion.xml', sanitizeStrayAmpersands(xml));

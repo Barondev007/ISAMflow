@@ -2,7 +2,14 @@
 <!--
     Detached-content JWS (RFC 7515 Appendix F): header..signature — the
     payload segment is left empty since the payload isn't carried
-    inside the JWS itself. Runs when signature.jwt.detached = true.
+    inside the JWS itself. Runs when signature.jwt.detached = "true".
+
+    Compared as the STRING "true", not the bare boolean literal: a
+    flow variable set via AssignMessage is always typed as a String,
+    and Apigee conditions don't reliably coerce String vs. Boolean for
+    custom variables, so `signature.jwt.detached = true` (unquoted)
+    can silently never match even when the value is "true".
+
     Requires signature.jwt.signature.encoded (the signature,
     base64url-encoded, no padding) to already be set by the signing-API
     call — IgnoreUnresolvedVariables=false means this policy faults

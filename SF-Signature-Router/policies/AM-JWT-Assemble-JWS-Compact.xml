@@ -2,7 +2,10 @@
 <!--
     Default (non-detached) JWS Compact Serialization:
     header.payload.signature. Runs when signature.jwt.detached is not
-    true. Requires signature.jwt.signature.encoded (the signature,
+    the string "true" (see AM-JWT-Assemble-JWS-Detached for why it's
+    compared as a string, not a bare boolean literal).
+
+    Requires signature.jwt.signature.encoded (the signature,
     base64url-encoded, no padding) to already be set by the signing-API
     call — IgnoreUnresolvedVariables=false means this policy faults
     with a clear "unresolved variable" error if it isn't.

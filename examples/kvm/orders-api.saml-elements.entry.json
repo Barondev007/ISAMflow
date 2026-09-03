@@ -1,4 +1,0 @@
-{
-  "name": "orders-api.saml.elements",
-  "value": "[{\"variable\":\"saml.subject\",\"type\":\"element\",\"name\":\"NameID\"},{\"variable\":\"saml.email\",\"type\":\"attribute\",\"name\":\"email\"},{\"variable\":\"saml.sessionIndex\",\"type\":\"element\",\"name\":\"AuthnStatement\",\"attribute\":\"SessionIndex\"}]"
-}

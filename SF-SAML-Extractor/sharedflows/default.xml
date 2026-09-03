@@ -5,27 +5,21 @@
          Reads the SAML assertion from the configured request header
          (saml.header.name, default "X-SAML-Assertion" if the calling
          proxy hasn't set it — raw XML or base64-encoded, auto-detected)
-         and extracts the elements listed for this proxy in the shared
-         KVM "saml" (entry key "{apiproxy.name}.saml.elements"), one
-         flow variable per rule. See KVM-Get-SAML-Elements-Template for
-         the rule format.
+         and exposes it as saml.assertion.xml.
 
-         Call this shared flow BEFORE SF-Signature-Router if a signing
-         KVM template needs to reference one of the variables it sets
-         (e.g. a JWT header template with "someClaim": "${saml.email}").
+         Call this shared flow, then run a native ExtractVariables
+         policy in the calling proxy with <Source>saml.assertion.xml</Source>
+         and proxy-specific XPath (using local-name() to ignore
+         namespace prefixes) to pull out whatever elements that proxy
+         needs — see examples/orders-api-proxy/apiproxy/policies/
+         EV-Extract-SAML-Claims.xml. Extraction is deliberately left to
+         each proxy rather than driven by a shared config: XPath is
+         static per policy in Apigee, so a proxy that already knows its
+         own SAML shape is simpler served by its own ExtractVariables
+         policy than by a generic KVM-driven engine.
          ================================================================ -->
     <Step>
-        <Name>AM-SAML-Set-KVM-Key</Name>
-    </Step>
-    <Step>
-        <Name>KVM-Get-SAML-Elements-Template</Name>
-    </Step>
-    <Step>
-        <Name>RF-SAML-Elements-Config-Missing</Name>
-        <Condition>saml.elements.template = null</Condition>
-    </Step>
-    <Step>
-        <Name>JS-Extract-SAML-Elements</Name>
+        <Name>JS-Decode-SAML-Assertion</Name>
     </Step>
 
 </SharedFlow>

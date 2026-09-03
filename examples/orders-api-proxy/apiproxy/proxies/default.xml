@@ -6,6 +6,9 @@
                 <Name>FC-Extract-SAML</Name>
             </Step>
             <Step>
+                <Name>EV-Extract-SAML-Claims</Name>
+            </Step>
+            <Step>
                 <Name>AM-Set-Signature-Type</Name>
             </Step>
             <Step>

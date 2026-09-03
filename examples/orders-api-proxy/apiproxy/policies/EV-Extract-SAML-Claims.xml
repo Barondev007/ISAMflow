@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Runs after FC-Extract-SAML (which decodes the assertion into
+    saml.assertion.xml) and before FC-Sign-JWT (whose KVM header
+    template references ${saml.email}). local-name() makes every XPath
+    namespace-prefix-agnostic, so it doesn't matter whether the IdP
+    emits saml2:, saml:, or no prefix at all.
+
+    IgnoreUnresolvedVariables is true here because sessionIndex is
+    genuinely optional in this example; set it false for a claim your
+    proxy requires — a missing required claim then fails loudly instead
+    of silently signing a JWT with a blank "sub".
+-->
+<ExtractVariables name="EV-Extract-SAML-Claims">
+    <DisplayName>EV-Extract-SAML-Claims</DisplayName>
+    <Source>saml.assertion.xml</Source>
+    <XMLPayload>
+        <Variable name="saml.subject" type="string">
+            <XPath>//*[local-name()='Subject']/*[local-name()='NameID']/text()</XPath>
+        </Variable>
+        <Variable name="saml.email" type="string">
+            <XPath>//*[local-name()='Attribute'][@Name='email']/*[local-name()='AttributeValue']/text()</XPath>
+        </Variable>
+        <Variable name="saml.sessionIndex" type="string">
+            <XPath>//*[local-name()='AuthnStatement']/@SessionIndex</XPath>
+        </Variable>
+    </XMLPayload>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</ExtractVariables>

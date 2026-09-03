@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Javascript name="JS-Decode-SAML-Assertion" timeLimit="200">
+    <DisplayName>JS-Decode-SAML-Assertion</DisplayName>
+    <IncludeURL>jsc://base64url.js</IncludeURL>
+    <ResourceURL>jsc://saml-decode-assertion.js</ResourceURL>
+</Javascript>

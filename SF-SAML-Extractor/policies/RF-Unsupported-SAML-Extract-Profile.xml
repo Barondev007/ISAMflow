@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RaiseFault name="RF-Unsupported-SAML-Extract-Profile">
+    <DisplayName>RF-Unsupported-SAML-Extract-Profile</DisplayName>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <FaultResponse>
+        <Set>
+            <StatusCode>500</StatusCode>
+            <ReasonPhrase>Internal Server Error</ReasonPhrase>
+            <Payload contentType="application/json">{
+    "error": "configuration_error",
+    "message": "No ExtractVariables profile named '{saml.extract.profile}' is configured in SF-SAML-Extractor. Add an EV-Extract-SAML-* policy for it in default.xml and extend this check."
+}</Payload>
+        </Set>
+    </FaultResponse>
+</RaiseFault>

@@ -1,18 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Runs after FC-Extract-SAML (which decodes the assertion into
-    saml.assertion.xml) and before FC-Sign-JWT (whose KVM header
-    template references ${saml.email}). local-name() makes every XPath
+    SAML extraction profile "orders-api". Runs when the calling proxy
+    sets saml.extract.profile = "orders-api" before invoking this
+    shared flow (see default.xml). local-name() makes every XPath
     namespace-prefix-agnostic, so it doesn't matter whether the IdP
     emits saml2:, saml:, or no prefix at all.
 
     IgnoreUnresolvedVariables is true here because sessionIndex is
-    genuinely optional in this example; set it false for a claim your
-    proxy requires — a missing required claim then fails loudly instead
-    of silently signing a JWT with a blank "sub".
+    genuinely optional in this example; set it false for a claim a
+    profile requires — a missing required claim then fails loudly
+    instead of silently signing a JWT with a blank "sub".
+
+    To add a new profile: copy this policy, give it a new name/XPath
+    set, add a Step for it in default.xml gated on
+    saml.extract.profile = "<new profile>", and add that profile to
+    RF-Unsupported-SAML-Extract-Profile's Condition.
 -->
-<ExtractVariables name="EV-Extract-SAML-Claims">
-    <DisplayName>EV-Extract-SAML-Claims</DisplayName>
+<ExtractVariables name="EV-Extract-SAML-orders-api">
+    <DisplayName>EV-Extract-SAML-orders-api</DisplayName>
     <Source>saml.assertion.xml</Source>
     <XMLPayload>
         <Variable name="saml.subject" type="string">

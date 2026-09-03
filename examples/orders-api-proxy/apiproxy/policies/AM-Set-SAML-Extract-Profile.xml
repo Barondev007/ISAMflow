@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Tells SF-SAML-Extractor which ExtractVariables profile to run
+    (EV-Extract-SAML-orders-api). Must run BEFORE FC-Extract-SAML —
+    same rule as any flow variable a called shared flow depends on.
+-->
+<AssignMessage name="AM-Set-SAML-Extract-Profile">
+    <DisplayName>AM-Set-SAML-Extract-Profile</DisplayName>
+    <AssignVariable>
+        <Name>saml.extract.profile</Name>
+        <Value>orders-api</Value>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+</AssignMessage>

@@ -4,13 +4,15 @@
     <DisplayName>SF-SAML-Extractor</DisplayName>
     <Description>
         Reads a SAML assertion from a request header (base64-encoded or
-        raw XML) and exposes it as saml.assertion.xml. Each calling
-        proxy then runs its own native ExtractVariables policy against
-        that variable with its own XPath (local-name()-based) to pull
-        out whatever elements it needs.
+        raw XML) and, per the calling proxy's saml.extract.profile flag,
+        runs that profile's native ExtractVariables policy (real,
+        compiled XPath) to pull out whatever elements it needs.
     </Description>
     <Policies>
         <Policy>JS-Decode-SAML-Assertion</Policy>
+        <Policy>RF-Missing-SAML-Extract-Profile</Policy>
+        <Policy>EV-Extract-SAML-orders-api</Policy>
+        <Policy>RF-Unsupported-SAML-Extract-Profile</Policy>
     </Policies>
     <SharedFlows>
         <SharedFlow>default</SharedFlow>

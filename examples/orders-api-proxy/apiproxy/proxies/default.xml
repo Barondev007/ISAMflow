@@ -3,10 +3,10 @@
     <PreFlow name="PreFlow">
         <Request>
             <Step>
-                <Name>FC-Extract-SAML</Name>
+                <Name>AM-Set-SAML-Extract-Profile</Name>
             </Step>
             <Step>
-                <Name>EV-Extract-SAML-Claims</Name>
+                <Name>FC-Extract-SAML</Name>
             </Step>
             <Step>
                 <Name>AM-Set-Signature-Type</Name>

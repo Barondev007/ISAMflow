@@ -6,20 +6,45 @@
          (saml.header.name, default "X-SAML-Assertion" if the calling
          proxy hasn't set it — raw XML or base64-encoded, auto-detected)
          and exposes it as saml.assertion.xml.
-
-         Call this shared flow, then run a native ExtractVariables
-         policy in the calling proxy with <Source>saml.assertion.xml</Source>
-         and proxy-specific XPath (using local-name() to ignore
-         namespace prefixes) to pull out whatever elements that proxy
-         needs — see examples/orders-api-proxy/apiproxy/policies/
-         EV-Extract-SAML-Claims.xml. Extraction is deliberately left to
-         each proxy rather than driven by a shared config: XPath is
-         static per policy in Apigee, so a proxy that already knows its
-         own SAML shape is simpler served by its own ExtractVariables
-         policy than by a generic KVM-driven engine.
          ================================================================ -->
     <Step>
         <Name>JS-Decode-SAML-Assertion</Name>
+    </Step>
+
+    <!-- ================================================================
+         Guard: the calling proxy must set saml.extract.profile before
+         invoking this shared flow, so it knows which ExtractVariables
+         profile below to run.
+         ================================================================ -->
+    <Step>
+        <Name>RF-Missing-SAML-Extract-Profile</Name>
+        <Condition>saml.extract.profile = null</Condition>
+    </Step>
+
+    <!-- ================================================================
+         One native ExtractVariables policy per proxy/profile, each
+         gated on saml.extract.profile — real, compiled XPath (Apigee
+         doesn't support {variable} substitution inside <XPath>, so it
+         can't be KVM-driven), centralized here so proxies with the
+         same assertion shape can share a profile and proxies don't
+         need to carry their own copy of the policy.
+
+         To add a profile: copy EV-Extract-SAML-orders-api.xml, give it
+         a new name and XPath set, add a Step for it below gated on
+         saml.extract.profile = "<new profile>", and add that profile
+         to RF-Unsupported-SAML-Extract-Profile's Condition.
+         ================================================================ -->
+    <Step>
+        <Name>EV-Extract-SAML-orders-api</Name>
+        <Condition>saml.extract.profile = "orders-api"</Condition>
+    </Step>
+
+    <!-- ================================================================
+         Guard: reject a profile with no matching Step above.
+         ================================================================ -->
+    <Step>
+        <Name>RF-Unsupported-SAML-Extract-Profile</Name>
+        <Condition>saml.extract.profile != "orders-api"</Condition>
     </Step>
 
 </SharedFlow>

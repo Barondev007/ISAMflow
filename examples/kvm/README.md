@@ -15,11 +15,14 @@ For the `orders-api` example proxy that's two entries in the same KVM:
 | JWT | `orders-api.jwt.header` | JOSE header JSON template |
 | Cavage | `orders-api.cavage.headers` | JSON array of header names to sign |
 
-`SF-SAML-Extractor` doesn't use a KVM at all — see
-`../orders-api-proxy/apiproxy/policies/EV-Extract-SAML-Claims.xml`: it
-just decodes the assertion, and each proxy runs its own native
-`ExtractVariables` policy (static XPath, no dynamic config needed)
-against the result.
+`SF-SAML-Extractor` doesn't use a KVM at all — it just decodes the
+assertion, then (since XPath can't be KVM-driven either — no
+`{variable}` substitution inside `<XPath>`, not even the `Parameter
+ref` indirection KVM keys get) runs a native `ExtractVariables` policy
+selected by the calling proxy's `saml.extract.profile` flag, e.g.
+`SF-SAML-Extractor/policies/EV-Extract-SAML-orders-api.xml`. See
+`../orders-api-proxy/apiproxy/policies/AM-Set-SAML-Extract-Profile.xml`
+for how a proxy opts into a profile.
 
 ## JWT
 

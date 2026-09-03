@@ -32,7 +32,19 @@ function sanitizeStrayAmpersands(xml) {
         context.setVariable('saml.header.name', headerName);
     }
 
-    var raw = context.getVariable('request.header.' + headerName);
+    // Apigee applies HTTP's list-header convention (RFC 7230 §3.2.2) to
+    // any header, not just recognized list-type ones: a comma inside a
+    // single header line is treated as a value separator, same as
+    // repeating the header. request.header.<name> as a plain scalar
+    // then returns only the first comma-delimited segment — silently
+    // truncating a raw-XML assertion at its first comma (e.g. inside a
+    // free-text claim like "user-agent"). .values.string reassembles
+    // the full original value; fall back to the plain scalar for the
+    // ordinary case where there's nothing to reassemble.
+    var raw = context.getVariable('request.header.' + headerName + '.values.string');
+    if (!raw) {
+        raw = context.getVariable('request.header.' + headerName);
+    }
     if (!raw) {
         throw new Error('No SAML assertion found in request header "' + headerName + '".');
     }

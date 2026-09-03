@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Javascript name="JS-Build-XmlDsig-Signing-String" timeLimit="200">
+    <DisplayName>JS-Build-XmlDsig-Signing-String</DisplayName>
+    <IncludeURL>jsc://base64url.js</IncludeURL>
+    <IncludeURL>jsc://sha256.js</IncludeURL>
+    <IncludeURL>jsc://xml-exc-c14n.js</IncludeURL>
+    <ResourceURL>jsc://xmldsig-build-signing-string.js</ResourceURL>
+</Javascript>

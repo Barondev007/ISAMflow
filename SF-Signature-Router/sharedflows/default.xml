@@ -56,11 +56,24 @@
 
     <!-- ================================================================
          2) XML Signature (XML-DSig)
-         TODO: replace NI-Signature-XMLDSig with the real sub-step
-         policy chain. Leave the Condition unchanged.
+         Builds the digest and SignedInfo for an enveloped signature
+         over signature.payload (or message.content): canonicalizes the
+         target with Exclusive C14N, SHA-256s it into DigestValue,
+         builds <SignedInfo>, canonicalizes that too, and base64s it
+         into signature.xmldsig.signing.string.
+         signature.xmldsig.signatureMethod defaults to
+         "...xmldsig-more#rsa-sha256" if the calling proxy hasn't set
+         it (same auto-default pattern as JWT's iat/exp).
+         TODO: NI-Signature-XmlDsig-Sign still needs to call the
+         signing API, assemble the final <ds:Signature>, and embed it
+         in the document. Leave the Condition unchanged.
          ================================================================ -->
     <Step>
-        <Name>NI-Signature-XMLDSig</Name>
+        <Name>JS-Build-XmlDsig-Signing-String</Name>
+        <Condition>signature.type = "xmldsig"</Condition>
+    </Step>
+    <Step>
+        <Name>NI-Signature-XmlDsig-Sign</Name>
         <Condition>signature.type = "xmldsig"</Condition>
     </Step>
 

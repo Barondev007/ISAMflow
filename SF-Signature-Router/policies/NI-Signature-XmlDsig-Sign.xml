@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Placeholder for the remaining XML-DSig sub-step: send
+    signature.xmldsig.signing.string (base64 of the canonicalized
+    SignedInfo) to the external signature API, take back the
+    SignatureValue, and assemble the final <ds:Signature> —
+    <SignedInfo> (signature.xmldsig.signedinfo.canonical, reparsed) +
+    <SignatureValue>...</SignatureValue> + <KeyInfo> (X509 cert/KeyName,
+    static per proxy) — then insert it into the signed document (e.g.
+    as the last child of its root element, the conventional placement
+    for an enveloped signature) and return that as the response.
+    Replace this policy with a ServiceCallout + XML assembly chain when
+    the signing API contract is defined.
+-->
+<RaiseFault name="NI-Signature-XmlDsig-Sign">
+    <DisplayName>NI-Signature-XmlDsig-Sign</DisplayName>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <FaultResponse>
+        <Set>
+            <StatusCode>501</StatusCode>
+            <ReasonPhrase>Not Implemented</ReasonPhrase>
+            <Payload contentType="application/json">{
+    "error": "not_implemented",
+    "message": "XML-DSig SignedInfo built successfully but the call to the signature API is not implemented yet.",
+    "digestValue": "{signature.xmldsig.digest.value}",
+    "signingString": "{signature.xmldsig.signing.string}"
+}</Payload>
+        </Set>
+    </FaultResponse>
+</RaiseFault>

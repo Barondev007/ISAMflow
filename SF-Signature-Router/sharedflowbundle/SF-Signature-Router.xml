@@ -17,7 +17,8 @@
         <Policy>NI-Signature-JWT-Sign</Policy>
         <Policy>AM-JWT-Assemble-JWS-Detached</Policy>
         <Policy>AM-JWT-Assemble-JWS-Compact</Policy>
-        <Policy>NI-Signature-XMLDSig</Policy>
+        <Policy>JS-Build-XmlDsig-Signing-String</Policy>
+        <Policy>NI-Signature-XmlDsig-Sign</Policy>
         <Policy>AM-Cavage-Set-KVM-Key</Policy>
         <Policy>KVM-Get-Cavage-Headers-Template</Policy>
         <Policy>RF-Cavage-Headers-Config-Missing</Policy>

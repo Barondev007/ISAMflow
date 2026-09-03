@@ -5,12 +5,27 @@
     (see examples/kvm/orders-api.signature.jwt-header.json: "x-txn-id":
     "${orders.txnId}"). signature.payload is left unset on purpose, so
     the shared flow falls back to signing the request body (message.content).
+
+    signature.jwt.detached=true here is a worked example of the
+    detached-JWS flag (see AM-JWT-Assemble-JWS-Detached in
+    SF-Signature-Router): set as the literal string "true" and — this
+    is the part that matters — assigned in THIS step, which must run
+    BEFORE the FC-Sign-JWT FlowCallout step below it in proxies/default.xml.
+    A flow variable is only visible inside a called shared flow if it
+    was already set at the point the FlowCallout executes; setting it
+    afterwards (or in a step that runs after FC-Sign-JWT) leaves it
+    null inside SF-Signature-Router even though it looks set later in
+    the same trace.
 -->
 <AssignMessage name="AM-Set-Signature-Type">
     <DisplayName>AM-Set-Signature-Type</DisplayName>
     <AssignVariable>
         <Name>signature.type</Name>
         <Value>jwt</Value>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>signature.jwt.detached</Name>
+        <Value>true</Value>
     </AssignVariable>
     <AssignVariable>
         <Name>orders.txnId</Name>

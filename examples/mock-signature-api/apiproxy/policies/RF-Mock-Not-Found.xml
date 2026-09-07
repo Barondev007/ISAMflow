@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Fallback for any request that didn't match one of the three mocked
+    operations. Its Condition (in proxies/default.xml) checks
+    response.status.code = null, i.e. none of the JS-Mock-* steps ran.
+-->
+<RaiseFault name="RF-Mock-Not-Found">
+    <DisplayName>RF-Mock-Not-Found</DisplayName>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <FaultResponse>
+        <Set>
+            <StatusCode>404</StatusCode>
+            <ReasonPhrase>Not Found</ReasonPhrase>
+            <Payload contentType="application/json">{
+    "code": "not_found",
+    "message": "No mock operation matches {request.verb} {proxy.pathsuffix}. Expected POST /scopes/SCOPE/keys/KEYNAME/hmacs:compute, hmacs:verify, or signature:compute."
+}</Payload>
+        </Set>
+    </FaultResponse>
+</RaiseFault>

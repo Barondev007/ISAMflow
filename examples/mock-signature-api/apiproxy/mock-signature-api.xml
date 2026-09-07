@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<APIProxy revision="1" name="mock-signature-api">
+    <ConfigurationVersion majorVersion="4" minorVersion="0"/>
+    <DisplayName>mock-signature-api</DisplayName>
+    <Description>
+        Mock of the external signature API SF-Signature-Router's
+        NI-Signature-*-Sign placeholders will eventually call. Computes real
+        HMAC-SHA256 (compute/verify round-trip correctly for the same
+        scope+keyName), and returns deterministic but NOT cryptographically
+        valid fake data for RSA/ECDSA signing (real signing needs private-key
+        math this mock has no key material for) — enough to test the
+        calling side's request/response wiring without a real backend.
+    </Description>
+    <Policies>
+        <Policy>JS-Mock-Hmac-Compute</Policy>
+        <Policy>JS-Mock-Hmac-Verify</Policy>
+        <Policy>JS-Mock-Rsa-Compute</Policy>
+        <Policy>RF-Mock-Not-Found</Policy>
+    </Policies>
+    <ProxyEndpoints>
+        <ProxyEndpoint>default</ProxyEndpoint>
+    </ProxyEndpoints>
+    <TargetEndpoints/>
+</APIProxy>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ProxyEndpoint name="default">
+    <PreFlow name="PreFlow">
+        <Request>
+            <Step>
+                <Name>JS-Mock-Hmac-Compute</Name>
+                <Condition>request.verb = "POST" AND proxy.pathsuffix MatchesPath "/scopes/*/keys/*/hmacs:compute"</Condition>
+            </Step>
+            <Step>
+                <Name>JS-Mock-Hmac-Verify</Name>
+                <Condition>request.verb = "POST" AND proxy.pathsuffix MatchesPath "/scopes/*/keys/*/hmacs:verify"</Condition>
+            </Step>
+            <Step>
+                <Name>JS-Mock-Rsa-Compute</Name>
+                <Condition>request.verb = "POST" AND proxy.pathsuffix MatchesPath "/scopes/*/keys/*/signature:compute"</Condition>
+            </Step>
+            <Step>
+                <Name>RF-Mock-Not-Found</Name>
+                <Condition>response.status.code = null</Condition>
+            </Step>
+        </Request>
+        <Response/>
+    </PreFlow>
+    <Flows/>
+    <HTTPProxyConnection>
+        <BasePath>/mock-signature-api</BasePath>
+    </HTTPProxyConnection>
+    <!-- No TargetEndpoint: the PreFlow above builds the full response
+         itself (status, headers, body), so there's nothing to route to —
+         Apigee returns that response directly. -->
+    <RouteRule name="NoRoute"/>
+</ProxyEndpoint>

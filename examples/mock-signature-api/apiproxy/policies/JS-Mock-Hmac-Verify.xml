@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Javascript name="JS-Mock-Hmac-Verify" timeLimit="200">
+    <DisplayName>JS-Mock-Hmac-Verify</DisplayName>
+    <IncludeURL>jsc://sha256.js</IncludeURL>
+    <IncludeURL>jsc://base64url.js</IncludeURL>
+    <IncludeURL>jsc://hmac-sha256.js</IncludeURL>
+    <IncludeURL>jsc://mock-common.js</IncludeURL>
+    <ResourceURL>jsc://mock-hmac-verify.js</ResourceURL>
+</Javascript>

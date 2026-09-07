@@ -4,17 +4,26 @@
         <Name>SC-Call-ISAM-Primary</Name>
     </Step>
 
-    <!-- Only failover to the secondary host on a transport failure or an
-         explicit HTTP 500 from the primary, not on other 4xx/5xx, since
-         those would presumably fail identically on the secondary too. -->
+    <!-- Only failover to the secondary host on a transport failure (timeout,
+         connection refused, DNS failure) or an explicit HTTP 500 from the
+         primary, not on other 4xx/5xx, since those would presumably fail
+         identically on the secondary too. A genuine timeout/connection
+         failure never produces an HTTP response at all, so
+         isamCallPrimaryResponse.status.code comes back null, not 500; it
+         is NOT safe to rely on SC-Call-ISAM-Primary.failed alone for this,
+         since that variable reflects the policy's own execution outcome and
+         is not consistently set for every transport-level failure mode.
+         Checking status.code = null directly is the documented, reliable
+         signal for "no response was ever received". -->
     <Step>
-        <Condition>SC-Call-ISAM-Primary.failed = true OR isamCallPrimaryResponse.status.code = 500</Condition>
+        <Condition>SC-Call-ISAM-Primary.failed = true OR isamCallPrimaryResponse.status.code = null OR isamCallPrimaryResponse.status.code = 500</Condition>
         <Name>SC-Call-ISAM-Secondary</Name>
     </Step>
 
-    <!-- Both hosts genuinely unreachable / 500. -->
+    <!-- Both hosts genuinely unreachable / 500. Same null-status.code
+         reasoning as above, applied to both legs. -->
     <Step>
-        <Condition>(SC-Call-ISAM-Primary.failed = true OR isamCallPrimaryResponse.status.code = 500) AND (SC-Call-ISAM-Secondary.failed = true OR isamCallSecondaryResponse.status.code = 500)</Condition>
+        <Condition>(SC-Call-ISAM-Primary.failed = true OR isamCallPrimaryResponse.status.code = null OR isamCallPrimaryResponse.status.code = 500) AND (SC-Call-ISAM-Secondary.failed = true OR isamCallSecondaryResponse.status.code = null OR isamCallSecondaryResponse.status.code = 500)</Condition>
         <Name>RF-ISAM-Unavailable</Name>
     </Step>
 

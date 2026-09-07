@@ -29,6 +29,20 @@
         normally with isamcall.response.statusCode set accordingly; it's the
         caller's job to decide what a non-200 response means for its own
         response shape.
+
+        Timeout failover: a genuine transport timeout/connection failure on
+        SC-Call-ISAM-Primary never produces an HTTP response, so
+        isamCallPrimaryResponse.status.code comes back null rather than 500;
+        the failover Condition in sharedflows/default.xml checks for that
+        null explicitly rather than relying only on the
+        SC-Call-ISAM-Primary.failed variable (which is not consistently set
+        for every transport-level failure mode). Both ServiceCallouts also
+        set continueOnError="true" so a timeout does not abort the flow
+        outright; if you ever see the whole flow abort (not just skip the
+        failover step) on a primary timeout, that is Apigee not honoring
+        continueOnError for that specific failure -- check the proxy's own
+        FaultRules/DefaultFaultRule in that case, since a SharedFlowBundle
+        cannot define FaultRules of its own to catch it.
     </Description>
     <Policies>
         <Policy>SC-Call-ISAM-Primary</Policy>

@@ -16,8 +16,14 @@
           isamcall.request.contentType   string; e.g. "application/soap+xml; charset=utf-8" or "application/json"
           isamcall.target.url.primary    string; full URL of the primary ISAM host
           isamcall.target.url.secondary  string; full URL of the secondary ISAM host
-          isamcall.connectTimeoutMs      string, optional (default: Apigee ServiceCallout default if unresolved)
-          isamcall.ioTimeoutMs           string, optional
+          isamcall.connectTimeoutMs      string, optional, default 5000; bounds ONLY the TCP handshake to
+                                          the target -- has no effect on how long Apigee waits for a
+                                          response once connected. Use this to fail fast on an
+                                          unreachable host.
+          isamcall.ioTimeoutMs           string, optional, default 10000; bounds how long Apigee waits
+                                          for the response once connected. This is the one that governs
+                                          a reachable-but-slow-to-respond target; a short
+                                          connectTimeoutMs alone will NOT shorten that wait.
 
         OUTPUT variables (read these after the FlowCallout returns):
           isamcall.response.body         string; whichever host actually responded

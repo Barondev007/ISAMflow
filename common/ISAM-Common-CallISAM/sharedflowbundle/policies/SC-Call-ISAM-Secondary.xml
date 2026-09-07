@@ -1,3 +1,8 @@
+<!--
+  No top-level <Timeout> here for the same reason as SC-Call-ISAM-Primary:
+  it duplicates/conflicts with the dynamic io.timeout.millis property below
+  and only accepts a literal, not the {isamcall.ioTimeoutMs} template.
+-->
 <ServiceCallout name="SC-Call-ISAM-Secondary" continueOnError="true">
     <DisplayName>SC Call ISAM Secondary</DisplayName>
     <Request clearPayload="true" variable="isamcall.callout.request.secondary">
@@ -10,7 +15,6 @@
         </Set>
     </Request>
     <Response>isamCallSecondaryResponse</Response>
-    <Timeout>10000</Timeout>
     <HTTPTargetConnection>
         <URL>{isamcall.target.url.secondary}</URL>
         <SSLInfo>

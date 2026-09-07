@@ -3,6 +3,17 @@
   type-specific shared flow calls this one, so there is nothing WS-Trust- or
   JSON-specific here. See this bundle's root descriptor for the full
   input/output contract.
+
+  No top-level <Timeout> element here on purpose: <Timeout> and the
+  io.timeout.millis property below both configure the exact same thing (the
+  I/O wait once the connection is established), and <Timeout> only accepts a
+  literal value, not the {isamcall.ioTimeoutMs} template used below; a
+  hardcoded <Timeout> would silently override/conflict with the dynamic,
+  KVM-driven io.timeout.millis. connect.timeout.millis is a separate, earlier
+  phase (the TCP handshake only); it has no effect on how long Apigee waits
+  for a response once connected, so a short connect.timeout.millis alone
+  will not shorten a slow-to-respond (rather than unreachable) target; that
+  is io.timeout.millis's job.
 -->
 <ServiceCallout name="SC-Call-ISAM-Primary" continueOnError="true">
     <DisplayName>SC Call ISAM Primary</DisplayName>
@@ -16,7 +27,6 @@
         </Set>
     </Request>
     <Response>isamCallPrimaryResponse</Response>
-    <Timeout>10000</Timeout>
     <HTTPTargetConnection>
         <URL>{isamcall.target.url.primary}</URL>
         <SSLInfo>

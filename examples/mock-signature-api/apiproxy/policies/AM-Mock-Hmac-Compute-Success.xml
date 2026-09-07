@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AssignMessage name="AM-Mock-Hmac-Compute-Success">
+    <DisplayName>AM-Mock-Hmac-Compute-Success</DisplayName>
+    <AssignTo createNew="true" type="response"/>
+    <Set>
+        <StatusCode>200</StatusCode>
+        <ReasonPhrase>OK</ReasonPhrase>
+        <Headers>
+            <Header name="Content-Type">application/json</Header>
+        </Headers>
+        <Payload contentType="application/json">{"hmac":"MOCK-HMAC-VALUE"}</Payload>
+    </Set>
+</AssignMessage>

@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Javascript name="JS-Mock-Hmac-Compute" timeLimit="200">
-    <DisplayName>JS-Mock-Hmac-Compute</DisplayName>
-    <IncludeURL>jsc://mock-common.js</IncludeURL>
-    <ResourceURL>jsc://mock-hmac-compute.js</ResourceURL>
-</Javascript>

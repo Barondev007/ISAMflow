@@ -11,6 +11,12 @@ no real HMAC or signature computation. Set the **`X-Mock-Fail`**
 request header to `true` to get that endpoint's failure response
 instead, for testing error handling on the caller's side.
 
+Pure `AssignMessage` + `Condition` routing, no JavaScript: each
+operation has a Success and a Failure policy (e.g.
+`AM-Mock-Hmac-Compute-Success` / `-Failure`), and the matching
+`<Step>` `Condition` in `proxies/default.xml` picks between them based
+on path, verb, and `X-Mock-Fail`.
+
 ## Endpoints
 
 ### `POST /scopes/{scope}/keys/{keyName}/hmacs:compute`

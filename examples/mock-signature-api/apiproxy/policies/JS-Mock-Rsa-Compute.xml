@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Javascript name="JS-Mock-Rsa-Compute" timeLimit="200">
-    <DisplayName>JS-Mock-Rsa-Compute</DisplayName>
-    <IncludeURL>jsc://mock-common.js</IncludeURL>
-    <ResourceURL>jsc://mock-rsa-compute.js</ResourceURL>
-</Javascript>

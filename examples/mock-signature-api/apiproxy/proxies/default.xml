@@ -3,16 +3,28 @@
     <PreFlow name="PreFlow">
         <Request>
             <Step>
-                <Name>JS-Mock-Hmac-Compute</Name>
-                <Condition>request.verb = "POST" AND proxy.pathsuffix MatchesPath "/scopes/*/keys/*/hmacs:compute"</Condition>
+                <Name>AM-Mock-Hmac-Compute-Success</Name>
+                <Condition>request.verb = "POST" AND proxy.pathsuffix MatchesPath "/scopes/*/keys/*/hmacs:compute" AND request.header.X-Mock-Fail != "true"</Condition>
             </Step>
             <Step>
-                <Name>JS-Mock-Hmac-Verify</Name>
-                <Condition>request.verb = "POST" AND proxy.pathsuffix MatchesPath "/scopes/*/keys/*/hmacs:verify"</Condition>
+                <Name>AM-Mock-Hmac-Compute-Failure</Name>
+                <Condition>request.verb = "POST" AND proxy.pathsuffix MatchesPath "/scopes/*/keys/*/hmacs:compute" AND request.header.X-Mock-Fail = "true"</Condition>
             </Step>
             <Step>
-                <Name>JS-Mock-Rsa-Compute</Name>
-                <Condition>request.verb = "POST" AND proxy.pathsuffix MatchesPath "/scopes/*/keys/*/signature:compute"</Condition>
+                <Name>AM-Mock-Hmac-Verify-Success</Name>
+                <Condition>request.verb = "POST" AND proxy.pathsuffix MatchesPath "/scopes/*/keys/*/hmacs:verify" AND request.header.X-Mock-Fail != "true"</Condition>
+            </Step>
+            <Step>
+                <Name>AM-Mock-Hmac-Verify-Failure</Name>
+                <Condition>request.verb = "POST" AND proxy.pathsuffix MatchesPath "/scopes/*/keys/*/hmacs:verify" AND request.header.X-Mock-Fail = "true"</Condition>
+            </Step>
+            <Step>
+                <Name>AM-Mock-Rsa-Compute-Success</Name>
+                <Condition>request.verb = "POST" AND proxy.pathsuffix MatchesPath "/scopes/*/keys/*/signature:compute" AND request.header.X-Mock-Fail != "true"</Condition>
+            </Step>
+            <Step>
+                <Name>AM-Mock-Rsa-Compute-Failure</Name>
+                <Condition>request.verb = "POST" AND proxy.pathsuffix MatchesPath "/scopes/*/keys/*/signature:compute" AND request.header.X-Mock-Fail = "true"</Condition>
             </Step>
             <Step>
                 <Name>RF-Mock-Not-Found</Name>

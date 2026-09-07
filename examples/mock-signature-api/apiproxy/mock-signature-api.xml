@@ -12,9 +12,12 @@
         failure response instead.
     </Description>
     <Policies>
-        <Policy>JS-Mock-Hmac-Compute</Policy>
-        <Policy>JS-Mock-Hmac-Verify</Policy>
-        <Policy>JS-Mock-Rsa-Compute</Policy>
+        <Policy>AM-Mock-Hmac-Compute-Success</Policy>
+        <Policy>AM-Mock-Hmac-Compute-Failure</Policy>
+        <Policy>AM-Mock-Hmac-Verify-Success</Policy>
+        <Policy>AM-Mock-Hmac-Verify-Failure</Policy>
+        <Policy>AM-Mock-Rsa-Compute-Success</Policy>
+        <Policy>AM-Mock-Rsa-Compute-Failure</Policy>
         <Policy>RF-Mock-Not-Found</Policy>
     </Policies>
     <ProxyEndpoints>

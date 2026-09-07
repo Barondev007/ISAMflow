@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AssignMessage name="AM-Mock-Hmac-Compute-Failure">
+    <DisplayName>AM-Mock-Hmac-Compute-Failure</DisplayName>
+    <AssignTo createNew="true" type="response"/>
+    <Set>
+        <StatusCode>400</StatusCode>
+        <ReasonPhrase>Bad Request</ReasonPhrase>
+        <Headers>
+            <Header name="Content-Type">application/json</Header>
+        </Headers>
+        <Payload contentType="application/json">{"code":"mock_hmac_compute_failure","message":"Simulated hmacs:compute failure (X-Mock-Fail)."}</Payload>
+    </Set>
+</AssignMessage>

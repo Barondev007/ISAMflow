@@ -4,12 +4,12 @@
     <DisplayName>mock-signature-api</DisplayName>
     <Description>
         Mock of the external signature API SF-Signature-Router's
-        NI-Signature-*-Sign placeholders will eventually call. Computes real
-        HMAC-SHA256 (compute/verify round-trip correctly for the same
-        scope+keyName), and returns deterministic but NOT cryptographically
-        valid fake data for RSA/ECDSA signing (real signing needs private-key
-        math this mock has no key material for) — enough to test the
-        calling side's request/response wiring without a real backend.
+        NI-Signature-*-Sign placeholders will eventually call. Always
+        returns a fixed dummy success response per endpoint — no real
+        HMAC or signature computation — enough to test the calling
+        side's request/response wiring without a real backend. Set the
+        X-Mock-Fail request header to "true" to get that endpoint's
+        failure response instead.
     </Description>
     <Policies>
         <Policy>JS-Mock-Hmac-Compute</Policy>

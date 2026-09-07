@@ -1,23 +1,10 @@
-// Mocks POST /scopes/{scope}/keys/{keyName}/hmacs:verify
+// Mocks POST /scopes/{scope}/keys/{keyName}/hmacs:verify — always a
+// dummy response, no real verification. Set X-Mock-Fail: true to get
+// the failure branch instead.
 (function mockHmacVerify() {
-    var params = mockParsePathParams(context.getVariable('proxy.pathsuffix'), 'hmacs:verify');
-    if (!params) {
-        mockSendError(400, 'invalid_argument', 'Path does not match /scopes/{scope}/keys/{keyName}/hmacs:verify');
+    if (mockShouldFail()) {
+        mockSendError(400, 'mock_hmac_verify_failure', 'Simulated hmacs:verify failure (X-Mock-Fail).');
         return;
     }
-
-    var body = mockParseJsonBody();
-    if (body === undefined) {
-        mockSendError(400, 'invalid_argument', 'Request body is not valid JSON.');
-        return;
-    }
-    if (!body || typeof body.message !== 'string' || typeof body.hmac !== 'string') {
-        mockSendError(400, 'invalid_argument', '"message" and "hmac" (strings) are required in the request body.');
-        return;
-    }
-
-    var key = mockDeriveHmacKey(params.scope, params.keyName);
-    var expected = base64Encode(hmacSha256Bytes(key, utf8ToByteString(body.message)));
-
-    mockSendJson(200, { valid: expected === body.hmac ? 'true' : 'false' });
+    mockSendJson(200, { valid: 'true' });
 })();

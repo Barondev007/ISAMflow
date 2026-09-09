@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RaiseFault name="RF-Missing-Signature-Verify-Type">
+    <DisplayName>RF-Missing-Signature-Verify-Type</DisplayName>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <FaultResponse>
+        <Set>
+            <StatusCode>500</StatusCode>
+            <ReasonPhrase>Internal Server Error</ReasonPhrase>
+            <Payload contentType="application/json">{
+    "error": "configuration_error",
+    "message": "signature.verify.type is not set. The calling API proxy must set it to one of: jwt, cavage, xmldsig before invoking SF-Signature-Validator."
+}</Payload>
+        </Set>
+    </FaultResponse>
+</RaiseFault>

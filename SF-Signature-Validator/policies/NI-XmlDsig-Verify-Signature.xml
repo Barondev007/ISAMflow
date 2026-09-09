@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Placeholder for the actual cryptographic check: verify
+    signature.verify.xmldsig.signature.value (base64) is a valid
+    signature — per signature.verify.xmldsig.signature.method — over
+    the bytes of signature.verify.xmldsig.signedinfo.canonical, using
+    the public key in Apigee's KeyStore referenced for this document
+    (e.g. by a KeyName/X509IssuerSerial in its <KeyInfo>, or a fixed
+    per-proxy KeyStore/alias).
+
+    Reaching this step means the digest check already passed (content
+    integrity), but that alone proves nothing about authenticity — see
+    the comment at the top of xmldsig-verify-digest.js. Nothing here
+    should be treated as "verified" until this policy is replaced.
+
+    No native Apigee policy does XML-DSig signature verification, and
+    Apigee's JS engine can't read KeyStore key material to do RSA/ECDSA
+    math itself — this needs a JavaCallout (e.g. using Apache Santuario
+    or java.security.Signature with the KeyStore/alias Apigee already
+    manages).
+
+    Until that JavaCallout replaces this policy, every request reaches
+    here as NOT VERIFIED — this always faults rather than letting
+    anything through unauthenticated.
+-->
+<RaiseFault name="NI-XmlDsig-Verify-Signature">
+    <DisplayName>NI-XmlDsig-Verify-Signature</DisplayName>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <FaultResponse>
+        <Set>
+            <StatusCode>501</StatusCode>
+            <ReasonPhrase>Not Implemented</ReasonPhrase>
+            <Payload contentType="application/json">{
+    "error": "not_implemented",
+    "message": "Digest verified successfully but the cryptographic SignatureValue check is not implemented yet.",
+    "signatureMethod": "{signature.verify.xmldsig.signature.method}"
+}</Payload>
+        </Set>
+    </FaultResponse>
+</RaiseFault>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RaiseFault name="RF-JWT-Verify-Source-Missing">
+    <DisplayName>RF-JWT-Verify-Source-Missing</DisplayName>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <FaultResponse>
+        <Set>
+            <StatusCode>500</StatusCode>
+            <ReasonPhrase>Internal Server Error</ReasonPhrase>
+            <Payload contentType="application/json">{
+    "error": "configuration_error",
+    "message": "signature.verify.jwt.jws is not set. The calling API proxy must stage the JWS to verify into that variable (e.g. from an Authorization or custom header) before invoking SF-Signature-Validator."
+}</Payload>
+        </Set>
+    </FaultResponse>
+</RaiseFault>

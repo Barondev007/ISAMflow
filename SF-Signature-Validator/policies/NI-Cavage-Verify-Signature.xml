@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Placeholder for the actual cryptographic check: verify
+    signature.verify.cavage.signature.provided (base64) is a valid
+    signature over signature.verify.cavage.signing.string, per
+    signature.verify.cavage.algorithm, using the public key in Apigee's
+    KeyStore referenced for signature.verify.cavage.keyId.
+
+    No native Apigee policy does this (there's nothing analogous to
+    VerifyJWS for raw-string signatures), and Apigee's JS engine can't
+    read KeyStore key material to do RSA/ECDSA math itself — this needs
+    a JavaCallout (e.g. using Apache Santuario or java.security.Signature
+    with the KeyStore/alias Apigee already manages) that:
+      1. Looks up the public key for signature.verify.cavage.keyId
+         (map keyId -> KeyStore alias — a per-proxy KVM entry, same
+         pattern as the rest of this bundle, or a fixed mapping).
+      2. Verifies signature.verify.cavage.signature.provided against
+         signature.verify.cavage.signing.string with that key and
+         signature.verify.cavage.algorithm.
+      3. Sets a flow variable this shared flow's caller can act on, or
+         raises a fault itself on failure (fail closed, like this
+         placeholder does).
+
+    Until that JavaCallout replaces this policy, every request reaches
+    here as NOT VERIFIED — this always faults rather than letting
+    anything through unauthenticated.
+-->
+<RaiseFault name="NI-Cavage-Verify-Signature">
+    <DisplayName>NI-Cavage-Verify-Signature</DisplayName>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <FaultResponse>
+        <Set>
+            <StatusCode>501</StatusCode>
+            <ReasonPhrase>Not Implemented</ReasonPhrase>
+            <Payload contentType="application/json">{
+    "error": "not_implemented",
+    "message": "Cavage signing string reconstructed and pre-checks (expiry, header presence) passed, but the cryptographic signature check is not implemented yet.",
+    "algorithm": "{signature.verify.cavage.algorithm}",
+    "keyId": "{signature.verify.cavage.keyId}"
+}</Payload>
+        </Set>
+    </FaultResponse>
+</RaiseFault>

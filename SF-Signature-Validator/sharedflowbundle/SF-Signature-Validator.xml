@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SharedFlowBundle name="SF-Signature-Validator">
+    <ConfigurationVersion majorVersion="4" minorVersion="0"/>
+    <DisplayName>SF-Signature-Validator</DisplayName>
+    <Description>
+        Single entry point for signature validation at the gateway (the
+        API itself provides no validation method). Calling API proxies
+        set the signature.verify.type flow variable (jwt | cavage |
+        xmldsig) and invoke this shared flow via FlowCallout; it routes
+        to the matching sub-step. JWT/JWS is fully native (VerifyJWS,
+        keyed from an Apigee KeyStore reference). Cavage and XML-DSig
+        verify everything achievable without real RSA/ECDSA math (the
+        signing string / digest) natively in JS, and fault via a
+        clearly marked NI-*-Verify-Signature placeholder for the actual
+        cryptographic check, which needs a JavaCallout — Apigee has no
+        native policy for either, and JS can't reach KeyStore key
+        material to do that math itself.
+    </Description>
+    <Policies>
+        <Policy>RF-Missing-Signature-Verify-Type</Policy>
+        <Policy>RF-Unsupported-Signature-Verify-Type</Policy>
+        <Policy>RF-JWT-Verify-Source-Missing</Policy>
+        <Policy>VerifyJWS-Jwt-orders-api-Compact</Policy>
+        <Policy>VerifyJWS-Jwt-orders-api-Detached</Policy>
+        <Policy>RF-Unsupported-Jwt-Verify-Profile</Policy>
+        <Policy>JS-Verify-Cavage-Signing-String</Policy>
+        <Policy>NI-Cavage-Verify-Signature</Policy>
+        <Policy>JS-Verify-XmlDsig-Digest</Policy>
+        <Policy>RF-XmlDsig-Digest-Mismatch</Policy>
+        <Policy>NI-XmlDsig-Verify-Signature</Policy>
+    </Policies>
+    <SharedFlows>
+        <SharedFlow>default</SharedFlow>
+    </SharedFlows>
+</SharedFlowBundle>

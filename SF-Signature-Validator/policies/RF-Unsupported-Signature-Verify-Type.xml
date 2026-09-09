@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RaiseFault name="RF-Unsupported-Signature-Verify-Type">
+    <DisplayName>RF-Unsupported-Signature-Verify-Type</DisplayName>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <FaultResponse>
+        <Set>
+            <StatusCode>500</StatusCode>
+            <ReasonPhrase>Internal Server Error</ReasonPhrase>
+            <Payload contentType="application/json">{
+    "error": "configuration_error",
+    "message": "Unsupported signature.verify.type '{signature.verify.type}'. Supported values: jwt, cavage, xmldsig."
+}</Payload>
+        </Set>
+    </FaultResponse>
+</RaiseFault>

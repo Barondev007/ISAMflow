@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    JWT/JWS verification profile "orders-api", compact serialization
+    (header.payload.signature). Runs when signature.verify.type = "jwt"
+    AND signature.verify.profile = "orders-api" AND
+    signature.verify.jwt.detached != "true" (see the -Detached sibling
+    policy for that case).
+
+    Native VerifyJWS — no custom crypto needed, unlike Cavage/XML-DSig.
+    continueOnError defaults to false, so an invalid/expired/malformed
+    JWS raises a policy fault here and the request is rejected; nothing
+    else needs to check a "valid" flag. Add a FaultRule if you want a
+    response shape other than Apigee's default JWS-fault response.
+
+    KeyStore/Alias name the cert in Apigee's KeyStore holding the
+    orders-api signer's public key — set up separately from this repo
+    (Apigee KeyStores aren't managed as bundle config). Algorithm is
+    pinned here deliberately rather than sourced from KVM: letting
+    KVM (or worse, the token itself) choose the accepted algorithm
+    would open an algorithm-confusion downgrade attack.
+
+    ASSUMPTION TO VERIFY: I can't test this policy against a live
+    Apigee instance from here. <KeyStore>/<Alias> as plain literal
+    values (no `ref` attribute) is the documented static form; if your
+    Apigee version needs a different PublicKey shape, adjust this
+    policy accordingly — the rest of the shared flow doesn't depend on
+    its internals.
+
+    To add another profile: copy this policy (and its -Detached
+    sibling) with a new profile suffix, new KeyStore/Alias/Algorithm,
+    add Steps for it in default.xml gated on
+    signature.verify.profile = "<new profile>", and add that profile
+    to RF-Unsupported-Jwt-Verify-Profile's Condition.
+-->
+<VerifyJWS name="VerifyJWS-Jwt-orders-api-Compact" continueOnError="false">
+    <DisplayName>VerifyJWS-Jwt-orders-api-Compact</DisplayName>
+    <Algorithm>RS256</Algorithm>
+    <Source>signature.verify.jwt.jws</Source>
+    <PublicKey>
+        <KeyStore>orders-api-keystore</KeyStore>
+        <Alias>orders-api-signing-cert</Alias>
+    </PublicKey>
+    <VariablePrefix>signature.verify.jwt</VariablePrefix>
+</VerifyJWS>

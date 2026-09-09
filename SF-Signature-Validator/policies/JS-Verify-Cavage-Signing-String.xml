@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Javascript name="JS-Verify-Cavage-Signing-String" timeLimit="200">
+    <DisplayName>JS-Verify-Cavage-Signing-String</DisplayName>
+    <ResourceURL>jsc://cavage-verify-signing-string.js</ResourceURL>
+</Javascript>

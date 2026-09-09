@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SharedFlow name="default">
+
+    <!-- ================================================================
+         Guard: the calling API proxy must set signature.verify.type
+         before invoking this shared flow (e.g. via AssignMessage, then
+         FlowCallout with SharedFlowBundle="SF-Signature-Validator").
+         ================================================================ -->
+    <Step>
+        <Name>RF-Missing-Signature-Verify-Type</Name>
+        <Condition>signature.verify.type = null</Condition>
+    </Step>
+
+    <!-- ================================================================
+         1) JWT / JWS verification — fully native, no custom crypto.
+         The calling proxy stages the JWS into signature.verify.jwt.jws
+         (and, for a detached JWS, the original payload into
+         signature.verify.jwt.payload, plus
+         signature.verify.jwt.detached = "true"), and picks a profile
+         (KeyStore/Alias/Algorithm) via signature.verify.profile.
+         VerifyJWS itself rejects an invalid/expired/malformed JWS
+         (continueOnError=false raises a policy fault) — nothing else
+         needs to check a "valid" flag.
+         ================================================================ -->
+    <Step>
+        <Name>RF-JWT-Verify-Source-Missing</Name>
+        <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.jws = null</Condition>
+    </Step>
+    <Step>
+        <Name>VerifyJWS-Jwt-orders-api-Compact</Name>
+        <Condition>signature.verify.type = "jwt" AND signature.verify.profile = "orders-api" AND signature.verify.jwt.detached != "true"</Condition>
+    </Step>
+    <Step>
+        <Name>VerifyJWS-Jwt-orders-api-Detached</Name>
+        <Condition>signature.verify.type = "jwt" AND signature.verify.profile = "orders-api" AND signature.verify.jwt.detached = "true"</Condition>
+    </Step>
+    <Step>
+        <Name>RF-Unsupported-Jwt-Verify-Profile</Name>
+        <Condition>signature.verify.type = "jwt" AND signature.verify.profile != "orders-api"</Condition>
+    </Step>
+
+    <!-- ================================================================
+         2) HTTP Signature (Cavage) verification.
+         Rebuilds the signing string from the CURRENT request per the
+         headers list in the incoming Signature header itself, and
+         checks (expires) — real, achievable in JS. The actual
+         signature-value crypto check is still a placeholder (see
+         NI-Cavage-Verify-Signature): no native policy exists for this,
+         and JS can't reach KeyStore key material for RSA/ECDSA math.
+         ================================================================ -->
+    <Step>
+        <Name>JS-Verify-Cavage-Signing-String</Name>
+        <Condition>signature.verify.type = "cavage"</Condition>
+    </Step>
+    <Step>
+        <Name>NI-Cavage-Verify-Signature</Name>
+        <Condition>signature.verify.type = "cavage"</Condition>
+    </Step>
+
+    <!-- ================================================================
+         3) XML Signature (XML-DSig) verification.
+         Recomputes the digest (enveloped-signature + Exclusive C14N,
+         same as the signing side in reverse) and compares it to the
+         document's own claimed DigestValue — real, achievable in JS,
+         but only proves content integrity, NOT authenticity (see the
+         comment at the top of xmldsig-verify-digest.js) until the
+         actual SignatureValue crypto check (still a placeholder — see
+         NI-XmlDsig-Verify-Signature) runs too.
+         ================================================================ -->
+    <Step>
+        <Name>JS-Verify-XmlDsig-Digest</Name>
+        <Condition>signature.verify.type = "xmldsig"</Condition>
+    </Step>
+    <Step>
+        <Name>RF-XmlDsig-Digest-Mismatch</Name>
+        <Condition>signature.verify.type = "xmldsig" AND signature.verify.xmldsig.digest.match != "true"</Condition>
+    </Step>
+    <Step>
+        <Name>NI-XmlDsig-Verify-Signature</Name>
+        <Condition>signature.verify.type = "xmldsig"</Condition>
+    </Step>
+
+    <!-- ================================================================
+         Guard: reject anything that isn't one of the three known types.
+         ================================================================ -->
+    <Step>
+        <Name>RF-Unsupported-Signature-Verify-Type</Name>
+        <Condition>signature.verify.type != "jwt" AND signature.verify.type != "cavage" AND signature.verify.type != "xmldsig"</Condition>
+    </Step>
+
+</SharedFlow>

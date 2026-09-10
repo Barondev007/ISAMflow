@@ -7,12 +7,16 @@
         API itself provides no validation method). Calling API proxies
         set the signature.verify.type flow variable (jwt | cavage |
         xmldsig) and invoke this shared flow via FlowCallout; it routes
-        to the matching sub-step. JWT/JWS is fully native (VerifyJWS,
-        no JS at all): KeyStore/Alias/KnownHeaders all resolve per-proxy
-        from the shared KVM "signature" via ref — the same pattern
-        ServiceCallout/TargetEndpoint use for SSLInfo — with
-        KnownHeaders/IgnoreCriticalHeaders enforcing RFC 7515 §4.1.11's
-        "crit" rule. Cavage and XML-DSig
+        to the matching sub-step. JWT/JWS uses native VerifyJWS for the
+        JWS check itself (KnownHeaders resolves per-proxy from the shared
+        KVM "signature" via ref, enforcing RFC 7515 §4.1.11's "crit"
+        rule), plus one JavaCallout (JC-JWT-Verify-Extract-Public-Key) to
+        bridge the KeyStore/Alias (also from KVM) into it as a PEM
+        <PublicKey><Value ref="..."/></PublicKey> — VerifyJWS's own
+        <PublicKey><KeyStore ref="..."/><Alias ref="..."/></PublicKey>
+        does not resolve a dynamic ref at runtime (confirmed against a
+        live Apigee instance; only ServiceCallout/TargetEndpoint's
+        SSLInfo does that). Cavage and XML-DSig
         verify everything achievable without real RSA/ECDSA math (the
         signing string / digest) natively in JS, and fault via a
         clearly marked NI-*-Verify-Signature placeholder for the actual
@@ -28,6 +32,7 @@
         <Policy>KVM-Get-JWT-Verify-Config</Policy>
         <Policy>RF-JWT-Verify-Config-Missing</Policy>
         <Policy>EV-JWT-Verify-Parse-Config</Policy>
+        <Policy>JC-JWT-Verify-Extract-Public-Key</Policy>
         <Policy>VerifyJWS-Jwt-Compact</Policy>
         <Policy>VerifyJWS-Jwt-Detached</Policy>
         <Policy>JS-Verify-Cavage-Signing-String</Policy>

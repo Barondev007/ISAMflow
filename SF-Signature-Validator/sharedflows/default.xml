@@ -12,8 +12,9 @@
     </Step>
 
     <!-- ================================================================
-         1) JWT / JWS verification — fully native, no custom crypto and
-         no JS at all. The calling proxy stages the JWS into
+         1) JWT / JWS verification — native VerifyJWS for the JWS check
+         itself, plus one JavaCallout to bridge the KeyStore into it (see
+         below). The calling proxy stages the JWS into
          signature.verify.jwt.jws (and, for a detached JWS, the original
          payload into signature.verify.jwt.payload, plus
          signature.verify.jwt.detached = "true"). KeyStore/Alias are
@@ -42,6 +43,18 @@
     </Step>
     <Step>
         <Name>EV-JWT-Verify-Parse-Config</Name>
+        <Condition>signature.verify.type = "jwt"</Condition>
+    </Step>
+    <!--
+        VerifyJWS's <PublicKey><KeyStore ref="..."/><Alias ref="..."/></PublicKey>
+        doesn't resolve a dynamic ref at runtime (confirmed live) — so this
+        JavaCallout reads the same KeyStore/Alias from KVM and turns it
+        into a PEM public key both VerifyJWS steps below read via
+        <Value ref="signature.verify.jwt.publicKey.pem"/>. See
+        JC-JWT-Verify-Extract-Public-Key.xml and java-src/README.md.
+    -->
+    <Step>
+        <Name>JC-JWT-Verify-Extract-Public-Key</Name>
         <Condition>signature.verify.type = "jwt"</Condition>
     </Step>
     <Step>

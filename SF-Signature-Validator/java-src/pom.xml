@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.orders.signature</groupId>
+    <artifactId>signature-keystore-callout</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <!--
+        Apigee does not publish its Java Callout SDK (message-flow-*.jar,
+        expressions-*.jar, and their transitive dependencies) to Maven
+        Central under any coordinates I can confirm from here. Apigee's own
+        Java-callout samples resolve this the same way: download the SDK
+        jars from Apigee (see README.md in this directory for where to
+        look) and drop them into ./lib, then this system-scoped dependency
+        picks them up. If your org DOES have these in an internal/private
+        Maven repository, replace this with a normal <dependency> against
+        that repo's real groupId/artifactId/version instead — don't trust
+        the ones here as real Maven Central coordinates.
+    -->
+    <dependencies>
+        <dependency>
+            <groupId>com.apigee.edge</groupId>
+            <artifactId>message-flow</artifactId>
+            <version>1.0.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/message-flow.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.apigee.edge</groupId>
+            <artifactId>expressions</artifactId>
+            <version>1.0.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/expressions.jar</systemPath>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>signature-keystore-callout</finalName>
+        <plugins>
+            <!--
+                Apigee loads the callout jar plus every jar it depends on
+                from resources/java/ — it does not run a dependency
+                resolver at proxy-deploy time. shade (preferred) or
+                assembly with the jar-with-dependencies descriptor bundles
+                this callout's own classes together with anything it
+                needs beyond the Apigee-provided SDK jars (which are NOT
+                shaded in here — they're provided by the Apigee runtime
+                itself, so keep them out of the shaded jar to avoid
+                classloader conflicts). This callout has no dependencies
+                beyond the JDK and the Apigee SDK, so shading is close to
+                a no-op today; kept in place so it still works if that
+                changes.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>com.apigee.edge:*</exclude>
+                                </excludes>
+                            </artifactSet>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

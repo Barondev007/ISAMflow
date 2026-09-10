@@ -6,6 +6,12 @@
     must be staged by the calling proxy into signature.verify.jwt.payload
     before calling this shared flow — it's what DetachedContent hashes
     to recompute the digest the signature covers.
+
+    PublicKey is a PEM <Value ref="..."/>, not <KeyStore ref="..."/>, for
+    the same reason as VerifyJWS-Jwt-Compact — see its comment for
+    details. JC-JWT-Verify-Extract-Public-Key runs before both branches
+    (see sharedflows/default.xml), so signature.verify.jwt.publicKey.pem
+    is already populated by the time either VerifyJWS step runs.
 -->
 <VerifyJWS name="VerifyJWS-Jwt-Detached" continueOnError="false">
     <DisplayName>VerifyJWS-Jwt-Detached</DisplayName>
@@ -13,8 +19,7 @@
     <Source>signature.verify.jwt.jws</Source>
     <DetachedContent>signature.verify.jwt.payload</DetachedContent>
     <PublicKey>
-        <KeyStore ref="signature.verify.jwt.keystore.name"/>
-        <Alias ref="signature.verify.jwt.keystore.alias"/>
+        <Value ref="signature.verify.jwt.publicKey.pem"/>
     </PublicKey>
     <KnownHeaders ref="signature.verify.jwt.knownHeaders"/>
     <IgnoreCriticalHeaders>false</IgnoreCriticalHeaders>

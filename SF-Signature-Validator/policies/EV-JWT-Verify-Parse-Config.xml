@@ -19,10 +19,13 @@
     "crit" header at all.
 
     signature.verify.jwt.keystore.name/.alias feed
-    <PublicKey><KeyStore ref="..."/><Alias ref="..."/></PublicKey>, and
-    signature.verify.jwt.knownHeaders feeds <KnownHeaders ref="...">  —
-    the same ref-to-a-flow-variable pattern ServiceCallout/TargetEndpoint
-    use for <SSLInfo><KeyStore ref="...">.
+    JC-JWT-Verify-Extract-Public-Key (a JavaCallout, not VerifyJWS
+    directly — VerifyJWS's own <PublicKey><KeyStore ref="..."/></PublicKey>
+    doesn't resolve a dynamic ref at runtime, confirmed against a live
+    Apigee instance), which turns them into a PEM public key VerifyJWS
+    reads via <Value ref="signature.verify.jwt.publicKey.pem"/>.
+    signature.verify.jwt.knownHeaders feeds <KnownHeaders ref="..."> on
+    VerifyJWS directly, same as before.
 -->
 <ExtractVariables name="EV-JWT-Verify-Parse-Config">
     <DisplayName>EV-JWT-Verify-Parse-Config</DisplayName>

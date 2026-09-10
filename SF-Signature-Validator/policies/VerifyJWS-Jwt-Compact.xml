@@ -7,7 +7,7 @@
 
     Native VerifyJWS — no custom crypto needed, unlike Cavage/XML-DSig.
     KeyStore/Alias are per-proxy, resolved at runtime from this proxy's
-    KVM config (see JS-JWT-Verify-Parse-Config) via ref, the same
+    KVM config (see EV-JWT-Verify-Parse-Config) via ref, the same
     ref-to-a-flow-variable pattern ServiceCallout/TargetEndpoint use for
     <SSLInfo><KeyStore ref="...">.
 
@@ -16,18 +16,28 @@
     else needs to check a "valid" flag. Add a FaultRule if you want a
     response shape other than Apigee's default JWS-fault response.
 
-    Algorithm is pinned here deliberately rather than KVM-sourced:
-    letting the accepted algorithm come from anywhere outside a
-    reviewed policy change opens an algorithm-confusion downgrade
-    attack. If more than one algorithm is genuinely needed, add
-    another Algorithm value here (VerifyJWS accepts more than one) —
-    don't make it fully dynamic.
+    Algorithm AND KnownHeaders are pinned here deliberately rather than
+    KVM-sourced, for the same reason: both are security-relevant
+    allow-lists (accepted signing algorithm; extension header params
+    this proxy claims to understand for RFC 7515 §4.1.11's "crit"
+    check), so they belong in a reviewed policy change, not
+    config anyone with KVM write access could alter — same reasoning
+    IgnoreCriticalHeaders stays "false": accepting a JWS whose "crit"
+    lists something outside KnownHeaders should fail closed, not be
+    toggled off by config. x-txn-id is this proxy's one custom
+    extension (see examples/kvm/orders-api.signature.jwt-header.json on
+    the signing side). If more than one algorithm or extension header
+    is genuinely needed, add more <Algorithm>/<Header> entries here —
+    don't make either fully dynamic. A different proxy needing a
+    different KnownHeaders list gets its own copy of this policy pair
+    (same reasoning as SF-SAML-Extractor's per-proxy profiles).
 
-    "crit" (RFC 7515 §4.1.11) isn't handled here: whether Apigee's
-    VerifyJWS enforces it natively isn't something this environment can
-    verify, so JS-JWT-Verify-Check-Crit enforces it explicitly right
-    after this step succeeds, rather than relying on unconfirmed native
-    behavior for a spec-mandated security control.
+    UNVERIFIED: I can't check the exact <KnownHeaders>/<Header> child
+    element shape against Apigee's reference docs from here — if it
+    turns out to be a different structure (e.g. a single
+    comma-separated value, or repeated <KnownHeader> without a
+    wrapper), adjust this policy; nothing else in the shared flow
+    depends on its internals.
 -->
 <VerifyJWS name="VerifyJWS-Jwt-Compact" continueOnError="false">
     <DisplayName>VerifyJWS-Jwt-Compact</DisplayName>
@@ -37,5 +47,9 @@
         <KeyStore ref="signature.verify.jwt.keystore.name"/>
         <Alias ref="signature.verify.jwt.keystore.alias"/>
     </PublicKey>
+    <KnownHeaders>
+        <Header>x-txn-id</Header>
+    </KnownHeaders>
+    <IgnoreCriticalHeaders>false</IgnoreCriticalHeaders>
     <VariablePrefix>signature.verify.jwt</VariablePrefix>
 </VerifyJWS>

@@ -16,5 +16,9 @@
         <KeyStore ref="signature.verify.jwt.keystore.name"/>
         <Alias ref="signature.verify.jwt.keystore.alias"/>
     </PublicKey>
+    <KnownHeaders>
+        <Header>x-txn-id</Header>
+    </KnownHeaders>
+    <IgnoreCriticalHeaders>false</IgnoreCriticalHeaders>
     <VariablePrefix>signature.verify.jwt</VariablePrefix>
 </VerifyJWS>

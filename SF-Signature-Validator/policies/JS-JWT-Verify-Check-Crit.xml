@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Javascript name="JS-JWT-Verify-Check-Crit" timeLimit="200">
-    <DisplayName>JS-JWT-Verify-Check-Crit</DisplayName>
-    <IncludeURL>jsc://base64url.js</IncludeURL>
-    <ResourceURL>jsc://jwt-verify-check-crit.js</ResourceURL>
-</Javascript>

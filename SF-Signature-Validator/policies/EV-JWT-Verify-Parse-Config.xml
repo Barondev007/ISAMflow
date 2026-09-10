@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Parses this proxy's JWT verification config, loaded from the shared
+    KVM "signature" (entry key "{apiproxy.name}.jwt.verify") into two
+    flow variables. The KVM entry value is a JSON object, e.g.:
+      {
+        "keystore": "orders-api-keystore",
+        "alias": "orders-api-signing-cert"
+      }
+
+    signature.verify.jwt.keystore.name/.alias feed
+    VerifyJWS-Jwt-Compact/-Detached's
+    <PublicKey><KeyStore ref="..."/><Alias ref="..."/></PublicKey> — the
+    same ref-to-a-flow-variable pattern ServiceCallout/TargetEndpoint use
+    for <SSLInfo><KeyStore ref="...">.
+
+    Native ExtractVariables/JSONPath, not JS — both fields are scalar
+    leaf values, which is exactly what JSONPath extraction is for.
+-->
+<ExtractVariables name="EV-JWT-Verify-Parse-Config">
+    <DisplayName>EV-JWT-Verify-Parse-Config</DisplayName>
+    <Source>signature.verify.jwt.config.json</Source>
+    <JSONPayload>
+        <Variable name="signature.verify.jwt.keystore.name" type="string">
+            <JSONPath>$.keystore</JSONPath>
+        </Variable>
+        <Variable name="signature.verify.jwt.keystore.alias" type="string">
+            <JSONPath>$.alias</JSONPath>
+        </Variable>
+    </JSONPayload>
+    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+</ExtractVariables>

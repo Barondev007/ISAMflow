@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Same as VerifyJWS-Jwt-Compact, for detached JWS (header..signature —
+    RFC 7515 Appendix F). Runs when signature.verify.jwt.detached =
+    "true". The original payload, which a detached JWS doesn't carry,
+    must be staged by the calling proxy into signature.verify.jwt.payload
+    before calling this shared flow — it's what DetachedContent hashes
+    to recompute the digest the signature covers.
+-->
+<VerifyJWS name="VerifyJWS-Jwt-Detached" continueOnError="false">
+    <DisplayName>VerifyJWS-Jwt-Detached</DisplayName>
+    <Algorithm>RS256</Algorithm>
+    <Source>signature.verify.jwt.jws</Source>
+    <DetachedContent>signature.verify.jwt.payload</DetachedContent>
+    <PublicKey>
+        <KeyStore ref="signature.verify.jwt.keystore.name"/>
+        <Alias ref="signature.verify.jwt.keystore.alias"/>
+    </PublicKey>
+    <VariablePrefix>signature.verify.jwt</VariablePrefix>
+</VerifyJWS>

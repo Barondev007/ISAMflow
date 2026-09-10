@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Reads this proxy's JWT verification config from the shared KVM
+    "signature" (see AM-JWT-Verify-Set-KVM-Key), entry key
+    "{apiproxy.name}.jwt.verify". See jwt-verify-parse-config.js for
+    the JSON shape.
+
+    continueOnError lets the flow proceed past a missing key so
+    RF-JWT-Verify-Config-Missing can raise a clear configuration error
+    instead of Apigee's generic KVM fault.
+-->
+<KeyValueMapOperations name="KVM-Get-JWT-Verify-Config" mapIdentifier="signature" continueOnError="true">
+    <DisplayName>KVM-Get-JWT-Verify-Config</DisplayName>
+    <Scope>environment</Scope>
+    <Get assignTo="signature.verify.jwt.config.json" index="1">
+        <Key>
+            <Parameter ref="signature.kvm.key"/>
+        </Key>
+    </Get>
+</KeyValueMapOperations>

@@ -16,27 +16,48 @@
          The calling proxy stages the JWS into signature.verify.jwt.jws
          (and, for a detached JWS, the original payload into
          signature.verify.jwt.payload, plus
-         signature.verify.jwt.detached = "true"), and picks a profile
-         (KeyStore/Alias/Algorithm) via signature.verify.profile.
-         VerifyJWS itself rejects an invalid/expired/malformed JWS
+         signature.verify.jwt.detached = "true"). KeyStore/Alias are
+         per-proxy, from the shared KVM "signature" (entry key
+         "{apiproxy.name}.jwt.verify") — same pattern as the signing
+         side. VerifyJWS itself rejects an invalid/expired/malformed JWS
          (continueOnError=false raises a policy fault) — nothing else
-         needs to check a "valid" flag.
+         needs to check a "valid" flag. JS-JWT-Verify-Check-Crit runs
+         after VerifyJWS succeeds to explicitly enforce RFC 7515
+         §4.1.11's "crit" rule against this proxy's own understood-list,
+         rather than relying on unconfirmed native VerifyJWS behavior
+         for it.
          ================================================================ -->
     <Step>
         <Name>RF-JWT-Verify-Source-Missing</Name>
         <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.jws = null</Condition>
     </Step>
     <Step>
-        <Name>VerifyJWS-Jwt-orders-api-Compact</Name>
-        <Condition>signature.verify.type = "jwt" AND signature.verify.profile = "orders-api" AND signature.verify.jwt.detached != "true"</Condition>
+        <Name>AM-JWT-Verify-Set-KVM-Key</Name>
+        <Condition>signature.verify.type = "jwt"</Condition>
     </Step>
     <Step>
-        <Name>VerifyJWS-Jwt-orders-api-Detached</Name>
-        <Condition>signature.verify.type = "jwt" AND signature.verify.profile = "orders-api" AND signature.verify.jwt.detached = "true"</Condition>
+        <Name>KVM-Get-JWT-Verify-Config</Name>
+        <Condition>signature.verify.type = "jwt"</Condition>
     </Step>
     <Step>
-        <Name>RF-Unsupported-Jwt-Verify-Profile</Name>
-        <Condition>signature.verify.type = "jwt" AND signature.verify.profile != "orders-api"</Condition>
+        <Name>RF-JWT-Verify-Config-Missing</Name>
+        <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.config.json = null</Condition>
+    </Step>
+    <Step>
+        <Name>JS-JWT-Verify-Parse-Config</Name>
+        <Condition>signature.verify.type = "jwt"</Condition>
+    </Step>
+    <Step>
+        <Name>VerifyJWS-Jwt-Compact</Name>
+        <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.detached != "true"</Condition>
+    </Step>
+    <Step>
+        <Name>VerifyJWS-Jwt-Detached</Name>
+        <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.detached = "true"</Condition>
+    </Step>
+    <Step>
+        <Name>JS-JWT-Verify-Check-Crit</Name>
+        <Condition>signature.verify.type = "jwt"</Condition>
     </Step>
 
     <!-- ================================================================

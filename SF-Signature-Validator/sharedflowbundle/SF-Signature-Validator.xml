@@ -8,7 +8,11 @@
         set the signature.verify.type flow variable (jwt | cavage |
         xmldsig) and invoke this shared flow via FlowCallout; it routes
         to the matching sub-step. JWT/JWS is fully native (VerifyJWS,
-        keyed from an Apigee KeyStore reference). Cavage and XML-DSig
+        KeyStore/Alias resolved per-proxy from the shared KVM
+        "signature" via ref — the same pattern ServiceCallout/
+        TargetEndpoint use for SSLInfo), with an explicit "crit"
+        (RFC 7515 §4.1.11) check run afterward rather than relying on
+        unconfirmed native handling for it. Cavage and XML-DSig
         verify everything achievable without real RSA/ECDSA math (the
         signing string / digest) natively in JS, and fault via a
         clearly marked NI-*-Verify-Signature placeholder for the actual
@@ -20,9 +24,13 @@
         <Policy>RF-Missing-Signature-Verify-Type</Policy>
         <Policy>RF-Unsupported-Signature-Verify-Type</Policy>
         <Policy>RF-JWT-Verify-Source-Missing</Policy>
-        <Policy>VerifyJWS-Jwt-orders-api-Compact</Policy>
-        <Policy>VerifyJWS-Jwt-orders-api-Detached</Policy>
-        <Policy>RF-Unsupported-Jwt-Verify-Profile</Policy>
+        <Policy>AM-JWT-Verify-Set-KVM-Key</Policy>
+        <Policy>KVM-Get-JWT-Verify-Config</Policy>
+        <Policy>RF-JWT-Verify-Config-Missing</Policy>
+        <Policy>JS-JWT-Verify-Parse-Config</Policy>
+        <Policy>VerifyJWS-Jwt-Compact</Policy>
+        <Policy>VerifyJWS-Jwt-Detached</Policy>
+        <Policy>JS-JWT-Verify-Check-Crit</Policy>
         <Policy>JS-Verify-Cavage-Signing-String</Policy>
         <Policy>NI-Cavage-Verify-Signature</Policy>
         <Policy>JS-Verify-XmlDsig-Digest</Policy>

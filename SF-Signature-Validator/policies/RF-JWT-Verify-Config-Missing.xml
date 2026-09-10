@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<RaiseFault name="RF-Unsupported-Jwt-Verify-Profile">
-    <DisplayName>RF-Unsupported-Jwt-Verify-Profile</DisplayName>
+<RaiseFault name="RF-JWT-Verify-Config-Missing">
+    <DisplayName>RF-JWT-Verify-Config-Missing</DisplayName>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
     <FaultResponse>
         <Set>
@@ -8,7 +8,7 @@
             <ReasonPhrase>Internal Server Error</ReasonPhrase>
             <Payload contentType="application/json">{
     "error": "configuration_error",
-    "message": "No JWT verification profile named '{signature.verify.profile}' is configured in SF-Signature-Validator. Add a VerifyJWS-Jwt-* policy pair for it in default.xml and extend this check."
+    "message": "No entry '{signature.kvm.key}' found in KVM 'signature'. Add an entry with that key holding {\"keystore\": \"...\", \"alias\": \"...\", \"understoodCriticalParams\": [...]}."
 }</Payload>
         </Set>
     </FaultResponse>

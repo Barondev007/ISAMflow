@@ -1,21 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
     Parses this proxy's JWT verification config, loaded from the shared
-    KVM "signature" (entry key "{apiproxy.name}.jwt.verify") into two
-    flow variables. The KVM entry value is a JSON object, e.g.:
+    KVM "signature" (entry key "{apiproxy.name}.jwt.verify") into flow
+    variables. The KVM entry value is a JSON object, e.g.:
       {
         "keystore": "orders-api-keystore",
-        "alias": "orders-api-signing-cert"
+        "alias": "orders-api-signing-cert",
+        "knownHeaders": "x-txn-id"
       }
 
-    signature.verify.jwt.keystore.name/.alias feed
-    VerifyJWS-Jwt-Compact/-Detached's
-    <PublicKey><KeyStore ref="..."/><Alias ref="..."/></PublicKey> — the
-    same ref-to-a-flow-variable pattern ServiceCallout/TargetEndpoint use
-    for <SSLInfo><KeyStore ref="...">.
+    knownHeaders is a comma-separated string, not a JSON array — a
+    JSONPath extraction is for pulling out one scalar value, and a
+    delimited string IS one scalar value, letting this whole step (and
+    VerifyJWS-Jwt-Compact/-Detached's KnownHeaders) stay native with no
+    JS, the same way a JSON array couldn't. It's a required field, same
+    as keystore/alias (IgnoreUnresolvedVariables=false applies to the
+    whole policy) — set it to "" for a proxy that never expects a
+    "crit" header at all.
 
-    Native ExtractVariables/JSONPath, not JS — both fields are scalar
-    leaf values, which is exactly what JSONPath extraction is for.
+    signature.verify.jwt.keystore.name/.alias feed
+    <PublicKey><KeyStore ref="..."/><Alias ref="..."/></PublicKey>, and
+    signature.verify.jwt.knownHeaders feeds <KnownHeaders ref="...">  —
+    the same ref-to-a-flow-variable pattern ServiceCallout/TargetEndpoint
+    use for <SSLInfo><KeyStore ref="...">.
 -->
 <ExtractVariables name="EV-JWT-Verify-Parse-Config">
     <DisplayName>EV-JWT-Verify-Parse-Config</DisplayName>
@@ -26,6 +33,9 @@
         </Variable>
         <Variable name="signature.verify.jwt.keystore.alias" type="string">
             <JSONPath>$.alias</JSONPath>
+        </Variable>
+        <Variable name="signature.verify.jwt.knownHeaders" type="string">
+            <JSONPath>$.knownHeaders</JSONPath>
         </Variable>
     </JSONPayload>
     <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>

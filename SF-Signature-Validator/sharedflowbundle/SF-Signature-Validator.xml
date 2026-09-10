@@ -8,11 +8,11 @@
         set the signature.verify.type flow variable (jwt | cavage |
         xmldsig) and invoke this shared flow via FlowCallout; it routes
         to the matching sub-step. JWT/JWS is fully native (VerifyJWS,
-        no JS at all): KeyStore/Alias resolve per-proxy from the shared
-        KVM "signature" via ref — the same pattern ServiceCallout/
-        TargetEndpoint use for SSLInfo — and KnownHeaders/
-        IgnoreCriticalHeaders enforce RFC 7515 §4.1.11's "crit" rule.
-        Cavage and XML-DSig
+        no JS at all): KeyStore/Alias/KnownHeaders all resolve per-proxy
+        from the shared KVM "signature" via ref — the same pattern
+        ServiceCallout/TargetEndpoint use for SSLInfo — with
+        KnownHeaders/IgnoreCriticalHeaders enforcing RFC 7515 §4.1.11's
+        "crit" rule. Cavage and XML-DSig
         verify everything achievable without real RSA/ECDSA math (the
         signing string / digest) natively in JS, and fault via a
         clearly marked NI-*-Verify-Signature placeholder for the actual

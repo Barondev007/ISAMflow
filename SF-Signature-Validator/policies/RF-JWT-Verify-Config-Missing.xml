@@ -8,7 +8,7 @@
             <ReasonPhrase>Internal Server Error</ReasonPhrase>
             <Payload contentType="application/json">{
     "error": "configuration_error",
-    "message": "No entry '{signature.kvm.key}' found in KVM 'signature'. Add an entry with that key holding {\"keystore\": \"...\", \"alias\": \"...\", \"knownHeaders\": \"...\"}."
+    "message": "No entry '{signature.kvm.key}' found in KVM 'signature'. Add an entry with that key holding {\"publicKeyPem\": \"-----BEGIN PUBLIC KEY-----\\n...\\n-----END PUBLIC KEY-----\\n\", \"knownHeaders\": \"...\"}."
 }</Payload>
         </Set>
     </FaultResponse>

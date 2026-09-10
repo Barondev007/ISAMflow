@@ -19,11 +19,16 @@
     was the original design, but it does not resolve a dynamic ref at
     runtime (confirmed against a live Apigee instance; only
     ServiceCallout/TargetEndpoint's <SSLInfo><KeyStore ref="..."> does
-    that). Instead, JC-JWT-Verify-Extract-Public-Key (a JavaCallout —
-    see java-src/README.md) runs just before this step, reads the same
-    KeyStore/Alias from KVM, and writes the certificate's public key as
-    PEM text into signature.verify.jwt.publicKey.pem, which
-    <Value ref="..."/> below reads.
+    that), and there's no other way to reach KeyStore key material from
+    inside a running proxy either (no Java-callout SDK method for it,
+    and calling the Management API's cert-export endpoint per-request is
+    an antipattern per Apigee's own docs). Instead, the verification
+    public key is stored as PEM directly in this proxy's KVM entry (see
+    EV-JWT-Verify-Parse-Config) — populated once, out-of-band, whenever
+    the certificate is issued/rotated in the KeyStore, not read from it
+    at request time. <Value ref="..."/> below reads
+    signature.verify.jwt.publicKey.pem, set by that ExtractVariables
+    step.
 
     continueOnError defaults to false, so an invalid/expired/malformed
     JWS raises a policy fault here and the request is rejected; nothing

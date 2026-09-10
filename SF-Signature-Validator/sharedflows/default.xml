@@ -12,18 +12,23 @@
     </Step>
 
     <!-- ================================================================
-         1) JWT / JWS verification — native VerifyJWS for the JWS check
-         itself, plus one JavaCallout to bridge the KeyStore into it (see
-         below). The calling proxy stages the JWS into
+         1) JWT / JWS verification — fully native, no custom crypto and
+         no JS at all. The calling proxy stages the JWS into
          signature.verify.jwt.jws (and, for a detached JWS, the original
          payload into signature.verify.jwt.payload, plus
-         signature.verify.jwt.detached = "true"). KeyStore/Alias are
-         per-proxy, from the shared KVM "signature" (entry key
-         "{apiproxy.name}.jwt.verify") — same pattern as the signing
-         side. VerifyJWS itself rejects an invalid/expired/malformed JWS,
-         and — via KnownHeaders/IgnoreCriticalHeaders — enforces RFC 7515
-         §4.1.11's "crit" rule (continueOnError=false raises a policy
-         fault) — nothing else needs to check a "valid" flag.
+         signature.verify.jwt.detached = "true"). The verification public
+         key (PEM) and KnownHeaders are per-proxy, from the shared KVM
+         "signature" (entry key "{apiproxy.name}.jwt.verify") — see
+         EV-JWT-Verify-Parse-Config for why the public key is stored as
+         PEM in KVM rather than read from the KeyStore at request time
+         (VerifyJWS's <PublicKey><KeyStore ref="..."/></PublicKey> doesn't
+         resolve a dynamic ref at runtime, confirmed against a live
+         Apigee instance, and there's no other way to reach KeyStore key
+         material from inside a running proxy). VerifyJWS itself rejects
+         an invalid/expired/malformed JWS, and — via
+         KnownHeaders/IgnoreCriticalHeaders — enforces RFC 7515 §4.1.11's
+         "crit" rule (continueOnError=false raises a policy fault) —
+         nothing else needs to check a "valid" flag.
          ================================================================ -->
     <Step>
         <Name>RF-JWT-Verify-Source-Missing</Name>
@@ -43,18 +48,6 @@
     </Step>
     <Step>
         <Name>EV-JWT-Verify-Parse-Config</Name>
-        <Condition>signature.verify.type = "jwt"</Condition>
-    </Step>
-    <!--
-        VerifyJWS's <PublicKey><KeyStore ref="..."/><Alias ref="..."/></PublicKey>
-        doesn't resolve a dynamic ref at runtime (confirmed live) — so this
-        JavaCallout reads the same KeyStore/Alias from KVM and turns it
-        into a PEM public key both VerifyJWS steps below read via
-        <Value ref="signature.verify.jwt.publicKey.pem"/>. See
-        JC-JWT-Verify-Extract-Public-Key.xml and java-src/README.md.
-    -->
-    <Step>
-        <Name>JC-JWT-Verify-Extract-Public-Key</Name>
         <Condition>signature.verify.type = "jwt"</Condition>
     </Step>
     <Step>

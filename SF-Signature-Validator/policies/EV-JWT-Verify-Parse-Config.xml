@@ -4,38 +4,55 @@
     KVM "signature" (entry key "{apiproxy.name}.jwt.verify") into flow
     variables. The KVM entry value is a JSON object, e.g.:
       {
-        "keystore": "orders-api-keystore",
-        "alias": "orders-api-signing-cert",
+        "publicKeyPem": "[PEM BEGIN PUBLIC KEY marker]\nMIIBIjANBg...\n[PEM END PUBLIC KEY marker]\n",
         "knownHeaders": "x-txn-id"
       }
+      (an actual entry has real PEM "BEGIN/END PUBLIC KEY" dashed markers —
+      spelled out here as bracketed placeholders only because a run of
+      dashes isn't legal inside an XML comment)
+
+    publicKeyPem is the PEM text of the verification certificate's public
+    key (X.509 SubjectPublicKeyInfo, "BEGIN PUBLIC KEY" — not the private
+    key, and not just the raw base64 without headers). It is NOT read out
+    of the KeyStore at request time: VerifyJWS's own
+    <PublicKey><KeyStore ref="..."/><Alias ref="..."/></PublicKey> doesn't
+    resolve a dynamic ref at runtime (confirmed against a live Apigee
+    instance), and there is no Java-callout SDK method to read KeyStore
+    key material either — ExecutionContext/MessageContext only expose
+    flow variables, message content, and classpath resources, confirmed
+    against Apigee's own published Java-callout javadocs. The only
+    documented way to get a cert's key material out of an Apigee KeyStore
+    at all is the Management API's keystore/alias export endpoint, and
+    Apigee's own docs call calling the Management API from a running
+    proxy an antipattern — so this is deliberately a one-time, out-of-band
+    step: whoever uploads/rotates the certificate in the Apigee KeyStore
+    also pastes its public key here as PEM (e.g. via
+    `openssl x509 -in cert.pem -pubkey -noout`, or the Management API's
+    export endpoint run once from a terminal, not from a proxy). A JSON
+    string can hold literal "\n" escapes for the multi-line PEM; JSONPath
+    extraction below unescapes them back into real newlines, which is
+    exactly what VerifyJWS's PublicKey/Value needs.
 
     knownHeaders is a comma-separated string, not a JSON array — a
     JSONPath extraction is for pulling out one scalar value, and a
     delimited string IS one scalar value, letting this whole step (and
     VerifyJWS-Jwt-Compact/-Detached's KnownHeaders) stay native with no
     JS, the same way a JSON array couldn't. It's a required field, same
-    as keystore/alias (IgnoreUnresolvedVariables=false applies to the
-    whole policy) — set it to "" for a proxy that never expects a
-    "crit" header at all.
+    as publicKeyPem (IgnoreUnresolvedVariables=false applies to the whole
+    policy) — set it to "" for a proxy that never expects a "crit" header
+    at all.
 
-    signature.verify.jwt.keystore.name/.alias feed
-    JC-JWT-Verify-Extract-Public-Key (a JavaCallout, not VerifyJWS
-    directly — VerifyJWS's own <PublicKey><KeyStore ref="..."/></PublicKey>
-    doesn't resolve a dynamic ref at runtime, confirmed against a live
-    Apigee instance), which turns them into a PEM public key VerifyJWS
-    reads via <Value ref="signature.verify.jwt.publicKey.pem"/>.
-    signature.verify.jwt.knownHeaders feeds <KnownHeaders ref="..."> on
-    VerifyJWS directly, same as before.
+    signature.verify.jwt.publicKey.pem feeds VerifyJWS's
+    <PublicKey><Value ref="..."/></PublicKey> directly — no JavaCallout,
+    no intermediate step. signature.verify.jwt.knownHeaders feeds
+    <KnownHeaders ref="..."> on VerifyJWS directly, same as before.
 -->
 <ExtractVariables name="EV-JWT-Verify-Parse-Config">
     <DisplayName>EV-JWT-Verify-Parse-Config</DisplayName>
     <Source>signature.verify.jwt.config.json</Source>
     <JSONPayload>
-        <Variable name="signature.verify.jwt.keystore.name" type="string">
-            <JSONPath>$.keystore</JSONPath>
-        </Variable>
-        <Variable name="signature.verify.jwt.keystore.alias" type="string">
-            <JSONPath>$.alias</JSONPath>
+        <Variable name="signature.verify.jwt.publicKey.pem" type="string">
+            <JSONPath>$.publicKeyPem</JSONPath>
         </Variable>
         <Variable name="signature.verify.jwt.knownHeaders" type="string">
             <JSONPath>$.knownHeaders</JSONPath>

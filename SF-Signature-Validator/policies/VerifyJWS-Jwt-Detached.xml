@@ -9,9 +9,10 @@
 
     PublicKey is a PEM <Value ref="..."/>, not <KeyStore ref="..."/>, for
     the same reason as VerifyJWS-Jwt-Compact — see its comment for
-    details. JC-JWT-Verify-Extract-Public-Key runs before both branches
-    (see sharedflows/default.xml), so signature.verify.jwt.publicKey.pem
-    is already populated by the time either VerifyJWS step runs.
+    details. EV-JWT-Verify-Parse-Config runs before both branches (see
+    sharedflows/default.xml), so signature.verify.jwt.publicKey.pem is
+    already populated, straight from KVM, by the time either VerifyJWS
+    step runs.
 -->
 <VerifyJWS name="VerifyJWS-Jwt-Detached" continueOnError="false">
     <DisplayName>VerifyJWS-Jwt-Detached</DisplayName>

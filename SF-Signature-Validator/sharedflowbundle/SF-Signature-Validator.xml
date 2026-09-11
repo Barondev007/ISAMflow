@@ -22,13 +22,19 @@
         endpoint) is an antipattern to call from a running proxy per
         Apigee's own docs, so the PEM is populated once, out-of-band,
         whenever the certificate is issued/rotated (see
-        EV-JWT-Verify-Parse-Config). Cavage and XML-DSig
-        verify everything achievable without real RSA/ECDSA math (the
-        signing string / digest) natively in JS, and fault via a
-        clearly marked NI-*-Verify-Signature placeholder for the actual
+        EV-JWT-Verify-Parse-Config). Cavage verifies everything
+        achievable without real RSA/ECDSA math (the signing string)
+        natively in JS, and faults via a clearly marked
+        NI-Cavage-Verify-Signature placeholder for the actual
         cryptographic check, which needs a JavaCallout — Apigee has no
-        native policy for either, and JS can't reach KeyStore key
-        material to do that math itself.
+        native policy for raw-string signature verification, and JS
+        can't reach KeyStore key material to do that math itself.
+        XML-DSig verification IS fully implemented: one JavaCallout
+        (JC-XmlDsig-Verify-Signature) does canonicalization, digest, and
+        the SignatureValue check together, using the JDK's built-in JSR
+        105 implementation (javax.xml.crypto.dsig — no extra library
+        beyond the Apigee SDK). Its verification public key is PEM-in-KVM
+        too, same pattern and reason as JWT.
     </Description>
     <Policies>
         <Policy>RF-Missing-Signature-Verify-Type</Policy>
@@ -42,9 +48,12 @@
         <Policy>VerifyJWS-Jwt-Detached</Policy>
         <Policy>JS-Verify-Cavage-Signing-String</Policy>
         <Policy>NI-Cavage-Verify-Signature</Policy>
-        <Policy>JS-Verify-XmlDsig-Digest</Policy>
-        <Policy>RF-XmlDsig-Digest-Mismatch</Policy>
-        <Policy>NI-XmlDsig-Verify-Signature</Policy>
+        <Policy>AM-XmlDsig-Verify-Set-KVM-Key</Policy>
+        <Policy>KVM-Get-XmlDsig-Verify-Config</Policy>
+        <Policy>RF-XmlDsig-Verify-Config-Missing</Policy>
+        <Policy>EV-XmlDsig-Verify-Parse-Config</Policy>
+        <Policy>JC-XmlDsig-Verify-Signature</Policy>
+        <Policy>RF-XmlDsig-Verify-Failed</Policy>
     </Policies>
     <SharedFlows>
         <SharedFlow>default</SharedFlow>

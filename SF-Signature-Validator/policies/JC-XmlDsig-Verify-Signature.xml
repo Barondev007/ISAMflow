@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Verifies the XML Signature end to end: canonicalization, digest, and
+    the SignatureValue cryptographic check, all in one policy — using
+    the JDK's built-in JSR 105 implementation (javax.xml.crypto.dsig),
+    not Apache Santuario or any other extra library. Replaces both the
+    former JS-Verify-XmlDsig-Digest (which only checked the digest
+    against the document's own claimed value — content integrity, not
+    authenticity) and the NI-XmlDsig-Verify-Signature placeholder — see
+    java-src/README.md for build/deploy steps, and the class-level
+    comment in XmlDsigVerifyCallout.java for the fixed
+    algorithm/structure allow-list it enforces (deliberately narrower
+    than "whatever the document declares," to close off XML Signature
+    wrapping attacks).
+
+    document/document-fallback mirror the signing side's own
+    signature.payload / message.content fallback. public-key-pem and
+    key-algorithm come from this proxy's KVM entry (see
+    EV-XmlDsig-Verify-Parse-Config) — the same PEM-in-KVM pattern JWT
+    verification uses, for the same reason (no way to read Apigee
+    KeyStore key material from inside a running proxy).
+
+    Sets signature.verify.xmldsig.valid ("true"/"false") and, when not
+    valid, signature.verify.xmldsig.error with a human-readable reason.
+    continueOnError is "true" deliberately: this callout never raises
+    the fault itself, RF-XmlDsig-Verify-Failed does, gated on
+    signature.verify.xmldsig.valid != "true" — the same
+    sets-a-flag/RaiseFault-checks-it pattern every other guard in this
+    bundle uses, so a failed verification produces the same clearly
+    marked 401 shape as everything else here, not a generic Apigee
+    JavaCallout fault.
+-->
+<JavaCallout name="JC-XmlDsig-Verify-Signature" continueOnError="true">
+    <DisplayName>JC-XmlDsig-Verify-Signature</DisplayName>
+    <ClassName>com.orders.signature.XmlDsigVerifyCallout</ClassName>
+    <ResourceURL>java://xmldsig-verify-callout.jar</ResourceURL>
+    <Properties>
+        <Property name="document">{signature.verify.payload}</Property>
+        <Property name="document-fallback">{message.content}</Property>
+        <Property name="public-key-pem">{signature.verify.xmldsig.publicKey.pem}</Property>
+        <Property name="key-algorithm">{signature.verify.xmldsig.keyAlgorithm}</Property>
+        <Property name="output-prefix">signature.verify.xmldsig</Property>
+    </Properties>
+</JavaCallout>

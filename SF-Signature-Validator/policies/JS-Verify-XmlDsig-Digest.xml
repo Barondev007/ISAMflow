@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Javascript name="JS-Verify-XmlDsig-Digest" timeLimit="200">
-    <DisplayName>JS-Verify-XmlDsig-Digest</DisplayName>
-    <IncludeURL>jsc://base64url.js</IncludeURL>
-    <IncludeURL>jsc://sha256.js</IncludeURL>
-    <IncludeURL>jsc://xml-exc-c14n.js</IncludeURL>
-    <ResourceURL>jsc://xmldsig-verify-digest.js</ResourceURL>
-</Javascript>

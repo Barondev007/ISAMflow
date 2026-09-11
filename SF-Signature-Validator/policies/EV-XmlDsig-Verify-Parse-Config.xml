@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Parses this proxy's XML-DSig verification config, loaded from the
+    shared KVM "signature" (entry key "{apiproxy.name}.xmldsig.verify"),
+    into flow variables. The KVM entry value is a JSON object, e.g.:
+      {
+        "publicKeyPem": "[PEM BEGIN PUBLIC KEY marker]\nMIIBIjANBg...\n[PEM END PUBLIC KEY marker]\n",
+        "keyAlgorithm": "RSA"
+      }
+      (an actual entry has real PEM "BEGIN/END PUBLIC KEY" dashed markers
+      — spelled out here as bracketed placeholders only because a run of
+      dashes isn't legal inside an XML comment)
+
+    Same reasoning as EV-JWT-Verify-Parse-Config: the public key is
+    stored as PEM directly in KVM, populated once out-of-band whenever
+    the certificate is issued/rotated, not read from the Apigee KeyStore
+    at request time — there is no way to do that from inside a running
+    proxy (see that policy's comment, and Section 7 of the project's
+    technical reference document, for the full story).
+
+    keyAlgorithm is "RSA" or "EC", matching the verification
+    certificate's key type — JC-XmlDsig-Verify-Signature needs it to
+    reconstruct a java.security.PublicKey from the PEM bytes. It's
+    optional; the callout defaults to "RSA" if this resolves to empty.
+
+    signature.verify.xmldsig.publicKey.pem and
+    signature.verify.xmldsig.keyAlgorithm feed
+    JC-XmlDsig-Verify-Signature's "public-key-pem"/"key-algorithm"
+    Properties directly.
+-->
+<ExtractVariables name="EV-XmlDsig-Verify-Parse-Config">
+    <DisplayName>EV-XmlDsig-Verify-Parse-Config</DisplayName>
+    <Source>signature.verify.xmldsig.config.json</Source>
+    <JSONPayload>
+        <Variable name="signature.verify.xmldsig.publicKey.pem" type="string">
+            <JSONPath>$.publicKeyPem</JSONPath>
+        </Variable>
+        <Variable name="signature.verify.xmldsig.keyAlgorithm" type="string">
+            <JSONPath>$.keyAlgorithm</JSONPath>
+        </Variable>
+    </JSONPayload>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</ExtractVariables>

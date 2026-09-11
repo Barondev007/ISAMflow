@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.orders.signature</groupId>
+    <artifactId>xmldsig-verify-callout</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <!--
+        Only the Apigee Java Callout SDK is needed here — XML-DSig
+        verification itself uses javax.xml.crypto.dsig (JSR 105), part of
+        the standard Java platform since Java 6 (the java.xml.crypto
+        module), so there is no Apache Santuario or other XML-security
+        dependency to add. As with the earlier JWT KeyStore callout,
+        Apigee doesn't publish its SDK jars (message-flow-*.jar,
+        expressions-*.jar) to Maven Central under any coordinates
+        confirmed from here — download them from Apigee for your edition
+        (see README.md) and drop them into ./lib.
+    -->
+    <dependencies>
+        <dependency>
+            <groupId>com.apigee.edge</groupId>
+            <artifactId>message-flow</artifactId>
+            <version>1.0.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/message-flow.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.apigee.edge</groupId>
+            <artifactId>expressions</artifactId>
+            <version>1.0.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/expressions.jar</systemPath>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>xmldsig-verify-callout</finalName>
+        <plugins>
+            <!--
+                Bundles this callout's own compiled class into a single
+                jar. There is nothing else to shade in — the Apigee SDK
+                jars are provided by the Apigee runtime itself (excluded
+                below to avoid classloader conflicts), and
+                javax.xml.crypto.dsig ships with the JDK — but the plugin
+                is kept in place the same way it was for the earlier
+                callout, so it still works if a real dependency is added
+                later.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>com.apigee.edge:*</exclude>
+                                </excludes>
+                            </artifactSet>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

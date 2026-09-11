@@ -78,26 +78,43 @@
     </Step>
 
     <!-- ================================================================
-         3) XML Signature (XML-DSig) verification.
-         Recomputes the digest (enveloped-signature + Exclusive C14N,
-         same as the signing side in reverse) and compares it to the
-         document's own claimed DigestValue — real, achievable in JS,
-         but only proves content integrity, NOT authenticity (see the
-         comment at the top of xmldsig-verify-digest.js) until the
-         actual SignatureValue crypto check (still a placeholder — see
-         NI-XmlDsig-Verify-Signature) runs too.
+         3) XML Signature (XML-DSig) verification — fully implemented,
+         via one JavaCallout (JC-XmlDsig-Verify-Signature) doing
+         canonicalization + digest + the SignatureValue cryptographic
+         check together, using the JDK's built-in JSR 105 implementation
+         (javax.xml.crypto.dsig — no extra library). The verification
+         public key (PEM) and key algorithm are per-proxy, from the
+         shared KVM "signature" (entry key
+         "{apiproxy.name}.xmldsig.verify") — same PEM-in-KVM pattern as
+         JWT verification, for the same reason (see
+         EV-XmlDsig-Verify-Parse-Config). The callout sets
+         signature.verify.xmldsig.valid rather than raising a fault
+         itself; RF-XmlDsig-Verify-Failed does that, so a failed
+         verification gets this bundle's normal 401 shape.
          ================================================================ -->
     <Step>
-        <Name>JS-Verify-XmlDsig-Digest</Name>
+        <Name>AM-XmlDsig-Verify-Set-KVM-Key</Name>
         <Condition>signature.verify.type = "xmldsig"</Condition>
     </Step>
     <Step>
-        <Name>RF-XmlDsig-Digest-Mismatch</Name>
-        <Condition>signature.verify.type = "xmldsig" AND signature.verify.xmldsig.digest.match != "true"</Condition>
+        <Name>KVM-Get-XmlDsig-Verify-Config</Name>
+        <Condition>signature.verify.type = "xmldsig"</Condition>
     </Step>
     <Step>
-        <Name>NI-XmlDsig-Verify-Signature</Name>
+        <Name>RF-XmlDsig-Verify-Config-Missing</Name>
+        <Condition>signature.verify.type = "xmldsig" AND signature.verify.xmldsig.config.json = null</Condition>
+    </Step>
+    <Step>
+        <Name>EV-XmlDsig-Verify-Parse-Config</Name>
         <Condition>signature.verify.type = "xmldsig"</Condition>
+    </Step>
+    <Step>
+        <Name>JC-XmlDsig-Verify-Signature</Name>
+        <Condition>signature.verify.type = "xmldsig"</Condition>
+    </Step>
+    <Step>
+        <Name>RF-XmlDsig-Verify-Failed</Name>
+        <Condition>signature.verify.type = "xmldsig" AND signature.verify.xmldsig.valid != "true"</Condition>
     </Step>
 
     <!-- ================================================================

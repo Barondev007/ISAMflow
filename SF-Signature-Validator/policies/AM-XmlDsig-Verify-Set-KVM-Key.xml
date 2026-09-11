@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Sets the KVM entry key this proxy's XML-DSig verification config
+    lives under, same pattern as AM-JWT-Verify-Set-KVM-Key.
+-->
+<AssignMessage name="AM-XmlDsig-Verify-Set-KVM-Key">
+    <DisplayName>AM-XmlDsig-Verify-Set-KVM-Key</DisplayName>
+    <AssignVariable>
+        <Name>signature.kvm.key</Name>
+        <Template>{apiproxy.name}.xmldsig.verify</Template>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+</AssignMessage>

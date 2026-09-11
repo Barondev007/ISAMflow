@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Replaces RF-XmlDsig-Digest-Mismatch now that JC-XmlDsig-Verify-Signature
+    does the full check (canonicalization + digest + SignatureValue), not
+    just the digest — this fires on ANY verification failure, not only a
+    digest mismatch, so the message stays generic and points at
+    signature.verify.xmldsig.error for the specific reason
+    (unsupported algorithm/shape, digest mismatch, or an invalid
+    SignatureValue) rather than assuming which one it was.
+-->
+<RaiseFault name="RF-XmlDsig-Verify-Failed">
+    <DisplayName>RF-XmlDsig-Verify-Failed</DisplayName>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <FaultResponse>
+        <Set>
+            <StatusCode>401</StatusCode>
+            <ReasonPhrase>Unauthorized</ReasonPhrase>
+            <Payload contentType="application/json">{
+    "error": "invalid_signature",
+    "message": "XML signature verification failed: {signature.verify.xmldsig.error}"
+}</Payload>
+        </Set>
+    </FaultResponse>
+</RaiseFault>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Reads this proxy's XML-DSig verification config from the shared KVM
+    "signature" (see AM-XmlDsig-Verify-Set-KVM-Key), entry key
+    "{apiproxy.name}.xmldsig.verify". See EV-XmlDsig-Verify-Parse-Config
+    for the JSON shape.
+
+    continueOnError lets the flow proceed past a missing key so
+    RF-XmlDsig-Verify-Config-Missing can raise a clear configuration
+    error instead of Apigee's generic KVM fault.
+-->
+<KeyValueMapOperations name="KVM-Get-XmlDsig-Verify-Config" mapIdentifier="signature" continueOnError="true">
+    <DisplayName>KVM-Get-XmlDsig-Verify-Config</DisplayName>
+    <Scope>environment</Scope>
+    <Get assignTo="signature.verify.xmldsig.config.json" index="1">
+        <Key>
+            <Parameter ref="signature.kvm.key"/>
+        </Key>
+    </Get>
+</KeyValueMapOperations>

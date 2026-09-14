@@ -8,10 +8,14 @@
         set the signature.verify.type flow variable (jwt | cavage |
         xmldsig) and invoke this shared flow via FlowCallout; it routes
         to the matching sub-step. JWT/JWS is fully native (VerifyJWS, no
-        JS at all): the verification public key (PEM) and KnownHeaders
-        both resolve per-proxy from the shared KVM "signature" via ref,
-        with KnownHeaders/IgnoreCriticalHeaders enforcing RFC 7515
-        §4.1.11's "crit" rule. The public key is stored as PEM directly
+        JS at all): the verification public key (PEM), KnownHeaders, and
+        whether the scheme is compact or detached all resolve per-proxy
+        from the shared KVM "signature" via ref — the calling proxy only
+        ever stages the JWS itself, never a detached flag or the
+        response payload, both of which AM-JWT-Verify-Set-Detached-Payload
+        stages from response.content automatically when KVM says
+        detached — with KnownHeaders/IgnoreCriticalHeaders enforcing
+        RFC 7515 §4.1.11's "crit" rule. The public key is stored as PEM directly
         in KVM rather than read from the KeyStore at request time:
         VerifyJWS's own <PublicKey><KeyStore ref="..."/><Alias
         ref="..."/></PublicKey> does not resolve a dynamic ref at runtime
@@ -44,6 +48,7 @@
         <Policy>KVM-Get-JWT-Verify-Config</Policy>
         <Policy>RF-JWT-Verify-Config-Missing</Policy>
         <Policy>EV-JWT-Verify-Parse-Config</Policy>
+        <Policy>AM-JWT-Verify-Set-Detached-Payload</Policy>
         <Policy>VerifyJWS-Jwt-Compact</Policy>
         <Policy>VerifyJWS-Jwt-Detached</Policy>
         <Policy>JS-Verify-Cavage-Signing-String</Policy>

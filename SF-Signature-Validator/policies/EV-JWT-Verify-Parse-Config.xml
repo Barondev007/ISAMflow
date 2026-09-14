@@ -5,11 +5,31 @@
     variables. The KVM entry value is a JSON object, e.g.:
       {
         "publicKeyPem": "[PEM BEGIN PUBLIC KEY marker]\nMIIBIjANBg...\n[PEM END PUBLIC KEY marker]\n",
-        "knownHeaders": "x-txn-id"
+        "knownHeaders": "x-txn-id",
+        "detached": "true"
       }
       (an actual entry has real PEM "BEGIN/END PUBLIC KEY" dashed markers —
       spelled out here as bracketed placeholders only because a run of
       dashes isn't legal inside an XML comment)
+
+    detached is per-proxy config, not something the calling proxy sets
+    on each request: whether this proxy's JWT scheme is compact or
+    detached is a fixed property of how that proxy signs/receives its
+    tokens, so it belongs alongside the key material and knownHeaders,
+    not as a flow variable the caller has to remember to set every time.
+    It's required, same as publicKeyPem/knownHeaders (IgnoreUnresolvedVariables=false
+    applies to the whole policy) — but like knownHeaders, "required" just
+    means the KEY must be present; set the VALUE to "" for a proxy using
+    compact JWS (the common case), or the STRING "true" for detached —
+    same quoted-string convention as everywhere else this project
+    compares a custom flow variable against a boolean-shaped value
+    (Apigee doesn't reliably coerce a String flow variable against an
+    unquoted Boolean literal). It drives both the
+    VerifyJWS-Jwt-Compact/-Detached routing Conditions in
+    sharedflows/default.xml AND, via
+    AM-JWT-Verify-Set-Detached-Payload, whether the response payload
+    gets staged into signature.verify.jwt.payload at all — see that
+    policy's comment.
 
     publicKeyPem is the PEM text of the verification certificate's public
     key (X.509 SubjectPublicKeyInfo, "BEGIN PUBLIC KEY" — not the private
@@ -56,6 +76,9 @@
         </Variable>
         <Variable name="signature.verify.jwt.knownHeaders" type="string">
             <JSONPath>$.knownHeaders</JSONPath>
+        </Variable>
+        <Variable name="signature.verify.jwt.detached" type="string">
+            <JSONPath>$.detached</JSONPath>
         </Variable>
     </JSONPayload>
     <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>

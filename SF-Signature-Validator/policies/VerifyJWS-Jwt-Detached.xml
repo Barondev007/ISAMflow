@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
     Same as VerifyJWS-Jwt-Compact, for detached JWS (header..signature —
-    RFC 7515 Appendix F). Runs when signature.verify.jwt.detached =
-    "true". The original payload, which a detached JWS doesn't carry,
-    must be staged by the calling proxy into signature.verify.jwt.payload
-    before calling this shared flow — it's what DetachedContent hashes
-    to recompute the digest the signature covers.
+    RFC 7515 Appendix F). Runs when this proxy's KVM config says
+    detached (signature.verify.jwt.detached = "true" — see
+    EV-JWT-Verify-Parse-Config, not something the calling proxy sets).
+    The original payload, which a detached JWS doesn't carry, is staged
+    by AM-JWT-Verify-Set-Detached-Payload from response.content — it's
+    what DetachedContent hashes to recompute the digest the signature
+    covers.
 
     PublicKey is a PEM <Value ref="..."/>, not <KeyStore ref="..."/>, for
     the same reason as VerifyJWS-Jwt-Compact — see its comment for

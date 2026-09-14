@@ -13,22 +13,25 @@
 
     <!-- ================================================================
          1) JWT / JWS verification — fully native, no custom crypto and
-         no JS at all. The calling proxy stages the JWS into
-         signature.verify.jwt.jws (and, for a detached JWS, the original
-         payload into signature.verify.jwt.payload, plus
-         signature.verify.jwt.detached = "true"). The verification public
-         key (PEM) and KnownHeaders are per-proxy, from the shared KVM
-         "signature" (entry key "{apiproxy.name}.jwt.verify") — see
+         no JS at all. The calling proxy stages only the JWS itself into
+         signature.verify.jwt.jws. Everything else — the verification
+         public key (PEM), KnownHeaders, and whether this proxy's scheme
+         is compact or detached — is per-proxy config from the shared
+         KVM "signature" (entry key "{apiproxy.name}.jwt.verify"): see
          EV-JWT-Verify-Parse-Config for why the public key is stored as
          PEM in KVM rather than read from the KeyStore at request time
          (VerifyJWS's <PublicKey><KeyStore ref="..."/></PublicKey> doesn't
          resolve a dynamic ref at runtime, confirmed against a live
          Apigee instance, and there's no other way to reach KeyStore key
-         material from inside a running proxy). VerifyJWS itself rejects
-         an invalid/expired/malformed JWS, and — via
-         KnownHeaders/IgnoreCriticalHeaders — enforces RFC 7515 §4.1.11's
-         "crit" rule (continueOnError=false raises a policy fault) —
-         nothing else needs to check a "valid" flag.
+         material from inside a running proxy). When KVM says detached,
+         AM-JWT-Verify-Set-Detached-Payload stages the response payload
+         itself — the calling proxy doesn't set signature.verify.jwt.payload
+         or signature.verify.jwt.detached at all, both come from this
+         proxy's own config, not a flag it has to remember per request.
+         VerifyJWS itself rejects an invalid/expired/malformed JWS, and —
+         via KnownHeaders/IgnoreCriticalHeaders — enforces RFC 7515
+         §4.1.11's "crit" rule (continueOnError=false raises a policy
+         fault) — nothing else needs to check a "valid" flag.
          ================================================================ -->
     <Step>
         <Name>RF-JWT-Verify-Source-Missing</Name>
@@ -49,6 +52,10 @@
     <Step>
         <Name>EV-JWT-Verify-Parse-Config</Name>
         <Condition>signature.verify.type = "jwt"</Condition>
+    </Step>
+    <Step>
+        <Name>AM-JWT-Verify-Set-Detached-Payload</Name>
+        <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.detached = "true"</Condition>
     </Step>
     <Step>
         <Name>VerifyJWS-Jwt-Compact</Name>

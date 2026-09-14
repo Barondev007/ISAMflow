@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Stages the response payload into signature.verify.jwt.payload —
+    what VerifyJWS-Jwt-Detached's <DetachedContent> hashes to recompute
+    the digest a detached JWS covers — but only when this proxy's KVM
+    config says its JWT scheme is detached
+    (signature.verify.jwt.detached = "true", see
+    EV-JWT-Verify-Parse-Config). For a compact-JWS proxy this step's
+    Condition is false and it never runs: the payload isn't needed
+    (VerifyJWS-Jwt-Compact has no DetachedContent) and response.content
+    isn't read/touched at all.
+
+    Reads response.content specifically, not message.content: this
+    shared flow validates a signature on an inbound RESPONSE (e.g. a
+    downstream API's signed response, checked before it's returned to
+    the original caller), so the payload the signature covers is the
+    response body.
+-->
+<AssignMessage name="AM-JWT-Verify-Set-Detached-Payload">
+    <DisplayName>AM-JWT-Verify-Set-Detached-Payload</DisplayName>
+    <AssignVariable>
+        <Name>signature.verify.jwt.payload</Name>
+        <Template>{response.content}</Template>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+</AssignMessage>

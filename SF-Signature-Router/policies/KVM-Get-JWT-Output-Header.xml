@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Reads the output header NAME for this proxy's JWT signing from the
+    shared, environment-scoped KVM "signature", entry key
+    "{apiproxy.name}.jwt.output" (see AM-JWT-Output-Set-KVM-Key). Unlike
+    the JOSE header template, this entry's value is a plain string, not
+    JSON — it's just a header name, e.g. "X-JWS-Signature" — so no
+    JSONPath/ExtractVariables step is needed to get it into a flow
+    variable.
+
+    continueOnError lets the flow proceed past a missing key so
+    RF-JWT-Output-Header-Missing can raise a clear configuration error
+    instead of Apigee's generic KVM fault.
+-->
+<KeyValueMapOperations name="KVM-Get-JWT-Output-Header" mapIdentifier="signature" continueOnError="true">
+    <DisplayName>KVM-Get-JWT-Output-Header</DisplayName>
+    <Scope>environment</Scope>
+    <Get assignTo="signature.jwt.output.header" index="1">
+        <Key>
+            <Parameter ref="signature.kvm.key"/>
+        </Key>
+    </Get>
+</KeyValueMapOperations>

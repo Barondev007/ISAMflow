@@ -25,7 +25,10 @@ PreFlow (request):
 4. `FC-Sign-JWT` — `FlowCallout` into `SF-Signature-Router`, which
    builds the JOSE header from KVM — including `"sub": "${saml.email}"`,
    set by step 2 — base64url-encodes header and payload, and sets
-   `signature.jwt.signing.string`.
+   `signature.jwt.signing.string`. Once the signature itself exists
+   (still not wired up — see below), the shared flow also looks up
+   *this* proxy's output header name from KVM
+   (`orders-api.jwt.output`) and writes the finished JWS there.
 
 Why the profile lives in the shared flow rather than a policy in this
 proxy: XPath expressions are static per policy in Apigee (no `{var}`
@@ -61,7 +64,14 @@ Today this returns the shared flow's `501 Not Implemented` from
 wired up yet), with the computed `signature.jwt.signing.string` in the
 response body so you can inspect it — or check the same variable in
 Apigee trace, along with `saml.email` etc. set by
-`EV-Extract-SAML-orders-api`.
+`EV-Extract-SAML-orders-api`. This requires the `orders-api.jwt.output`
+KVM entry (see `../kvm`) to exist even though signing itself isn't
+wired up yet — the output header's name is looked up and validated
+*before* the signing call, so a missing entry there fails with a clear
+`RF-JWT-Output-Header-Missing` `500` instead of ever reaching the `501`.
+Once signing is wired up, the response instead carries the JWS in the
+configured header (`X-JWS-Signature` for this example) rather than the
+body.
 
 If your real assertion is wrapped in something deeper (e.g. a WS-Trust
 `RequestSecurityTokenResponse` around the `Assertion`), there's no

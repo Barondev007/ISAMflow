@@ -8,11 +8,12 @@ calls it, and puts the per-proxy part on the **entry key** instead
 (`{apiproxy.name}.<sub-step>...`), which does support a runtime
 variable via `<Parameter ref="...">`.
 
-For the `orders-api` example proxy that's two entries in the same KVM:
+For the `orders-api` example proxy that's three entries in the same KVM:
 
 | Sub-step | Entry key | Value |
 |---|---|---|
 | JWT | `orders-api.jwt.header` | JOSE header JSON template |
+| JWT | `orders-api.jwt.output` | plain string: the header name the finished JWS goes in |
 | Cavage | `orders-api.cavage.headers` | JSON array of header names to sign |
 
 `SF-SAML-Extractor` doesn't use a KVM at all — it just decodes the
@@ -39,6 +40,13 @@ for how a proxy opts into a profile.
   a single string under key `orders-api.jwt.header`, ready to POST as
   the KVM entry (an entry value is always a string, so the JSON object
   has to be serialized before it's stored).
+- `orders-api.jwt-output.entry.json` — key `orders-api.jwt.output`,
+  value `"X-JWS-Signature"`. Just a header name, not JSON — read
+  directly by `KVM-Get-JWT-Output-Header`, no parsing needed. Kept as
+  its own entry rather than a field inside `orders-api.jwt.header`
+  because `JS-Build-JWT-Signing-String` copies every top-level key of
+  that entry straight into the JWT's actual JOSE header; an extra field
+  there would leak into the token.
 
 ## Cavage
 
@@ -74,13 +82,19 @@ curl -s -X POST \
 curl -s -X POST \
   "https://apigee.googleapis.com/v1/organizations/$ORG/environments/$ENV/keyvaluemaps/signature/entries" \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d @orders-api.jwt-output.entry.json
+
+curl -s -X POST \
+  "https://apigee.googleapis.com/v1/organizations/$ORG/environments/$ENV/keyvaluemaps/signature/entries" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d @orders-api.cavage-headers.entry.json
 ```
 
 To change an entry later, update it (`PUT` the same URL with
 `/entries/<key>`) — no proxy or shared flow redeploy needed. Adding a
 new proxy just adds new entries (`{proxyName}.jwt.header`,
-`{proxyName}.cavage.headers`) to this same KVM.
+`{proxyName}.jwt.output`, `{proxyName}.cavage.headers`) to this same
+KVM.
 
 ## Or with apigeecli
 
@@ -89,6 +103,10 @@ apigeecli kvms create -n signature -o "$ORG" -e "$ENV" --token "$TOKEN"
 
 apigeecli kvms entries create -m signature -k orders-api.jwt.header \
   -v "$(jq -c . orders-api.signature.jwt-header.json)" \
+  -o "$ORG" -e "$ENV" --token "$TOKEN"
+
+apigeecli kvms entries create -m signature -k orders-api.jwt.output \
+  -v "X-JWS-Signature" \
   -o "$ORG" -e "$ENV" --token "$TOKEN"
 
 apigeecli kvms entries create -m signature -k orders-api.cavage.headers \

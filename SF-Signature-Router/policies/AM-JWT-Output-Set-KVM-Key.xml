@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Same static-KVM/dynamic-entry-key pattern as AM-JWT-Set-KVM-Key, for
+    a separate, smaller KVM entry: which header to put the finished JWS
+    in. Kept as its own entry ("{apiproxy.name}.jwt.output") rather than
+    folded into the JOSE header template entry
+    ("{apiproxy.name}.jwt.header") because JS-Build-JWT-Signing-String
+    copies every top-level key of that entry straight into the JWT's
+    actual JOSE header — an extra field there would leak into the token
+    itself.
+-->
+<AssignMessage name="AM-JWT-Output-Set-KVM-Key">
+    <DisplayName>AM-JWT-Output-Set-KVM-Key</DisplayName>
+    <AssignVariable>
+        <Name>signature.kvm.key</Name>
+        <Template>{apiproxy.name}.jwt.output</Template>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+</AssignMessage>

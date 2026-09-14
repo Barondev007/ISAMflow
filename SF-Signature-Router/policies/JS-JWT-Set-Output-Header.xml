@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Javascript name="JS-JWT-Set-Output-Header" timeLimit="200">
+    <DisplayName>JS-JWT-Set-Output-Header</DisplayName>
+    <ResourceURL>jsc://jwt-set-output-header.js</ResourceURL>
+</Javascript>

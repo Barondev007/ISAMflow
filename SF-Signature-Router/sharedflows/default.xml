@@ -23,7 +23,12 @@
          default, or detached (header..signature) when the calling
          proxy sets signature.jwt.detached to the STRING "true" (not the
          boolean literal — see AM-JWT-Assemble-JWS-Detached). Leave the
-         Condition on each step unchanged.
+         Condition on each step unchanged. Finally,
+         JS-JWT-Set-Output-Header writes the finished JWS into the
+         request header named by this proxy's KVM entry
+         "{apiproxy.name}.jwt.output" (see KVM-Get-JWT-Output-Header) —
+         the header NAME is per-proxy config too, same as everything
+         else here.
          ================================================================ -->
     <Step>
         <Name>AM-JWT-Set-KVM-Key</Name>
@@ -42,6 +47,18 @@
         <Condition>signature.type = "jwt"</Condition>
     </Step>
     <Step>
+        <Name>AM-JWT-Output-Set-KVM-Key</Name>
+        <Condition>signature.type = "jwt"</Condition>
+    </Step>
+    <Step>
+        <Name>KVM-Get-JWT-Output-Header</Name>
+        <Condition>signature.type = "jwt"</Condition>
+    </Step>
+    <Step>
+        <Name>RF-JWT-Output-Header-Missing</Name>
+        <Condition>signature.type = "jwt" AND signature.jwt.output.header = null</Condition>
+    </Step>
+    <Step>
         <Name>NI-Signature-JWT-Sign</Name>
         <Condition>signature.type = "jwt"</Condition>
     </Step>
@@ -52,6 +69,10 @@
     <Step>
         <Name>AM-JWT-Assemble-JWS-Compact</Name>
         <Condition>signature.type = "jwt" AND signature.jwt.detached != "true"</Condition>
+    </Step>
+    <Step>
+        <Name>JS-JWT-Set-Output-Header</Name>
+        <Condition>signature.type = "jwt"</Condition>
     </Step>
 
     <!-- ================================================================

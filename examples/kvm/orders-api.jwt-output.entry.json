@@ -1,0 +1,4 @@
+{
+  "name": "orders-api.jwt.output",
+  "value": "X-JWS-Signature"
+}

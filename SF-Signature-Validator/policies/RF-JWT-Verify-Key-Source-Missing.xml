@@ -2,9 +2,10 @@
 <!--
     Guard: this proxy's {apiproxy.name}.jwt.verify KVM entry has neither
     publicKeyPem nor jwksUri set — there's no key to verify against at
-    all. Catches this explicitly, before JS-JWT-Verify-Extract-Kid /
-    SC-JWT-Verify-Fetch-JWKS, rather than letting it surface later as a
-    confusing empty-PublicKey fault from VerifyJWS.
+    all, so none of the four VerifyJWS-Jwt-* Conditions in
+    sharedflows/default.xml would match. Catches this explicitly rather
+    than letting the request fall through with no matching Step and no
+    clear error.
 -->
 <RaiseFault name="RF-JWT-Verify-Key-Source-Missing">
     <DisplayName>RF-JWT-Verify-Key-Source-Missing</DisplayName>

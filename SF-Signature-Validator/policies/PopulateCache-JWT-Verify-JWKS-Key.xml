@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Caches a freshly-resolved JWKS key (same jwksUri+kid composite key
+    as LookupCache-JWT-Verify-JWKS-Key — see its comment for why kid
+    alone isn't safe) so the next request for the same key hits the
+    cache instead of re-fetching the JWKS document and re-deriving PEM
+    from it.
+
+    Condition (see sharedflows/default.xml) is
+    signature.verify.jwt.jwks.key.found = "true" — set only by
+    JS-JWT-Verify-Resolve-JWKS-Key on an actual fresh match, never on a
+    cache hit (that step doesn't run at all when
+    LookupCache-JWT-Verify-JWKS-Key already found something) and never
+    on a miss with no matching kid (nothing to cache). That keeps this
+    step from ever caching a "not found" as if it were a real key, and
+    from redundantly re-populating an entry that was already served from
+    cache.
+
+    1 hour TTL is a starting point, not a measured value — balance
+    against how often your IdP actually rotates keys: shorter means
+    picking up a newly-rotated key sooner (at the cost of more JWKS
+    fetches); longer means fewer fetches but a longer window where a
+    freshly-rotated key would 404/mismatch until this entry expires (a
+    caller retry after that would naturally re-fetch and succeed, since
+    a fetch failure or a kid the cache doesn't have both fall through to
+    SC-JWT-Verify-Fetch-JWKS).
+-->
+<PopulateCache name="PopulateCache-JWT-Verify-JWKS-Key" continueOnError="true">
+    <DisplayName>PopulateCache-JWT-Verify-JWKS-Key</DisplayName>
+    <CacheResource>jwks-keys</CacheResource>
+    <Scope>Environment</Scope>
+    <CacheKey>
+        <KeyFragment ref="signature.verify.jwt.jwksUri"/>
+        <KeyFragment ref="signature.verify.jwt.header.kid"/>
+    </CacheKey>
+    <Source>signature.verify.jwt.publicKey.pem</Source>
+    <ExpirySettings>
+        <TimeoutInSec>3600</TimeoutInSec>
+    </ExpirySettings>
+</PopulateCache>

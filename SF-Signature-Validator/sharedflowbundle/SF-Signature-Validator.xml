@@ -23,11 +23,13 @@
         ref="..."/><Alias ref="..."/></PublicKey> does not resolve a
         dynamic ref at runtime, confirmed against a live Apigee instance,
         and there's no other way to reach KeyStore key material from
-        inside a running proxy), or a jwksUri fetched per request
-        (JS-JWT-Verify-Extract-Kid reads "kid" from the JWS header,
-        SC-JWT-Verify-Fetch-JWKS fetches the document,
+        inside a running proxy), or a jwksUri (JS-JWT-Verify-Extract-Kid
+        reads "kid" from the JWS header; LookupCache-JWT-Verify-JWKS-Key
+        checks a shared cache keyed on jwksUri+kid before paying for a
+        fetch; on a miss, SC-JWT-Verify-Fetch-JWKS fetches the document,
         JS-JWT-Verify-Resolve-JWKS-Key matches by kid and repackages the
-        RSA key as PEM) — both land in the same
+        RSA key as PEM, and PopulateCache-JWT-Verify-JWKS-Key caches it
+        for next time) — both sources land in the same
         signature.verify.jwt.publicKey.pem variable VerifyJWS reads.
         Cavage verifies everything
         achievable without real RSA/ECDSA math (the signing string)
@@ -53,10 +55,12 @@
         <Policy>EV-JWT-Verify-Parse-Config</Policy>
         <Policy>RF-JWT-Verify-Key-Source-Missing</Policy>
         <Policy>JS-JWT-Verify-Extract-Kid</Policy>
+        <Policy>LookupCache-JWT-Verify-JWKS-Key</Policy>
         <Policy>SC-JWT-Verify-Fetch-JWKS</Policy>
         <Policy>RF-JWT-Verify-JWKS-Fetch-Failed</Policy>
         <Policy>JS-JWT-Verify-Resolve-JWKS-Key</Policy>
         <Policy>RF-JWT-Verify-JWKS-Key-Not-Found</Policy>
+        <Policy>PopulateCache-JWT-Verify-JWKS-Key</Policy>
         <Policy>AM-JWT-Verify-Set-Detached-Payload</Policy>
         <Policy>VerifyJWS-Jwt-Compact</Policy>
         <Policy>VerifyJWS-Jwt-Detached</Policy>

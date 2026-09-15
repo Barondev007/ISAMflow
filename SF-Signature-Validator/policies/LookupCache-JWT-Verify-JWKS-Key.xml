@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Checks for an already-resolved JWKS key before paying for a network
+    fetch (SC-JWT-Verify-Fetch-JWKS) and re-deriving PEM from it
+    (JS-JWT-Verify-Resolve-JWKS-Key) — fetching an external JWKS endpoint
+    on every single request this proxy validates is a real latency and
+    availability cost, and IdP-issued keys don't rotate anywhere near
+    once per request.
+
+    Cache key is jwksUri + kid, NOT kid alone: "kid" is only guaranteed
+    unique WITHIN one issuer's JWKS document, not globally. This cache
+    is shared across every proxy that uses the JWKS path (same
+    environment-scoped sharing as the "signature" KVM), so two different
+    proxies pointing at two different issuers could easily both have a
+    key called "key-1" — caching by kid alone would let one proxy's
+    request be verified against a completely different issuer's key
+    that happens to share that name. Qualifying the key with jwksUri
+    keeps entries scoped to the issuer they actually came from.
+
+    AssignTo sets signature.verify.jwt.publicKey.pem directly on a hit,
+    which is exactly what SC-JWT-Verify-Fetch-JWKS's Condition
+    (signature.verify.jwt.publicKey.pem = "") checks — a cache hit here
+    means that whole fetch+resolve chain's Conditions evaluate false and
+    none of it runs. continueOnError=true: a cache-lookup failure should
+    fall through to the normal fetch path, not break verification.
+
+    Requires a Cache Resource named "jwks-keys" to exist in this
+    environment before this shared flow is deployed (create once via
+    the Management API or apigeecli — same one-time-per-environment
+    step as the "signature" KVM).
+-->
+<LookupCache name="LookupCache-JWT-Verify-JWKS-Key" continueOnError="true">
+    <DisplayName>LookupCache-JWT-Verify-JWKS-Key</DisplayName>
+    <CacheResource>jwks-keys</CacheResource>
+    <Scope>Environment</Scope>
+    <CacheKey>
+        <KeyFragment ref="signature.verify.jwt.jwksUri"/>
+        <KeyFragment ref="signature.verify.jwt.header.kid"/>
+    </CacheKey>
+    <AssignTo>signature.verify.jwt.publicKey.pem</AssignTo>
+</LookupCache>

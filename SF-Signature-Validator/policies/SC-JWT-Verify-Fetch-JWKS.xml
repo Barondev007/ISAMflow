@@ -2,7 +2,10 @@
 <!--
     Fetches the JWKS document from this proxy's KVM-configured jwksUri
     (see EV-JWT-Verify-Parse-Config). Only runs when publicKeyPem is
-    empty (the JWKS-based path).
+    empty (the JWKS-based path) AND
+    LookupCache-JWT-Verify-JWKS-Key found nothing cached for this
+    jwksUri+kid — see that policy's comment for the caching strategy;
+    this step is the "miss" path, not the steady-state one.
 
     <HTTPTargetConnection><URL> is set from a flow variable via a
     message template ("{...}") — a fully dynamic ServiceCallout target
@@ -19,12 +22,12 @@
     non-200 response so RF-JWT-Verify-JWKS-Fetch-Failed can raise a
     clear error instead of Apigee's generic ServiceCallout fault.
 
-    No response caching here — every JWKS-based verification fetches
-    the document fresh. For anything beyond light testing, put a
-    PopulateCache/LookupCache pair around this step (keyed on jwksUri,
-    TTL matched to how often your IdP actually rotates keys) — fetching
-    an external JWKS endpoint on every single request this proxy
-    validates is a real latency and availability cost otherwise.
+    This step itself is uncached — it only runs on a cache miss.
+    PopulateCache-JWT-Verify-JWKS-Key caches the RESOLVED key after
+    JS-JWT-Verify-Resolve-JWKS-Key runs, not the raw JWKS document, so a
+    fetched-but-not-yet-cached response never sits around: the next
+    request for the same kid hits the key cache directly and skips this
+    ServiceCallout entirely.
 -->
 <ServiceCallout name="SC-JWT-Verify-Fetch-JWKS" continueOnError="true">
     <DisplayName>SC-JWT-Verify-Fetch-JWKS</DisplayName>

@@ -37,13 +37,18 @@
              instance), and there's no other way to reach KeyStore key
              material from inside a running proxy, so this is populated
              out-of-band whenever the certificate is issued/rotated.
-           - jwksUri: fetched per request (JS-JWT-Verify-Extract-Kid
-             reads "kid" from the JWS header, SC-JWT-Verify-Fetch-JWKS
-             fetches the JWKS document, JS-JWT-Verify-Resolve-JWKS-Key
-             matches by kid and repackages the RSA key as PEM) — into
-             the SAME signature.verify.jwt.publicKey.pem variable, so
-             VerifyJWS-Jwt-Compact/-Detached don't know or care which
-             path populated it.
+           - jwksUri: JS-JWT-Verify-Extract-Kid reads "kid" from the JWS
+             header, LookupCache-JWT-Verify-JWKS-Key checks for an
+             already-resolved key (cached by jwksUri+kid — see its
+             comment for why kid alone isn't a safe cache key), and only
+             on a miss does SC-JWT-Verify-Fetch-JWKS fetch the JWKS
+             document and JS-JWT-Verify-Resolve-JWKS-Key match by kid
+             and repackage the RSA key as PEM, which
+             PopulateCache-JWT-Verify-JWKS-Key then caches for next
+             time. Either way the result lands in the SAME
+             signature.verify.jwt.publicKey.pem variable the static-PEM
+             path sets directly, so VerifyJWS-Jwt-Compact/-Detached
+             don't know or care which path populated it.
          ================================================================ -->
     <Step>
         <Name>RF-JWT-Verify-Source-Missing</Name>
@@ -74,6 +79,10 @@
         <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.publicKey.pem = ""</Condition>
     </Step>
     <Step>
+        <Name>LookupCache-JWT-Verify-JWKS-Key</Name>
+        <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.publicKey.pem = ""</Condition>
+    </Step>
+    <Step>
         <Name>SC-JWT-Verify-Fetch-JWKS</Name>
         <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.publicKey.pem = ""</Condition>
     </Step>
@@ -88,6 +97,10 @@
     <Step>
         <Name>RF-JWT-Verify-JWKS-Key-Not-Found</Name>
         <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.publicKey.pem = "" AND signature.verify.jwt.jwks.key.found = "false"</Condition>
+    </Step>
+    <Step>
+        <Name>PopulateCache-JWT-Verify-JWKS-Key</Name>
+        <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.jwks.key.found = "true"</Condition>
     </Step>
     <Step>
         <Name>AM-JWT-Verify-Set-Detached-Payload</Name>

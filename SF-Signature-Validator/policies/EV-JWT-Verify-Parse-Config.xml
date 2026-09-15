@@ -5,12 +5,38 @@
     variables. The KVM entry value is a JSON object, e.g.:
       {
         "publicKeyPem": "[PEM BEGIN PUBLIC KEY marker]\nMIIBIjANBg...\n[PEM END PUBLIC KEY marker]\n",
+        "jwksUri": "",
         "knownHeaders": "x-txn-id",
         "detached": "true"
       }
       (an actual entry has real PEM "BEGIN/END PUBLIC KEY" dashed markers —
       spelled out here as bracketed placeholders only because a run of
       dashes isn't legal inside an XML comment)
+
+    publicKeyPem and jwksUri are two alternative sources for the same
+    thing (the verification public key) — exactly one of them should be
+    non-empty per proxy:
+      - publicKeyPem set, jwksUri "": the static PEM-in-KVM path
+        described below — no network call, key never changes without a
+        KVM update.
+      - publicKeyPem "", jwksUri set: JS-JWT-Verify-Extract-Kid reads
+        "kid" out of the JWS header, SC-JWT-Verify-Fetch-JWKS fetches
+        the JWKS document from jwksUri, and
+        JS-JWT-Verify-Resolve-JWKS-Key finds the entry whose "kid"
+        matches and repackages its RSA modulus/exponent into
+        signature.verify.jwt.publicKey.pem — the SAME variable the
+        static path sets directly, so VerifyJWS-Jwt-Compact/-Detached
+        don't know or care which path populated it. See that policy's
+        comment for why this is plain JS (packaging PUBLIC key bytes
+        into a different container format), not a JavaCallout, unlike
+        the actual signature-verification math elsewhere in this
+        project.
+      - both "": RF-JWT-Verify-Key-Source-Missing raises a clear
+        configuration error rather than reaching VerifyJWS with no key
+        at all.
+    Both keys are always present in the JSON (required, like
+    knownHeaders/detached below) — it's the VALUE that's conditionally
+    empty, never the key's presence.
 
     detached is per-proxy config, not something the calling proxy sets
     on each request: whether this proxy's JWT scheme is compact or
@@ -73,6 +99,9 @@
     <JSONPayload>
         <Variable name="signature.verify.jwt.publicKey.pem" type="string">
             <JSONPath>$.publicKeyPem</JSONPath>
+        </Variable>
+        <Variable name="signature.verify.jwt.jwksUri" type="string">
+            <JSONPath>$.jwksUri</JSONPath>
         </Variable>
         <Variable name="signature.verify.jwt.knownHeaders" type="string">
             <JSONPath>$.knownHeaders</JSONPath>

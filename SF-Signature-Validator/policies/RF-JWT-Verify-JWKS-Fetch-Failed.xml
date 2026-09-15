@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RaiseFault name="RF-JWT-Verify-JWKS-Fetch-Failed">
+    <DisplayName>RF-JWT-Verify-JWKS-Fetch-Failed</DisplayName>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <FaultResponse>
+        <Set>
+            <StatusCode>502</StatusCode>
+            <ReasonPhrase>Bad Gateway</ReasonPhrase>
+            <Payload contentType="application/json">{
+    "error": "jwks_fetch_failed",
+    "message": "Could not fetch the JWKS document from '{signature.verify.jwt.jwksUri}' (status: {signature.verify.jwt.jwks.response.status.code})."
+}</Payload>
+        </Set>
+    </FaultResponse>
+</RaiseFault>

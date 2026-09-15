@@ -1,13 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    JWT/JWS verification, compact serialization (header.payload.signature),
-    for a proxy whose KVM config has a static publicKeyPem (see
-    EV-JWT-Verify-Parse-Config). Runs when signature.verify.type = "jwt"
-    AND signature.verify.jwt.detached != "true" AND
-    signature.verify.jwt.publicKey.pem != "" — see
-    VerifyJWS-Jwt-Compact-JWKS for the jwksUri-configured sibling, and
-    VerifyJWS-Jwt-Detached / VerifyJWS-Jwt-Detached-JWKS for the
-    detached-JWS equivalents of both.
+    JWT/JWS verification, compact serialization (header.payload.signature).
+    Runs when signature.verify.type = "jwt" AND
+    signature.verify.jwt.detached != "true" (see the -Detached sibling
+    for that case).
 
     Native VerifyJWS — no custom crypto needed, unlike Cavage/XML-DSig.
     KnownHeaders is per-proxy, resolved at runtime from this proxy's KVM
@@ -31,8 +27,10 @@
     EV-JWT-Verify-Parse-Config) — populated once, out-of-band, whenever
     the certificate is issued/rotated in the KeyStore, not read from it
     at request time. <Value ref="..."/> below reads
-    signature.verify.jwt.publicKey.pem, set directly by
-    EV-JWT-Verify-Parse-Config.
+    signature.verify.jwt.publicKey.pem, which is set either directly by
+    EV-JWT-Verify-Parse-Config (static publicKeyPem in KVM) or by
+    JS-JWT-Verify-Resolve-JWKS-Key (jwksUri in KVM instead) — this
+    policy doesn't know or care which.
 
     continueOnError defaults to false, so an invalid/expired/malformed
     JWS raises a policy fault here and the request is rejected; nothing

@@ -15,16 +15,22 @@
 
     publicKeyPem and jwksUri are two alternative sources for the same
     thing (the verification public key) — exactly one of them should be
-    non-empty per proxy, and which one is set picks which pair of
-    VerifyJWS policies runs (see sharedflows/default.xml):
-      - publicKeyPem set, jwksUri "": VerifyJWS-Jwt-Compact /
-        -Detached — no network call, key never changes without a KVM
-        update.
-      - publicKeyPem "", jwksUri set: VerifyJWS-Jwt-Compact-JWKS /
-        -Detached-JWKS — Apigee's native <PublicKey><JWKS uri="..."/></PublicKey>
-        fetches the JWKS document and matches the entry by the JWS
-        header's own "kid" automatically. See that policy's comment for
-        the UNVERIFIED note on this exact shape.
+    non-empty per proxy:
+      - publicKeyPem set, jwksUri "": the static PEM-in-KVM path
+        described below — no network call, key never changes without a
+        KVM update.
+      - publicKeyPem "", jwksUri set: JS-JWT-Verify-Extract-Kid reads
+        "kid" out of the JWS header, SC-JWT-Verify-Fetch-JWKS fetches
+        the JWKS document from jwksUri, and
+        JS-JWT-Verify-Resolve-JWKS-Key finds the entry whose "kid"
+        matches and repackages its RSA modulus/exponent into
+        signature.verify.jwt.publicKey.pem — the SAME variable the
+        static path sets directly, so VerifyJWS-Jwt-Compact/-Detached
+        don't know or care which path populated it. See that policy's
+        comment for why this is plain JS (packaging PUBLIC key bytes
+        into a different container format), not a JavaCallout, unlike
+        the actual signature-verification math elsewhere in this
+        project.
       - both "": RF-JWT-Verify-Key-Source-Missing raises a clear
         configuration error rather than reaching VerifyJWS with no key
         at all.
@@ -82,12 +88,10 @@
     policy) — set it to "" for a proxy that never expects a "crit" header
     at all.
 
-    signature.verify.jwt.publicKey.pem feeds VerifyJWS-Jwt-Compact/-Detached's
-    <PublicKey><Value ref="..."/></PublicKey> directly, and
-    signature.verify.jwt.jwksUri feeds VerifyJWS-Jwt-Compact-JWKS/-Detached-JWKS's
-    <PublicKey><JWKS uri="..."/></PublicKey> — no JavaCallout or JS either
-    way. signature.verify.jwt.knownHeaders feeds <KnownHeaders ref="...">
-    on all four VerifyJWS variants the same way.
+    signature.verify.jwt.publicKey.pem feeds VerifyJWS's
+    <PublicKey><Value ref="..."/></PublicKey> directly — no JavaCallout,
+    no intermediate step. signature.verify.jwt.knownHeaders feeds
+    <KnownHeaders ref="..."> on VerifyJWS directly, same as before.
 -->
 <ExtractVariables name="EV-JWT-Verify-Parse-Config">
     <DisplayName>EV-JWT-Verify-Parse-Config</DisplayName>

@@ -29,21 +29,21 @@
 
          The public key itself comes from one of two KVM-configured
          sources (see EV-JWT-Verify-Parse-Config), exactly one non-empty
-         per proxy, which picks which pair of VerifyJWS policies runs:
+         per proxy:
            - publicKeyPem: a static PEM pasted into KVM once — no
              network call. VerifyJWS's own
              <PublicKey><KeyStore ref="..."/></PublicKey> doesn't resolve
              a dynamic ref at runtime (confirmed against a live Apigee
              instance), and there's no other way to reach KeyStore key
              material from inside a running proxy, so this is populated
-             out-of-band whenever the certificate is issued/rotated. Runs
-             VerifyJWS-Jwt-Compact / VerifyJWS-Jwt-Detached.
-           - jwksUri: Apigee's native <PublicKey><JWKS uri="..."/></PublicKey>
-             fetches the JWKS document and matches the entry by the JWS
-             header's own "kid" automatically. Runs
-             VerifyJWS-Jwt-Compact-JWKS / VerifyJWS-Jwt-Detached-JWKS —
-             see that policy's comment for the UNVERIFIED note on this
-             exact shape.
+             out-of-band whenever the certificate is issued/rotated.
+           - jwksUri: fetched per request (JS-JWT-Verify-Extract-Kid
+             reads "kid" from the JWS header, SC-JWT-Verify-Fetch-JWKS
+             fetches the JWKS document, JS-JWT-Verify-Resolve-JWKS-Key
+             matches by kid and repackages the RSA key as PEM) — into
+             the SAME signature.verify.jwt.publicKey.pem variable, so
+             VerifyJWS-Jwt-Compact/-Detached don't know or care which
+             path populated it.
          ================================================================ -->
     <Step>
         <Name>RF-JWT-Verify-Source-Missing</Name>
@@ -70,24 +70,36 @@
         <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.publicKey.pem = "" AND signature.verify.jwt.jwksUri = ""</Condition>
     </Step>
     <Step>
+        <Name>JS-JWT-Verify-Extract-Kid</Name>
+        <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.publicKey.pem = ""</Condition>
+    </Step>
+    <Step>
+        <Name>SC-JWT-Verify-Fetch-JWKS</Name>
+        <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.publicKey.pem = ""</Condition>
+    </Step>
+    <Step>
+        <Name>RF-JWT-Verify-JWKS-Fetch-Failed</Name>
+        <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.publicKey.pem = "" AND signature.verify.jwt.jwks.response.status.code != 200</Condition>
+    </Step>
+    <Step>
+        <Name>JS-JWT-Verify-Resolve-JWKS-Key</Name>
+        <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.publicKey.pem = ""</Condition>
+    </Step>
+    <Step>
+        <Name>RF-JWT-Verify-JWKS-Key-Not-Found</Name>
+        <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.publicKey.pem = "" AND signature.verify.jwt.jwks.key.found = "false"</Condition>
+    </Step>
+    <Step>
         <Name>AM-JWT-Verify-Set-Detached-Payload</Name>
         <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.detached = "true"</Condition>
     </Step>
     <Step>
         <Name>VerifyJWS-Jwt-Compact</Name>
-        <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.detached != "true" AND signature.verify.jwt.publicKey.pem != ""</Condition>
-    </Step>
-    <Step>
-        <Name>VerifyJWS-Jwt-Compact-JWKS</Name>
-        <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.detached != "true" AND signature.verify.jwt.jwksUri != ""</Condition>
+        <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.detached != "true"</Condition>
     </Step>
     <Step>
         <Name>VerifyJWS-Jwt-Detached</Name>
-        <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.detached = "true" AND signature.verify.jwt.publicKey.pem != ""</Condition>
-    </Step>
-    <Step>
-        <Name>VerifyJWS-Jwt-Detached-JWKS</Name>
-        <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.detached = "true" AND signature.verify.jwt.jwksUri != ""</Condition>
+        <Condition>signature.verify.type = "jwt" AND signature.verify.jwt.detached = "true"</Condition>
     </Step>
 
     <!-- ================================================================

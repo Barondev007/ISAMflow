@@ -23,14 +23,13 @@
         ref="..."/><Alias ref="..."/></PublicKey> does not resolve a
         dynamic ref at runtime, confirmed against a live Apigee instance,
         and there's no other way to reach KeyStore key material from
-        inside a running proxy), or a jwksUri, using Apigee's native
-        <PublicKey><JWKS uri="..."/></PublicKey> support (fetches the
-        JWKS document and matches the entry by the JWS header's own
-        "kid" automatically). Each key source runs its own pair of
-        VerifyJWS policies (VerifyJWS-Jwt-Compact/-Detached for
-        publicKeyPem, VerifyJWS-Jwt-Compact-JWKS/-Detached-JWKS for
-        jwksUri) — see VerifyJWS-Jwt-Compact-JWKS's comment for the
-        UNVERIFIED note on the JWKS uri shape. Cavage verifies everything
+        inside a running proxy), or a jwksUri fetched per request
+        (JS-JWT-Verify-Extract-Kid reads "kid" from the JWS header,
+        SC-JWT-Verify-Fetch-JWKS fetches the document,
+        JS-JWT-Verify-Resolve-JWKS-Key matches by kid and repackages the
+        RSA key as PEM) — both land in the same
+        signature.verify.jwt.publicKey.pem variable VerifyJWS reads.
+        Cavage verifies everything
         achievable without real RSA/ECDSA math (the signing string)
         natively in JS, and faults via a clearly marked
         NI-Cavage-Verify-Signature placeholder for the actual
@@ -53,11 +52,14 @@
         <Policy>RF-JWT-Verify-Config-Missing</Policy>
         <Policy>EV-JWT-Verify-Parse-Config</Policy>
         <Policy>RF-JWT-Verify-Key-Source-Missing</Policy>
+        <Policy>JS-JWT-Verify-Extract-Kid</Policy>
+        <Policy>SC-JWT-Verify-Fetch-JWKS</Policy>
+        <Policy>RF-JWT-Verify-JWKS-Fetch-Failed</Policy>
+        <Policy>JS-JWT-Verify-Resolve-JWKS-Key</Policy>
+        <Policy>RF-JWT-Verify-JWKS-Key-Not-Found</Policy>
         <Policy>AM-JWT-Verify-Set-Detached-Payload</Policy>
         <Policy>VerifyJWS-Jwt-Compact</Policy>
-        <Policy>VerifyJWS-Jwt-Compact-JWKS</Policy>
         <Policy>VerifyJWS-Jwt-Detached</Policy>
-        <Policy>VerifyJWS-Jwt-Detached-JWKS</Policy>
         <Policy>JS-Verify-Cavage-Signing-String</Policy>
         <Policy>NI-Cavage-Verify-Signature</Policy>
         <Policy>AM-XmlDsig-Verify-Set-KVM-Key</Policy>

@@ -21,19 +21,27 @@
   message-template function (Java regex under the hood, confirmed against a
   Dino Chiesa Apigee-MessageTemplate-Demo example using the same
   {replaceAll(source,'pattern','replacement')} form), not JavaScript/Java
-  code; no JavaCallout needed for this. The whitespace shorthand needs a
-  DOUBLE backslash, \\s not \s: Apigee's own docs give \\s and \\d as the
-  correct form for this argument position, since the argument string goes
-  through the template engine's own escape processing before being handed
-  to the regex compiler as \s; a single backslash was tried first and
-  silently matched nothing (no compile error, just a no-op replace),
-  exactly the symptom that showed up in testing.
+  code; no JavaCallout needed for this. Two escaping/syntax pitfalls hit
+  while getting this working, both documented by Apigee but easy to miss:
+  (1) the whitespace shorthand needs a DOUBLE backslash, \\s not \s, since
+  the argument string goes through the template engine's own escape
+  processing before being handed to the regex compiler as \s; a single
+  backslash silently matched nothing (no compile error, just a no-op
+  replace). (2) Apigee's docs state plainly, more than once, that spaces
+  are not allowed ANYWHERE in a message template function expression,
+  including inside a single-quoted literal argument. The literal spaces in
+  "BEGIN CERTIFICATE"/"END CERTIFICATE" broke the whole {...} expression's
+  parse, and an unparseable expression is left as unresolved literal text
+  rather than raising an error, which is exactly what showed up in testing:
+  the raw, unevaluated function-call text landing in client.cert.base64
+  verbatim. Every literal space in the pattern below is written as \\s
+  instead for that reason.
 -->
 <AssignMessage name="AM-Extract-Client-Cert-TLS">
     <DisplayName>AM Extract Client Cert TLS</DisplayName>
     <AssignVariable>
         <Name>client.cert.base64</Name>
-        <Template>{replaceAll(tls.client.raw.cert,'-----BEGIN CERTIFICATE-----|-----END CERTIFICATE-----|\\s','')}</Template>
+        <Template>{replaceAll(tls.client.raw.cert,'-----BEGIN\\sCERTIFICATE-----|-----END\\sCERTIFICATE-----|\\s','')}</Template>
     </AssignVariable>
     <AssignVariable>
         <Name>client.cert.subject.dn</Name>

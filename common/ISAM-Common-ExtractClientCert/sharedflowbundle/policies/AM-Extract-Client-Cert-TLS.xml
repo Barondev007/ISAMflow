@@ -1,25 +1,33 @@
 <!--
   Authoritative source: the client certificate Apigee itself received during
   the two-way TLS handshake on its own VirtualHost, when mutual auth
-  terminates at the gateway. tls.client.raw.cert is only populated when the
-  VirtualHost has ClientAuthEnabled + a TrustStore configured (Edge Private/
-  Public Cloud) or propagateTLSInformation.clientProperties = true (Apigee X
-  / hybrid); that is environment/VirtualHost config outside this bundle, not
-  something a SharedFlowBundle can set. Plain <Ref> copies, not
-  <Value>/<Template>, since these are straight variable-to-variable copies.
+  terminates at the gateway. tls.client.raw.cert/.s.dn/.i.dn are only
+  populated when the VirtualHost has ClientAuthEnabled + a TrustStore
+  configured (Edge Private/Public Cloud) or
+  propagateTLSInformation.clientProperties = true (Apigee X/hybrid); that is
+  environment/VirtualHost config outside this bundle, not something a
+  SharedFlowBundle can set.
 
-  tls.client.s.dn / tls.client.i.dn (subject/issuer DN) come from the same
-  handshake as tls.client.raw.cert and are subject to the same VirtualHost
-  config; they are NOT derivable from the X-Client-Cert header fallback (that
-  header only ever carries the raw cert in this project, never a pre-parsed
-  DN), so client.cert.subject.dn/.issuer.dn stay null whenever the fallback
-  path is the one that resolved client.cert.pem.
+  Only reached (see sharedflows/default.xml's Condition) when
+  tls.client.raw.cert is confirmed non-null, so it is safe to use <Template>
+  here (which, unlike <Ref>, always produces a string, even ""; running it
+  unconditionally would make client.cert.base64 resolve to "" instead of
+  staying null when TLS gave us nothing, which would wrongly skip the header
+  fallback below).
+
+  client.cert.base64 strips tls.client.raw.cert's PEM armor and internal
+  line-wrap whitespace down to bare base64, since that (not full PEM) is
+  what gets embedded in the request to ISAM. replaceAll's regex is Apigee's
+  message-template function (Java regex under the hood, confirmed against a
+  Dino Chiesa Apigee-MessageTemplate-Demo example using the same
+  {replaceAll(source,'pattern','replacement')} form), not JavaScript/Java
+  code; no JavaCallout needed for this.
 -->
 <AssignMessage name="AM-Extract-Client-Cert-TLS">
     <DisplayName>AM Extract Client Cert TLS</DisplayName>
     <AssignVariable>
-        <Name>client.cert.pem</Name>
-        <Ref>tls.client.raw.cert</Ref>
+        <Name>client.cert.base64</Name>
+        <Template>{replaceAll(tls.client.raw.cert,'-----BEGIN CERTIFICATE-----|-----END CERTIFICATE-----|\s','')}</Template>
     </AssignVariable>
     <AssignVariable>
         <Name>client.cert.subject.dn</Name>
@@ -28,6 +36,14 @@
     <AssignVariable>
         <Name>client.cert.issuer.dn</Name>
         <Ref>tls.client.i.dn</Ref>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>client.cert.subject.dn.base64</Name>
+        <Template>{encodeBase64(tls.client.s.dn)}</Template>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>client.cert.issuer.dn.base64</Name>
+        <Template>{encodeBase64(tls.client.i.dn)}</Template>
     </AssignVariable>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
 </AssignMessage>

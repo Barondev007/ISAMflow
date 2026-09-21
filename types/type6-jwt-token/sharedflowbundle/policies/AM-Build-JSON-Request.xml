@@ -21,7 +21,9 @@
                 "ip": "{escapeJSON(client.ip)}",
                 "forwardedFor": "{escapeJSON(request.header.X-Forwarded-For)}",
                 "userAgent": "{escapeJSON(request.header.User-Agent)}",
-                "clientCertificate": "{escapeJSON(client.cert.pem)}"
+                "clientCertificate": "{escapeJSON(client.cert.base64)}",
+                "clientCertificateSubjectDN": "{escapeJSON(client.cert.subject.dn.base64)}",
+                "clientCertificateIssuerDN": "{escapeJSON(client.cert.issuer.dn.base64)}"
               }
             }
         </Payload>

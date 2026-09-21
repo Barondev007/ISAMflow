@@ -1,9 +1,16 @@
 <SharedFlow name="default">
+    <!-- Gated on tls.client.raw.cert itself (not run unconditionally): the
+         Template-based strip in AM-Extract-Client-Cert-TLS always produces a
+         string, even "" when its source is unresolved, so running it
+         unconditionally would set client.cert.base64 to "" instead of
+         leaving it null, which would wrongly skip the header fallback
+         below even when TLS gave us nothing. -->
     <Step>
+        <Condition>tls.client.raw.cert != null</Condition>
         <Name>AM-Extract-Client-Cert-TLS</Name>
     </Step>
     <Step>
-        <Condition>client.cert.pem = null</Condition>
+        <Condition>client.cert.base64 = null</Condition>
         <Name>AM-Extract-Client-Cert-Header-Fallback</Name>
     </Step>
 </SharedFlow>

@@ -1,14 +1,24 @@
 <!--
   Only reached (see sharedflows/default.xml's Condition) if
-  AM-Extract-Client-Cert-TLS left client.cert.pem unset; i.e. Apigee's own
+  AM-Extract-Client-Cert-TLS left client.cert.base64 unset; i.e. Apigee's own
   VirtualHost did not terminate mutual TLS for this request (mTLS terminates
   further upstream, e.g. at a load balancer or reverse proxy in front of
   Apigee, which forwards the cert it received in this header instead).
+
+  Kept as a plain <Ref>, not a <Template>-based strip like the TLS path: a
+  <Ref> with an unresolved source and no Value leaves the target genuinely
+  unset (null), which downstream callers (e.g. type 1's missing-cert check)
+  rely on; a <Template> would instead resolve to "" when the header is
+  absent (IgnoreUnresolvedVariables turns a missing {var} into empty text,
+  not null), silently breaking that check. This also means this header's
+  value is expected to already be bare base64 (no PEM armor, no
+  URL-encoding) by whatever terminates mTLS in front of Apigee; see the
+  top-level README.
 -->
 <AssignMessage name="AM-Extract-Client-Cert-Header-Fallback">
     <DisplayName>AM Extract Client Cert Header Fallback</DisplayName>
     <AssignVariable>
-        <Name>client.cert.pem</Name>
+        <Name>client.cert.base64</Name>
         <Ref>request.header.X-Client-Cert</Ref>
     </AssignVariable>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>

@@ -32,7 +32,9 @@
                             <wsc:ContextItem Name="ip"><wsc:Value>{escapeXML(client.ip)}</wsc:Value></wsc:ContextItem>
                             <wsc:ContextItem Name="forwardedFor"><wsc:Value>{escapeXML(request.header.X-Forwarded-For)}</wsc:Value></wsc:ContextItem>
                             <wsc:ContextItem Name="userAgent"><wsc:Value>{escapeXML(request.header.User-Agent)}</wsc:Value></wsc:ContextItem>
-                            <wsc:ContextItem Name="clientCertificate"><wsc:Value>{escapeXML(client.cert.pem)}</wsc:Value></wsc:ContextItem>
+                            <wsc:ContextItem Name="clientCertificate"><wsc:Value>{escapeXML(client.cert.base64)}</wsc:Value></wsc:ContextItem>
+                            <wsc:ContextItem Name="clientCertificateSubjectDN"><wsc:Value>{escapeXML(client.cert.subject.dn.base64)}</wsc:Value></wsc:ContextItem>
+                            <wsc:ContextItem Name="clientCertificateIssuerDN"><wsc:Value>{escapeXML(client.cert.issuer.dn.base64)}</wsc:Value></wsc:ContextItem>
                         </wst:AdditionalContext>
                     </wst:RequestSecurityToken>
                 </soapenv:Body>

@@ -173,21 +173,32 @@ native Apigee policies (no JavaScript anywhere in this project):
   string-splitting needs code. Instead `client.ip` (Apigee's own view) and
   the raw `X-Forwarded-For` header are sent separately and verbatim; let
   ISAM's own mapping rule decide which it trusts.
-- **Client certificate**: resolved once per request into a single
-  `client.cert.pem` variable by the `ISAM-Common-ExtractClientCert` shared
-  flow, which every type calls (via `FC-Extract-Client-Cert`) before
-  building its request to ISAM, rather than each type reading a header
-  directly. It prefers `tls.client.raw.cert` — the certificate Apigee
-  itself received during a two-way TLS handshake, when mutual auth
-  terminates at the gateway's own VirtualHost — and falls back to the
-  `X-Client-Cert` header only when that's unset, i.e. mTLS terminates
-  further upstream (a load balancer or reverse proxy in front of Apigee)
-  and forwards the cert it received in that header instead. See that
-  bundle's root descriptor for the VirtualHost/environment config
-  (`ClientAuthEnabled`+`TrustStore`, or `propagateTLSInformation.
-  clientProperties`) that `tls.client.raw.cert` actually depends on — it's
-  the first thing to check if `client.cert.pem` unexpectedly comes back
-  null in an environment where you expect Apigee itself to terminate mTLS.
+- **Client certificate & DN**: resolved once per request by the
+  `ISAM-Common-ExtractClientCert` shared flow, which every type calls (via
+  `FC-Extract-Client-Cert`) before building its request to ISAM, rather than
+  each type reading a header directly. It prefers `tls.client.raw.cert`/
+  `.s.dn`/`.i.dn` — what Apigee itself captured during a two-way TLS
+  handshake, when mutual auth terminates at the gateway's own VirtualHost —
+  and falls back to the `X-Client-Cert` header (cert only, no DN) when that's
+  unset, i.e. mTLS terminates further upstream (a load balancer or reverse
+  proxy in front of Apigee) and forwards the cert it received in that header
+  instead. See that bundle's root descriptor for the VirtualHost/environment
+  config (`ClientAuthEnabled`+`TrustStore`, or `propagateTLSInformation.
+  clientProperties`) that the TLS-sourced variables actually depend on —
+  it's the first thing to check if `client.cert.base64` unexpectedly comes
+  back null in an environment where you expect Apigee itself to terminate
+  mTLS.
+
+  The certificate is embedded in the request to ISAM as bare base64 — no
+  PEM armor (`-----BEGIN/END CERTIFICATE-----`), no line-wrap whitespace —
+  via `client.cert.base64`, which strips `tls.client.raw.cert`'s PEM
+  formatting down using Apigee's native `replaceAll()` message-template
+  function (still no JavaScript/Java for this). The subject/issuer DN are
+  embedded base64-encoded too, via `client.cert.subject.dn.base64`/
+  `client.cert.issuer.dn.base64` (`encodeBase64()` applied to
+  `tls.client.s.dn`/`.i.dn`), alongside the plain-text `client.cert.
+  subject.dn`/`.issuer.dn` kept around for anything that wants them
+  unencoded.
 
 ## Signature validation & trust
 

@@ -8,26 +8,36 @@
         its request to ISAM instead of each type reading a header directly.
 
         OUTPUT variables:
-          client.cert.pem           string, PEM-encoded X.509 certificate;
-                                     null if the caller presented no
-                                     certificate through either source below.
-          client.cert.subject.dn    string, the cert's subject Distinguished
-                                     Name; only populated via source 1 below
-                                     (tls.client.s.dn) -- the header fallback
-                                     never carries a pre-parsed DN, only the
-                                     raw cert, so this stays null whenever
-                                     client.cert.pem was resolved from
-                                     request.header.X-Client-Cert instead.
-          client.cert.issuer.dn     string, the cert's issuer Distinguished
-                                     Name (tls.client.i.dn); same header-
-                                     fallback caveat as client.cert.subject.dn.
+          client.cert.base64          string, the client's X.509 certificate
+                                       as BARE base64 -- no "-----BEGIN
+                                       CERTIFICATE-----"/"-----END
+                                       CERTIFICATE-----" armor, no internal
+                                       line-wrap whitespace, exactly the form
+                                       ISAM's request expects. Null if the
+                                       caller presented no certificate
+                                       through either source below.
+          client.cert.subject.dn      string, the cert's subject Distinguished
+                                       Name, plain text.
+          client.cert.issuer.dn       string, the cert's issuer Distinguished
+                                       Name, plain text.
+          client.cert.subject.dn.base64   the same subject DN, base64-encoded
+                                           (this, not the plain-text form
+                                           above, is what goes in the request
+                                           to ISAM).
+          client.cert.issuer.dn.base64    the same issuer DN, base64-encoded.
+
+          The four DN variables are only populated via source 1 below
+          (tls.client.s.dn / tls.client.i.dn) -- the header fallback never
+          carries a pre-parsed DN, only the raw cert, so all four stay null
+          whenever client.cert.base64 was resolved from
+          request.header.X-Client-Cert instead.
 
         Two sources, tried in order:
-          1. tls.client.raw.cert -- the certificate Apigee itself received
-             during a two-way TLS handshake on its own VirtualHost. This is
-             the authoritative source when mutual TLS terminates AT Apigee.
-             It is ONLY populated if the VirtualHost is configured for
-             client auth:
+          1. tls.client.raw.cert (PEM) / tls.client.s.dn / tls.client.i.dn --
+             what Apigee itself captured during a two-way TLS handshake on
+             its own VirtualHost. This is the authoritative source when
+             mutual TLS terminates AT Apigee. These are ONLY populated if the
+             VirtualHost is configured for client auth:
                - Edge Private/Public Cloud: the VirtualHost's SSLInfo needs
                  ClientAuthEnabled set to true, plus a TrustStore holding the
                  accepted client CA chain.
@@ -35,14 +45,18 @@
                  propagateTLSInformation.clientProperties = true.
              That configuration lives on the VirtualHost/environment, not in
              any proxy or shared flow bundle, so it will not show up in this
-             repo -- if client.cert.pem keeps coming back null in an
+             repo -- if client.cert.base64 keeps coming back null in an
              environment where you expect mTLS at the gateway, check that
-             config first, not this bundle's policies.
-          2. request.header.X-Client-Cert -- a PEM/URL-encoded certificate
-             forwarded by an upstream device (a load balancer or reverse
-             proxy in front of Apigee) that terminates mutual TLS itself.
-             Only used as a fallback when tls.client.raw.cert is unset, i.e.
-             Apigee did not itself terminate mTLS for this request.
+             config first, not this bundle's policies. tls.client.raw.cert
+             comes back PEM-armored (with BEGIN/END lines and line-wrap
+             whitespace); AM-Extract-Client-Cert-TLS strips that down to the
+             bare base64 stored in client.cert.base64.
+          2. request.header.X-Client-Cert -- a certificate forwarded by an
+             upstream device (a load balancer or reverse proxy in front of
+             Apigee) that terminates mutual TLS itself, expected already in
+             bare base64 (no PEM armor, no URL-encoding). Only used as a
+             fallback when tls.client.raw.cert is unset, i.e. Apigee did not
+             itself terminate mTLS for this request.
 
         Every type-specific shared flow (ISAM-SAML-Light, ISAM-SAML-User,
         ISAM-SAML-TP, ISAM-SAML-Technical, ISAM-JWT-SAML, ISAM-JWT-Token)

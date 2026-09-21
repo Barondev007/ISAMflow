@@ -1,15 +1,16 @@
 <!--
-  Reads client.cert.base64.step3, set by the previous policy STEP
-  (AM-Extract-Client-Cert-Strip-Step3), and writes the final
+  Reads client.cert.base64.step2, set by the previous policy STEP
+  (AM-Extract-Client-Cert-Strip-Step2), and writes the final
   client.cert.base64, the canonical, armor-free, whitespace-free output
   this whole bundle exists to produce. See AM-Extract-Client-Cert-Strip-
-  Step2's comment for why each transformation is its own policy.
+  Step2's comment for why each transformation is its own policy, and for
+  why the collapsed ENDCERTIFICATE marker is one literal with no space in it.
 -->
 <AssignMessage name="AM-Extract-Client-Cert-Strip-Final">
     <DisplayName>AM Extract Client Cert Strip Final</DisplayName>
     <AssignVariable>
         <Name>client.cert.base64</Name>
-        <Template>{replaceAll(client.cert.base64.step3,'\\s','')}</Template>
+        <Template>{replaceAll(client.cert.base64.step2,'-----ENDCERTIFICATE-----','')}</Template>
     </AssignVariable>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
 </AssignMessage>

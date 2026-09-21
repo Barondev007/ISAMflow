@@ -15,13 +15,22 @@
   of staying null when TLS gave us nothing, which would wrongly skip the
   header fallback further down the flow).
 
-  client.cert.base64.step1 is the first of 4 chained steps that strip
+  client.cert.base64.step1 is the first of 3 chained steps that strip
   tls.client.raw.cert's PEM armor and internal line-wrap whitespace down to
-  bare base64 (see AM-Extract-Client-Cert-Strip-Step2/Step3/Final for the
-  rest, and this bundle's root descriptor for why they're 4 SEPARATE
-  policies rather than 4 AssignVariable blocks in one). replaceAll's regex
-  is Apigee's own message-template function (Java regex under the hood; not
+  bare base64 (see AM-Extract-Client-Cert-Strip-Step2/Final for the rest,
+  and this bundle's root descriptor for why they're 3 SEPARATE policies
+  rather than 3 AssignVariable blocks in one). replaceAll's regex is
+  Apigee's own message-template function (Java regex under the hood; not
   JavaScript/Java code; no JavaCallout needed for this).
+
+  Whitespace comes out FIRST, before the BEGIN/END literal removal, not
+  after: stripping \s collapses the whole certificate onto one line, which
+  also removes the single space between "BEGIN"/"END" and "CERTIFICATE" (a
+  space is whitespace too), so the PEM armor's BEGIN CERTIFICATE marker line
+  collapses down to one contiguous word, one literal to remove instead of
+  needing "BEGIN", "END", and "CERTIFICATE" as three separate patterns. Doing
+  the whitespace strip last would still work, but doing it first is simpler
+  and is one fewer policy.
 
   client.cert.subject.dn/.issuer.dn/.subject.dn.base64/.issuer.dn.base64
   don't have this chaining problem (each is a single, independent
@@ -32,7 +41,7 @@
     <DisplayName>AM Extract Client Cert TLS</DisplayName>
     <AssignVariable>
         <Name>client.cert.base64.step1</Name>
-        <Template>{replaceAll(tls.client.raw.cert,'-----BEGIN','')}</Template>
+        <Template>{replaceAll(tls.client.raw.cert,'\\s','')}</Template>
     </AssignVariable>
     <AssignVariable>
         <Name>client.cert.subject.dn</Name>

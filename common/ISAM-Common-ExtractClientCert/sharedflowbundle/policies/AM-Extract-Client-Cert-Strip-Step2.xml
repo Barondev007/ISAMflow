@@ -7,15 +7,20 @@
   real pre-existing flow variable (tls.client.raw.cert) worked fine in that
   same policy. A variable set by one policy IS reliably visible to the next
   policy STEP in the flow, so each chained transformation gets its own
-  policy instead of trusting cross-block visibility within one AssignMessage
-  ; that visibility gap is exactly the class of undocumented behavior this
+  policy instead of trusting cross-block visibility within one AssignMessage;
+  that visibility gap is exactly the class of undocumented behavior this
   whole bundle has repeatedly had to learn the hard way, empirically.
+
+  Removes the collapsed BEGINCERTIFICATE marker as ONE literal, no space needed:
+  client.cert.base64.step1 (from AM-Extract-Client-Cert-TLS) already had
+  every whitespace character stripped, including the space that used to sit
+  between "BEGIN" and "CERTIFICATE" in the original PEM text.
 -->
 <AssignMessage name="AM-Extract-Client-Cert-Strip-Step2">
     <DisplayName>AM Extract Client Cert Strip Step2</DisplayName>
     <AssignVariable>
         <Name>client.cert.base64.step2</Name>
-        <Template>{replaceAll(client.cert.base64.step1,'-----END','')}</Template>
+        <Template>{replaceAll(client.cert.base64.step1,'-----BEGINCERTIFICATE-----','')}</Template>
     </AssignVariable>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
 </AssignMessage>

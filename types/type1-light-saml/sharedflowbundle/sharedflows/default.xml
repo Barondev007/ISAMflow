@@ -7,11 +7,18 @@
         <Name>RF-ISAM-Config-Missing</Name>
     </Step>
 
+    <Step>
+        <Name>FC-Extract-Client-Cert</Name>
+    </Step>
+
     <!-- Type 1 has no bearer token; the client certificate is the only
          identifying attribute, so it's required here (unlike the other
-         types, where a missing cert is just a missing optional context item). -->
+         types, where a missing cert is just a missing optional context item).
+         Checked against client.cert.pem (set by FC-Extract-Client-Cert
+         above), not the raw header directly, since client.cert.pem is
+         whichever of the TLS handshake or the header actually resolved. -->
     <Step>
-        <Condition>request.header.X-Client-Cert = null</Condition>
+        <Condition>client.cert.pem = null</Condition>
         <Name>RF-Missing-Client-Cert</Name>
     </Step>
 

@@ -8,6 +8,10 @@
     </Step>
 
     <Step>
+        <Name>FC-Extract-Client-Cert</Name>
+    </Step>
+
+    <Step>
         <Name>EV-Extract-BearerToken</Name>
     </Step>
     <Step>

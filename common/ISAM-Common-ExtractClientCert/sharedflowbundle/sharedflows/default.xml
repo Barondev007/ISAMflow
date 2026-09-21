@@ -1,0 +1,9 @@
+<SharedFlow name="default">
+    <Step>
+        <Name>AM-Extract-Client-Cert-TLS</Name>
+    </Step>
+    <Step>
+        <Condition>client.cert.pem = null</Condition>
+        <Name>AM-Extract-Client-Cert-Header-Fallback</Name>
+    </Step>
+</SharedFlow>

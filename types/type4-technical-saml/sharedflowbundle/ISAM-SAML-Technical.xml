@@ -12,6 +12,7 @@
     <Policies>
         <Policy>KVM-Get-ISAMConfig</Policy>
         <Policy>RF-ISAM-Config-Missing</Policy>
+        <Policy>FC-Extract-Client-Cert</Policy>
         <Policy>EV-Extract-BearerToken</Policy>
         <Policy>RF-Missing-Bearer-Token</Policy>
         <Policy>AM-Set-Default-CompressSaml</Policy>

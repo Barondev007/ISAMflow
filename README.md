@@ -173,13 +173,21 @@ native Apigee policies (no JavaScript anywhere in this project):
   string-splitting needs code. Instead `client.ip` (Apigee's own view) and
   the raw `X-Forwarded-For` header are sent separately and verbatim; let
   ISAM's own mapping rule decide which it trusts.
-- **Client certificate header**: hard-coded to `X-Client-Cert` in each
-  type's `AM-Build-*-Request.xml`, rather than KVM-configurable — looking up
-  a header by a name stored in *another* variable needs indirect variable
-  resolution, which native Apigee templating can't do (only JavaScript
-  could). If your header name varies, edit that one line per type. The
-  value is also expected pre-normalized to bare base64 (no PEM armor, no
-  URL-encoding) by whatever terminates mTLS in front of Apigee.
+- **Client certificate**: resolved once per request into a single
+  `client.cert.pem` variable by the `ISAM-Common-ExtractClientCert` shared
+  flow, which every type calls (via `FC-Extract-Client-Cert`) before
+  building its request to ISAM, rather than each type reading a header
+  directly. It prefers `tls.client.raw.cert` — the certificate Apigee
+  itself received during a two-way TLS handshake, when mutual auth
+  terminates at the gateway's own VirtualHost — and falls back to the
+  `X-Client-Cert` header only when that's unset, i.e. mTLS terminates
+  further upstream (a load balancer or reverse proxy in front of Apigee)
+  and forwards the cert it received in that header instead. See that
+  bundle's root descriptor for the VirtualHost/environment config
+  (`ClientAuthEnabled`+`TrustStore`, or `propagateTLSInformation.
+  clientProperties`) that `tls.client.raw.cert` actually depends on — it's
+  the first thing to check if `client.cert.pem` unexpectedly comes back
+  null in an environment where you expect Apigee itself to terminate mTLS.
 
 ## Signature validation & trust
 

@@ -1,0 +1,18 @@
+<!--
+  Authoritative source: the client certificate Apigee itself received during
+  the two-way TLS handshake on its own VirtualHost, when mutual auth
+  terminates at the gateway. tls.client.raw.cert is only populated when the
+  VirtualHost has ClientAuthEnabled + a TrustStore configured (Edge Private/
+  Public Cloud) or propagateTLSInformation.clientProperties = true (Apigee X
+  / hybrid); that is environment/VirtualHost config outside this bundle, not
+  something a SharedFlowBundle can set. A plain <Ref> copy, not
+  <Value>/<Template>, since this is a straight variable-to-variable copy.
+-->
+<AssignMessage name="AM-Extract-Client-Cert-TLS">
+    <DisplayName>AM Extract Client Cert TLS</DisplayName>
+    <AssignVariable>
+        <Name>client.cert.pem</Name>
+        <Ref>tls.client.raw.cert</Ref>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

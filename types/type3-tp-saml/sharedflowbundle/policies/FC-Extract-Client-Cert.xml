@@ -1,0 +1,4 @@
+<FlowCallout name="FC-Extract-Client-Cert">
+    <DisplayName>FC Extract Client Cert</DisplayName>
+    <SharedFlowBundle>ISAM-Common-ExtractClientCert</SharedFlowBundle>
+</FlowCallout>

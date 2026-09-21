@@ -1,0 +1,50 @@
+<SharedFlowBundle revision="1" name="ISAM-Common-ExtractClientCert">
+    <ConfigurationVersion majorVersion="4" minorVersion="0"/>
+    <CreatedAt>1735689600000</CreatedAt>
+    <LastModifiedAt>1735689600000</LastModifiedAt>
+    <Description>
+        Reusable building block: resolves the caller's client certificate into
+        a single canonical variable, client.cert.pem, so every SAML/JWT type
+        embeds the same value in its request to ISAM instead of each type
+        reading a header directly.
+
+        OUTPUT variable:
+          client.cert.pem   string, PEM-encoded X.509 certificate; null if
+                             the caller presented no certificate through
+                             either source below.
+
+        Two sources, tried in order:
+          1. tls.client.raw.cert -- the certificate Apigee itself received
+             during a two-way TLS handshake on its own VirtualHost. This is
+             the authoritative source when mutual TLS terminates AT Apigee.
+             It is ONLY populated if the VirtualHost is configured for
+             client auth:
+               - Edge Private/Public Cloud: the VirtualHost's SSLInfo needs
+                 ClientAuthEnabled set to true, plus a TrustStore holding the
+                 accepted client CA chain.
+               - Apigee X/hybrid: the environment's TLS config has
+                 propagateTLSInformation.clientProperties = true.
+             That configuration lives on the VirtualHost/environment, not in
+             any proxy or shared flow bundle, so it will not show up in this
+             repo -- if client.cert.pem keeps coming back null in an
+             environment where you expect mTLS at the gateway, check that
+             config first, not this bundle's policies.
+          2. request.header.X-Client-Cert -- a PEM/URL-encoded certificate
+             forwarded by an upstream device (a load balancer or reverse
+             proxy in front of Apigee) that terminates mutual TLS itself.
+             Only used as a fallback when tls.client.raw.cert is unset, i.e.
+             Apigee did not itself terminate mTLS for this request.
+
+        Every type-specific shared flow (ISAM-SAML-Light, ISAM-SAML-User,
+        ISAM-SAML-TP, ISAM-SAML-Technical, ISAM-JWT-SAML, ISAM-JWT-Token)
+        calls this one via FlowCallout early in its flow, before building its
+        request to ISAM, and reads client.cert.pem afterwards.
+    </Description>
+    <Policies>
+        <Policy>AM-Extract-Client-Cert-TLS</Policy>
+        <Policy>AM-Extract-Client-Cert-Header-Fallback</Policy>
+    </Policies>
+    <SharedFlows>
+        <SharedFlow>default</SharedFlow>
+    </SharedFlows>
+</SharedFlowBundle>

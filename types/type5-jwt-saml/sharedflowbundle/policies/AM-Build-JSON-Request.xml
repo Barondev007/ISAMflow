@@ -20,7 +20,7 @@
                 "ip": "{escapeJSON(client.ip)}",
                 "forwardedFor": "{escapeJSON(request.header.X-Forwarded-For)}",
                 "userAgent": "{escapeJSON(request.header.User-Agent)}",
-                "clientCertificate": "{escapeJSON(request.header.X-Client-Cert)}"
+                "clientCertificate": "{escapeJSON(client.cert.pem)}"
               }
             }
         </Payload>

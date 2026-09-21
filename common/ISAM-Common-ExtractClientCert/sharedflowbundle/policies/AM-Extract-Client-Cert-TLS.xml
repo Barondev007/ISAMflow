@@ -21,27 +21,40 @@
   message-template function (Java regex under the hood, confirmed against a
   Dino Chiesa Apigee-MessageTemplate-Demo example using the same
   {replaceAll(source,'pattern','replacement')} form), not JavaScript/Java
-  code; no JavaCallout needed for this. Two escaping/syntax pitfalls hit
-  while getting this working, both documented by Apigee but easy to miss:
-  (1) the whitespace shorthand needs a DOUBLE backslash, \\s not \s, since
-  the argument string goes through the template engine's own escape
-  processing before being handed to the regex compiler as \s; a single
-  backslash silently matched nothing (no compile error, just a no-op
-  replace). (2) Apigee's docs state plainly, more than once, that spaces
-  are not allowed ANYWHERE in a message template function expression,
-  including inside a single-quoted literal argument. The literal spaces in
-  "BEGIN CERTIFICATE"/"END CERTIFICATE" broke the whole {...} expression's
-  parse, and an unparseable expression is left as unresolved literal text
-  rather than raising an error, which is exactly what showed up in testing:
-  the raw, unevaluated function-call text landing in client.cert.base64
-  verbatim. Every literal space in the pattern below is written as \\s
-  instead for that reason.
+  code; no JavaCallout needed for this.
+
+  Deliberately split into 4 dead-simple steps chained through intermediate
+  variables, rather than one combined regex, after two earlier single-regex
+  attempts (with alternation via | and \s/\\s substitutions for the literal
+  spaces) both still came back as unevaluated literal text in trace on a
+  real environment (Apigee Edge Private Cloud 4.53.01); the two
+  documented pitfalls (single- vs double-backslash for \s; no spaces
+  anywhere in the expression, even inside a quoted literal) explained but
+  did not actually fix, so something about combining alternation with those
+  substitutions in one expression is still suspect on this version. Each
+  step below removes exactly one literal substring or the \\s shorthand,
+  alone, with zero alternation and zero embedded spaces; if this still
+  fails, check client.cert.base64.step1/.step2/.step3 in trace to see
+  exactly which single-purpose step is the one actually failing to
+  evaluate, rather than guessing at the combined expression again.
 -->
 <AssignMessage name="AM-Extract-Client-Cert-TLS">
     <DisplayName>AM Extract Client Cert TLS</DisplayName>
     <AssignVariable>
+        <Name>client.cert.base64.step1</Name>
+        <Template>{replaceAll(tls.client.raw.cert,'-----BEGIN','')}</Template>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>client.cert.base64.step2</Name>
+        <Template>{replaceAll(client.cert.base64.step1,'-----END','')}</Template>
+    </AssignVariable>
+    <AssignVariable>
+        <Name>client.cert.base64.step3</Name>
+        <Template>{replaceAll(client.cert.base64.step2,'CERTIFICATE-----','')}</Template>
+    </AssignVariable>
+    <AssignVariable>
         <Name>client.cert.base64</Name>
-        <Template>{replaceAll(tls.client.raw.cert,'-----BEGIN\\sCERTIFICATE-----|-----END\\sCERTIFICATE-----|\\s','')}</Template>
+        <Template>{replaceAll(client.cert.base64.step3,'\\s','')}</Template>
     </AssignVariable>
     <AssignVariable>
         <Name>client.cert.subject.dn</Name>

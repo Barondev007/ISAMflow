@@ -11,50 +11,28 @@
   Only reached (see sharedflows/default.xml's Condition) when
   tls.client.raw.cert is confirmed non-null, so it is safe to use <Template>
   here (which, unlike <Ref>, always produces a string, even ""; running it
-  unconditionally would make client.cert.base64 resolve to "" instead of
-  staying null when TLS gave us nothing, which would wrongly skip the header
-  fallback below).
+  unconditionally would make client.cert.base64.step1 resolve to "" instead
+  of staying null when TLS gave us nothing, which would wrongly skip the
+  header fallback further down the flow).
 
-  client.cert.base64 strips tls.client.raw.cert's PEM armor and internal
-  line-wrap whitespace down to bare base64, since that (not full PEM) is
-  what gets embedded in the request to ISAM. replaceAll's regex is Apigee's
-  message-template function (Java regex under the hood, confirmed against a
-  Dino Chiesa Apigee-MessageTemplate-Demo example using the same
-  {replaceAll(source,'pattern','replacement')} form), not JavaScript/Java
-  code; no JavaCallout needed for this.
+  client.cert.base64.step1 is the first of 4 chained steps that strip
+  tls.client.raw.cert's PEM armor and internal line-wrap whitespace down to
+  bare base64 (see AM-Extract-Client-Cert-Strip-Step2/Step3/Final for the
+  rest, and this bundle's root descriptor for why they're 4 SEPARATE
+  policies rather than 4 AssignVariable blocks in one). replaceAll's regex
+  is Apigee's own message-template function (Java regex under the hood; not
+  JavaScript/Java code; no JavaCallout needed for this).
 
-  Deliberately split into 4 dead-simple steps chained through intermediate
-  variables, rather than one combined regex, after two earlier single-regex
-  attempts (with alternation via | and \s/\\s substitutions for the literal
-  spaces) both still came back as unevaluated literal text in trace on a
-  real environment (Apigee Edge Private Cloud 4.53.01); the two
-  documented pitfalls (single- vs double-backslash for \s; no spaces
-  anywhere in the expression, even inside a quoted literal) explained but
-  did not actually fix, so something about combining alternation with those
-  substitutions in one expression is still suspect on this version. Each
-  step below removes exactly one literal substring or the \\s shorthand,
-  alone, with zero alternation and zero embedded spaces; if this still
-  fails, check client.cert.base64.step1/.step2/.step3 in trace to see
-  exactly which single-purpose step is the one actually failing to
-  evaluate, rather than guessing at the combined expression again.
+  client.cert.subject.dn/.issuer.dn/.subject.dn.base64/.issuer.dn.base64
+  don't have this chaining problem (each is a single, independent
+  AssignVariable reading directly from a real pre-existing flow variable,
+  tls.client.s.dn/tls.client.i.dn), so they stay in this one policy.
 -->
 <AssignMessage name="AM-Extract-Client-Cert-TLS">
     <DisplayName>AM Extract Client Cert TLS</DisplayName>
     <AssignVariable>
         <Name>client.cert.base64.step1</Name>
         <Template>{replaceAll(tls.client.raw.cert,'-----BEGIN','')}</Template>
-    </AssignVariable>
-    <AssignVariable>
-        <Name>client.cert.base64.step2</Name>
-        <Template>{replaceAll(client.cert.base64.step1,'-----END','')}</Template>
-    </AssignVariable>
-    <AssignVariable>
-        <Name>client.cert.base64.step3</Name>
-        <Template>{replaceAll(client.cert.base64.step2,'CERTIFICATE-----','')}</Template>
-    </AssignVariable>
-    <AssignVariable>
-        <Name>client.cert.base64</Name>
-        <Template>{replaceAll(client.cert.base64.step3,'\\s','')}</Template>
     </AssignVariable>
     <AssignVariable>
         <Name>client.cert.subject.dn</Name>

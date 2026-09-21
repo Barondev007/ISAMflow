@@ -1,0 +1,14 @@
+<!--
+  Reads client.cert.base64.step2, set by the previous policy STEP
+  (AM-Extract-Client-Cert-Strip-Step2); see that policy's comment for why
+  this has to be a separate policy rather than another AssignVariable block
+  in the same one.
+-->
+<AssignMessage name="AM-Extract-Client-Cert-Strip-Step3">
+    <DisplayName>AM Extract Client Cert Strip Step3</DisplayName>
+    <AssignVariable>
+        <Name>client.cert.base64.step3</Name>
+        <Template>{replaceAll(client.cert.base64.step2,'CERTIFICATE-----','')}</Template>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

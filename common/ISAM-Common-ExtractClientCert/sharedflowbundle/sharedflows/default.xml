@@ -1,13 +1,30 @@
 <SharedFlow name="default">
-    <!-- Gated on tls.client.raw.cert itself (not run unconditionally): the
-         Template-based strip in AM-Extract-Client-Cert-TLS always produces a
-         string, even "" when its source is unresolved, so running it
-         unconditionally would set client.cert.base64 to "" instead of
-         leaving it null, which would wrongly skip the header fallback
-         below even when TLS gave us nothing. -->
+    <!-- All four gated on tls.client.raw.cert itself (not run
+         unconditionally): every Template-based step here always produces a
+         string, even "" when its source is unresolved, so running them
+         unconditionally would end with client.cert.base64 = "" instead of
+         staying null, which would wrongly skip the header fallback below
+         even when TLS gave us nothing. Split into 4 separate policy STEPS,
+         not 4 AssignVariable blocks in one policy: a later block reading a
+         variable an earlier block in the SAME policy had just set came back
+         unresolved on a real trace, while a later STEP reading a variable a
+         PRIOR STEP set worked reliably; see AM-Extract-Client-Cert-Strip-
+         Step2's own comment for the detail. -->
     <Step>
         <Condition>tls.client.raw.cert != null</Condition>
         <Name>AM-Extract-Client-Cert-TLS</Name>
+    </Step>
+    <Step>
+        <Condition>tls.client.raw.cert != null</Condition>
+        <Name>AM-Extract-Client-Cert-Strip-Step2</Name>
+    </Step>
+    <Step>
+        <Condition>tls.client.raw.cert != null</Condition>
+        <Name>AM-Extract-Client-Cert-Strip-Step3</Name>
+    </Step>
+    <Step>
+        <Condition>tls.client.raw.cert != null</Condition>
+        <Name>AM-Extract-Client-Cert-Strip-Final</Name>
     </Step>
     <Step>
         <Condition>client.cert.base64 = null</Condition>

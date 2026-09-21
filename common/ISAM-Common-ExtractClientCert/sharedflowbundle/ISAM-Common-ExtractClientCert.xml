@@ -49,8 +49,19 @@
              environment where you expect mTLS at the gateway, check that
              config first, not this bundle's policies. tls.client.raw.cert
              comes back PEM-armored (with BEGIN/END lines and line-wrap
-             whitespace); AM-Extract-Client-Cert-TLS strips that down to the
-             bare base64 stored in client.cert.base64.
+             whitespace); stripping that down to the bare base64 stored in
+             client.cert.base64 takes 4 chained policy STEPS
+             (AM-Extract-Client-Cert-TLS, then -Strip-Step2, -Strip-Step3,
+             -Strip-Final, each writing one intermediate
+             client.cert.base64.stepN variable the next one reads), not 4
+             AssignVariable blocks inside one policy: on a real trace, a
+             later block reading a variable an EARLIER block in that SAME
+             policy had just set came back unresolved, while a later STEP
+             reading a variable a PRIOR STEP had set worked reliably. If you
+             ever need to chain a transformation like this yourself, split
+             it across policy steps, not AssignVariable blocks, until/unless
+             you've independently confirmed same-policy chaining works on
+             your specific Apigee version.
           2. request.header.X-Client-Cert -- a certificate forwarded by an
              upstream device (a load balancer or reverse proxy in front of
              Apigee) that terminates mutual TLS itself, expected already in
@@ -65,6 +76,9 @@
     </Description>
     <Policies>
         <Policy>AM-Extract-Client-Cert-TLS</Policy>
+        <Policy>AM-Extract-Client-Cert-Strip-Step2</Policy>
+        <Policy>AM-Extract-Client-Cert-Strip-Step3</Policy>
+        <Policy>AM-Extract-Client-Cert-Strip-Final</Policy>
         <Policy>AM-Extract-Client-Cert-Header-Fallback</Policy>
     </Policies>
     <SharedFlows>

@@ -4,14 +4,23 @@
     <LastModifiedAt>1735689600000</LastModifiedAt>
     <Description>
         Reusable building block: resolves the caller's client certificate into
-        a single canonical variable, client.cert.pem, so every SAML/JWT type
-        embeds the same value in its request to ISAM instead of each type
-        reading a header directly.
+        canonical variables, so every SAML/JWT type embeds the same values in
+        its request to ISAM instead of each type reading a header directly.
 
-        OUTPUT variable:
-          client.cert.pem   string, PEM-encoded X.509 certificate; null if
-                             the caller presented no certificate through
-                             either source below.
+        OUTPUT variables:
+          client.cert.pem           string, PEM-encoded X.509 certificate;
+                                     null if the caller presented no
+                                     certificate through either source below.
+          client.cert.subject.dn    string, the cert's subject Distinguished
+                                     Name; only populated via source 1 below
+                                     (tls.client.s.dn) -- the header fallback
+                                     never carries a pre-parsed DN, only the
+                                     raw cert, so this stays null whenever
+                                     client.cert.pem was resolved from
+                                     request.header.X-Client-Cert instead.
+          client.cert.issuer.dn     string, the cert's issuer Distinguished
+                                     Name (tls.client.i.dn); same header-
+                                     fallback caveat as client.cert.subject.dn.
 
         Two sources, tried in order:
           1. tls.client.raw.cert -- the certificate Apigee itself received
@@ -38,7 +47,7 @@
         Every type-specific shared flow (ISAM-SAML-Light, ISAM-SAML-User,
         ISAM-SAML-TP, ISAM-SAML-Technical, ISAM-JWT-SAML, ISAM-JWT-Token)
         calls this one via FlowCallout early in its flow, before building its
-        request to ISAM, and reads client.cert.pem afterwards.
+        request to ISAM, and reads these variables afterwards.
     </Description>
     <Policies>
         <Policy>AM-Extract-Client-Cert-TLS</Policy>

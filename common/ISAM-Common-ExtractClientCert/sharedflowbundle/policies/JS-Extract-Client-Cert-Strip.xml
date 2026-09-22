@@ -1,0 +1,12 @@
+<!--
+  Replaces the native-message-template attempt at this same transformation
+  (3 chained AssignVariable/replaceAll policies) after it repeatedly failed
+  to evaluate on a real environment, in 3 different variants, despite
+  matching documented Apigee message-template syntax each time. See
+  resources/jsc/strip-pem-armor.js for the detail and what was tried.
+-->
+<Javascript name="JS-Extract-Client-Cert-Strip" timeLimit="200">
+    <DisplayName>JS Extract Client Cert Strip</DisplayName>
+    <Properties/>
+    <ResourceURL>jsc://strip-pem-armor.js</ResourceURL>
+</Javascript>

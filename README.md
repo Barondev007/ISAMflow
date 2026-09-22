@@ -167,7 +167,8 @@ validate or compress, only a JWT to pass through as-is.
 ## Dynamic-attribute simplifications (all WS-Trust and JSON types)
 
 Two trade-offs, common to every type, fall out of building everything from
-native Apigee policies (no JavaScript anywhere in this project):
+native Apigee policies (with one exception, noted below, where native
+policies turned out not to work on a real deployment):
 
 - **Client IP**: no "first hop of X-Forwarded-For" parsing — that
   string-splitting needs code. Instead `client.ip` (Apigee's own view) and
@@ -191,10 +192,18 @@ native Apigee policies (no JavaScript anywhere in this project):
 
   The certificate is embedded in the request to ISAM as bare base64 — no
   PEM armor (`-----BEGIN/END CERTIFICATE-----`), no line-wrap whitespace —
-  via `client.cert.base64`, which strips `tls.client.raw.cert`'s PEM
-  formatting down using Apigee's native `replaceAll()` message-template
-  function (still no JavaScript/Java for this). The subject/issuer DN are
-  embedded base64-encoded too, via `client.cert.subject.dn.base64`/
+  via `client.cert.base64`. This is the one exception to "no JavaScript
+  anywhere": stripping `tls.client.raw.cert`'s PEM formatting was tried
+  natively first (`replaceAll()` message-template function, in a combined
+  regex, then a double-backslash `\s` variant, then split across chained
+  `AssignVariable` policy steps), but on the actual deployment target
+  (Apigee Edge Private Cloud 4.53.01) none of those ever evaluated — the
+  raw, unresolved expression text kept landing in the variable instead.
+  `JS-Extract-Client-Cert-Strip` (a plain `JavaScript` policy,
+  `resources/jsc/strip-pem-armor.js`) replaces just that one step; the DN
+  extraction alongside it is still native `AssignVariable`/`Ref`/`Template`,
+  since that was confirmed working in trace throughout. The subject/issuer
+  DN are embedded base64-encoded too, via `client.cert.subject.dn.base64`/
   `client.cert.issuer.dn.base64` (`encodeBase64()` applied to
   `tls.client.s.dn`/`.i.dn`), alongside the plain-text `client.cert.
   subject.dn`/`.issuer.dn` kept around for anything that wants them

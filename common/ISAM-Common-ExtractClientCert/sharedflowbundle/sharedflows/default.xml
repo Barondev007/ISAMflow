@@ -1,30 +1,19 @@
 <SharedFlow name="default">
-    <!-- All three gated on tls.client.raw.cert itself (not run
-         unconditionally): every Template-based step here always produces a
-         string, even "" when its source is unresolved, so running them
-         unconditionally would end with client.cert.base64 = "" instead of
-         staying null, which would wrongly skip the header fallback below
-         even when TLS gave us nothing. Split into 3 separate policy STEPS,
-         not 3 AssignVariable blocks in one policy: a later block reading a
-         variable an earlier block in the SAME policy had just set came back
-         unresolved on a real trace, while a later STEP reading a variable a
-         PRIOR STEP set worked reliably; see AM-Extract-Client-Cert-Strip-
-         Step2's own comment for the detail. Whitespace is stripped FIRST
-         (step1, in AM-Extract-Client-Cert-TLS), which collapses the PEM
-         armor's BEGIN/END CERTIFICATE marker lines down to one word each
-         (the space between them is whitespace too), so only two literal
-         removals are needed afterward instead of three. -->
+    <!-- Both gated on tls.client.raw.cert itself (not run unconditionally):
+         a Template-based AssignVariable always produces a string, even ""
+         when its source is unresolved, so running AM-Extract-Client-Cert-TLS
+         unconditionally would end with the DN variables set to "" instead of
+         staying null. JS-Extract-Client-Cert-Strip guards internally too
+         (see its own .js source), but keeping the same Condition here is
+         cheap and keeps both steps' gating consistent and easy to read
+         together. -->
     <Step>
         <Condition>tls.client.raw.cert != null</Condition>
         <Name>AM-Extract-Client-Cert-TLS</Name>
     </Step>
     <Step>
         <Condition>tls.client.raw.cert != null</Condition>
-        <Name>AM-Extract-Client-Cert-Strip-Step2</Name>
-    </Step>
-    <Step>
-        <Condition>tls.client.raw.cert != null</Condition>
-        <Name>AM-Extract-Client-Cert-Strip-Final</Name>
+        <Name>JS-Extract-Client-Cert-Strip</Name>
     </Step>
     <Step>
         <Condition>client.cert.base64 = null</Condition>

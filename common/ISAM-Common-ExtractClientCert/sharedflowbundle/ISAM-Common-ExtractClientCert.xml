@@ -50,22 +50,18 @@
              config first, not this bundle's policies. tls.client.raw.cert
              comes back PEM-armored (with BEGIN/END lines and line-wrap
              whitespace); stripping that down to the bare base64 stored in
-             client.cert.base64 takes 3 chained policy STEPS
-             (AM-Extract-Client-Cert-TLS, then -Strip-Step2, -Strip-Final,
-             each writing one intermediate client.cert.base64.stepN variable
-             the next one reads), not 3 AssignVariable blocks inside one
-             policy: on a real trace, a later block reading a variable an
-             EARLIER block in that SAME policy had just set came back
-             unresolved, while a later STEP reading a variable a PRIOR STEP
-             had set worked reliably. If you ever need to chain a
-             transformation like this yourself, split it across policy
-             steps, not AssignVariable blocks, until/unless you've
-             independently confirmed same-policy chaining works on your
-             specific Apigee version. Whitespace is stripped FIRST (step1),
-             not last: that collapses "-----BEGIN CERTIFICATE-----"/"-----END
-             CERTIFICATE-----" down to one word each (the space in the
-             middle is whitespace too), so only two literal removals are
-             needed afterward instead of three.
+             client.cert.base64 is done by JS-Extract-Client-Cert-Strip, a
+             plain JavaScript policy (resources/jsc/strip-pem-armor.js). The
+             DN variables above are still native AssignVariable (in
+             AM-Extract-Client-Cert-TLS) -- only the cert-stripping half
+             moved to JavaScript, after 3 different native
+             message-template/replaceAll() attempts (a single combined
+             regex, single- vs double-backslash \s variants, and a version
+             split across 3 chained AssignVariable policy steps) all still
+             came back as unevaluated literal text in trace on a real
+             environment (Apigee Edge Private Cloud 4.53.01), despite each
+             matching documented Apigee message-template syntax. Real
+             JavaScript string methods have no equivalent ambiguity.
           2. request.header.X-Client-Cert -- a certificate forwarded by an
              upstream device (a load balancer or reverse proxy in front of
              Apigee) that terminates mutual TLS itself, expected already in
@@ -80,8 +76,7 @@
     </Description>
     <Policies>
         <Policy>AM-Extract-Client-Cert-TLS</Policy>
-        <Policy>AM-Extract-Client-Cert-Strip-Step2</Policy>
-        <Policy>AM-Extract-Client-Cert-Strip-Final</Policy>
+        <Policy>JS-Extract-Client-Cert-Strip</Policy>
         <Policy>AM-Extract-Client-Cert-Header-Fallback</Policy>
     </Policies>
     <SharedFlows>

@@ -14,11 +14,11 @@
     <!-- Type 1 has no bearer token; the client certificate is the only
          identifying attribute, so it's required here (unlike the other
          types, where a missing cert is just a missing optional context item).
-         Checked against client.cert.base64 (set by FC-Extract-Client-Cert
-         above), not the raw header directly, since client.cert.base64 is
+         Checked against isam.client.cert.base64 (set by FC-Extract-Client-Cert
+         above), not the raw header directly, since isam.client.cert.base64 is
          whichever of the TLS handshake or the header actually resolved. -->
     <Step>
-        <Condition>client.cert.base64 = null</Condition>
+        <Condition>isam.client.cert.base64 = null</Condition>
         <Name>RF-Missing-Client-Cert</Name>
     </Step>
 

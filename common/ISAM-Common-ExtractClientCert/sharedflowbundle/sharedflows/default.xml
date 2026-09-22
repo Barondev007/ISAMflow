@@ -16,7 +16,7 @@
         <Name>JS-Extract-Client-Cert-Strip</Name>
     </Step>
     <Step>
-        <Condition>client.cert.base64 = null</Condition>
+        <Condition>isam.client.cert.base64 = null</Condition>
         <Name>AM-Extract-Client-Cert-Header-Fallback</Name>
     </Step>
 </SharedFlow>

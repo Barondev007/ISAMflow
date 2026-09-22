@@ -7,29 +7,44 @@
         canonical variables, so every SAML/JWT type embeds the same values in
         its request to ISAM instead of each type reading a header directly.
 
+        NAMING: every output variable here lives under isam.client.cert.*,
+        never bare client.*. client is a RESERVED Apigee system variable
+        prefix (client.ip, client.port, etc., all platform-populated and
+        read-only); an earlier version of this bundle used client.cert.* and
+        every write to it was silently rejected, no matter how it was
+        written (native AssignVariable/Template, a JavaScript
+        context.setVariable() -- neither worked, both were writing to a
+        read-only prefix). Confirmed via trace: a rejected write shows a
+        not-equals marker on the variable meaning "could not be assigned,
+        read-only". Do not reintroduce a client.* variable name in this
+        bundle.
+
         OUTPUT variables:
-          client.cert.base64          string, the client's X.509 certificate
-                                       as BARE base64 -- no "-----BEGIN
-                                       CERTIFICATE-----"/"-----END
-                                       CERTIFICATE-----" armor, no internal
-                                       line-wrap whitespace, exactly the form
-                                       ISAM's request expects. Null if the
-                                       caller presented no certificate
-                                       through either source below.
-          client.cert.subject.dn      string, the cert's subject Distinguished
-                                       Name, plain text.
-          client.cert.issuer.dn       string, the cert's issuer Distinguished
-                                       Name, plain text.
-          client.cert.subject.dn.base64   the same subject DN, base64-encoded
-                                           (this, not the plain-text form
-                                           above, is what goes in the request
-                                           to ISAM).
-          client.cert.issuer.dn.base64    the same issuer DN, base64-encoded.
+          isam.client.cert.base64            string, the client's X.509
+                                              certificate as BARE base64 --
+                                              no "-----BEGIN CERTIFICATE
+                                              -----"/"-----END CERTIFICATE
+                                              -----" armor, no internal
+                                              line-wrap whitespace, exactly
+                                              the form ISAM's request
+                                              expects. Null if the caller
+                                              presented no certificate
+                                              through either source below.
+          isam.client.cert.subject.dn        string, the cert's subject
+                                              Distinguished Name, plain text.
+          isam.client.cert.issuer.dn         string, the cert's issuer
+                                              Distinguished Name, plain text.
+          isam.client.cert.subject.dn.base64 the same subject DN,
+                                              base64-encoded (this, not the
+                                              plain-text form above, is what
+                                              goes in the request to ISAM).
+          isam.client.cert.issuer.dn.base64  the same issuer DN,
+                                              base64-encoded.
 
           The four DN variables are only populated via source 1 below
           (tls.client.s.dn / tls.client.i.dn) -- the header fallback never
           carries a pre-parsed DN, only the raw cert, so all four stay null
-          whenever client.cert.base64 was resolved from
+          whenever isam.client.cert.base64 was resolved from
           request.header.X-Client-Cert instead.
 
         Two sources, tried in order:
@@ -45,23 +60,30 @@
                  propagateTLSInformation.clientProperties = true.
              That configuration lives on the VirtualHost/environment, not in
              any proxy or shared flow bundle, so it will not show up in this
-             repo -- if client.cert.base64 keeps coming back null in an
+             repo -- if isam.client.cert.base64 keeps coming back null in an
              environment where you expect mTLS at the gateway, check that
-             config first, not this bundle's policies. tls.client.raw.cert
-             comes back PEM-armored (with BEGIN/END lines and line-wrap
-             whitespace); stripping that down to the bare base64 stored in
-             client.cert.base64 is done by JS-Extract-Client-Cert-Strip, a
-             plain JavaScript policy (resources/jsc/strip-pem-armor.js). The
-             DN variables above are still native AssignVariable (in
-             AM-Extract-Client-Cert-TLS) -- only the cert-stripping half
-             moved to JavaScript, after 3 different native
-             message-template/replaceAll() attempts (a single combined
-             regex, single- vs double-backslash \s variants, and a version
-             split across 3 chained AssignVariable policy steps) all still
-             came back as unevaluated literal text in trace on a real
-             environment (Apigee Edge Private Cloud 4.53.01), despite each
-             matching documented Apigee message-template syntax. Real
-             JavaScript string methods have no equivalent ambiguity.
+             config first, not this bundle's policies (and see the NAMING
+             note above if you see a value in trace with a not-equals marker
+             next to it, rather than a genuinely-null variable). tls.client.
+             raw.cert comes back PEM-armored (with BEGIN/END lines and
+             line-wrap whitespace); stripping that down to the bare base64
+             stored in isam.client.cert.base64 is done by
+             JS-Extract-Client-Cert-Strip, a plain JavaScript policy
+             (resources/jsc/strip-pem-armor.js). The DN variables above are
+             still native AssignVariable (in AM-Extract-Client-Cert-TLS) --
+             only the cert-stripping half moved to JavaScript. That move was
+             made after 3 different native message-template/replaceAll()
+             attempts (a single combined regex, single- vs double-backslash
+             \s variants, and a version split across 3 chained AssignVariable
+             policy steps) all still came back as unevaluated literal text in
+             trace; those were real bugs in their own right (Apigee message
+             templates disallow spaces anywhere in a function expression,
+             even inside a quoted literal, and \s needs to be written \\s),
+             worth knowing about independently, but NOT the actual reason
+             the certificate itself never made it into the request -- that
+             was the client.* naming collision described above, which
+             affected the cert-stripping output variable regardless of
+             which technique (native or JavaScript) tried to write it.
           2. request.header.X-Client-Cert -- a certificate forwarded by an
              upstream device (a load balancer or reverse proxy in front of
              Apigee) that terminates mutual TLS itself, expected already in

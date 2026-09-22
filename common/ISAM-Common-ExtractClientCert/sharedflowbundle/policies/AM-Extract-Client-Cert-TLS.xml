@@ -14,7 +14,7 @@
   unconditionally would make these resolve to "" instead of staying null
   when TLS gave us nothing).
 
-  This policy now only sets the DN variables. client.cert.base64 (the
+  This policy now only sets the DN variables. isam.client.cert.base64 (the
   stripped certificate itself) moved to JS-Extract-Client-Cert-Strip: the
   native message-template replaceAll() approach for that specific
   transformation never evaluated on a real environment (Apigee Edge Private
@@ -28,19 +28,19 @@
 <AssignMessage name="AM-Extract-Client-Cert-TLS">
     <DisplayName>AM Extract Client Cert TLS</DisplayName>
     <AssignVariable>
-        <Name>client.cert.subject.dn</Name>
+        <Name>isam.client.cert.subject.dn</Name>
         <Ref>tls.client.s.dn</Ref>
     </AssignVariable>
     <AssignVariable>
-        <Name>client.cert.issuer.dn</Name>
+        <Name>isam.client.cert.issuer.dn</Name>
         <Ref>tls.client.i.dn</Ref>
     </AssignVariable>
     <AssignVariable>
-        <Name>client.cert.subject.dn.base64</Name>
+        <Name>isam.client.cert.subject.dn.base64</Name>
         <Template>{encodeBase64(tls.client.s.dn)}</Template>
     </AssignVariable>
     <AssignVariable>
-        <Name>client.cert.issuer.dn.base64</Name>
+        <Name>isam.client.cert.issuer.dn.base64</Name>
         <Template>{encodeBase64(tls.client.i.dn)}</Template>
     </AssignVariable>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>

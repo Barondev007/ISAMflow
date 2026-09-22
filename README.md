@@ -186,28 +186,41 @@ policies turned out not to work on a real deployment):
   instead. See that bundle's root descriptor for the VirtualHost/environment
   config (`ClientAuthEnabled`+`TrustStore`, or `propagateTLSInformation.
   clientProperties`) that the TLS-sourced variables actually depend on —
-  it's the first thing to check if `client.cert.base64` unexpectedly comes
+  it's the first thing to check if `isam.client.cert.base64` unexpectedly comes
   back null in an environment where you expect Apigee itself to terminate
   mTLS.
 
   The certificate is embedded in the request to ISAM as bare base64 — no
   PEM armor (`-----BEGIN/END CERTIFICATE-----`), no line-wrap whitespace —
-  via `client.cert.base64`. This is the one exception to "no JavaScript
-  anywhere": stripping `tls.client.raw.cert`'s PEM formatting was tried
-  natively first (`replaceAll()` message-template function, in a combined
-  regex, then a double-backslash `\s` variant, then split across chained
-  `AssignVariable` policy steps), but on the actual deployment target
-  (Apigee Edge Private Cloud 4.53.01) none of those ever evaluated — the
-  raw, unresolved expression text kept landing in the variable instead.
+  via `isam.client.cert.base64`. Note the `isam.` prefix: this output
+  variable was originally just `client.cert.base64`, which never worked —
+  `client` is a reserved Apigee system variable prefix (`client.ip`,
+  `client.port`, etc., all platform-populated and read-only), so every
+  write to anything under `client.*` was silently rejected regardless of
+  how it was written. That masqueraded as several different-looking
+  failures before the real cause surfaced in trace (a "≠" marker on the
+  variable meaning "could not be assigned, read-only"): native
+  `replaceAll()` attempts that never seemed to evaluate, a JavaScript
+  `context.setVariable()` that appeared to have no effect a step later.
+  Renaming every one of these variables onto this project's own
+  `isam.client.cert.*` namespace (never `client.*`) actually fixed it.
+
+  This is also the one exception to "no JavaScript anywhere": stripping
+  `tls.client.raw.cert`'s PEM formatting down to bare base64 is done by
   `JS-Extract-Client-Cert-Strip` (a plain `JavaScript` policy,
-  `resources/jsc/strip-pem-armor.js`) replaces just that one step; the DN
-  extraction alongside it is still native `AssignVariable`/`Ref`/`Template`,
-  since that was confirmed working in trace throughout. The subject/issuer
-  DN are embedded base64-encoded too, via `client.cert.subject.dn.base64`/
-  `client.cert.issuer.dn.base64` (`encodeBase64()` applied to
-  `tls.client.s.dn`/`.i.dn`), alongside the plain-text `client.cert.
-  subject.dn`/`.issuer.dn` kept around for anything that wants them
-  unencoded.
+  `resources/jsc/strip-pem-armor.js`) using real `String.replace()` calls,
+  after several native `replaceAll()` message-template attempts (a combined
+  regex, a double-backslash `\s` variant, then split across chained
+  `AssignVariable` policy steps) were tried first and ruled out along the
+  way (real, independently worth knowing bugs — no spaces allowed in a
+  message-template function expression even inside a quoted literal, `\s`
+  needing to be written `\\s` — just not the actual root cause here). The
+  DN extraction alongside it is still native `AssignVariable`/`Ref`/
+  `Template`. The subject/issuer DN are embedded base64-encoded too, via
+  `isam.client.cert.subject.dn.base64`/`isam.client.cert.issuer.dn.base64`
+  (`encodeBase64()` applied to `tls.client.s.dn`/`.i.dn`), alongside the
+  plain-text `isam.client.cert.subject.dn`/`.issuer.dn` kept around for
+  anything that wants them unencoded.
 
 ## Signature validation & trust
 

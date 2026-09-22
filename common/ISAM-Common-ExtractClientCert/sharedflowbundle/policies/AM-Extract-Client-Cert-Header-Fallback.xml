@@ -1,6 +1,6 @@
 <!--
   Only reached (see sharedflows/default.xml's Condition) if
-  AM-Extract-Client-Cert-TLS left client.cert.base64 unset; i.e. Apigee's own
+  AM-Extract-Client-Cert-TLS left isam.client.cert.base64 unset; i.e. Apigee's own
   VirtualHost did not terminate mutual TLS for this request (mTLS terminates
   further upstream, e.g. at a load balancer or reverse proxy in front of
   Apigee, which forwards the cert it received in this header instead).
@@ -18,7 +18,7 @@
 <AssignMessage name="AM-Extract-Client-Cert-Header-Fallback">
     <DisplayName>AM Extract Client Cert Header Fallback</DisplayName>
     <AssignVariable>
-        <Name>client.cert.base64</Name>
+        <Name>isam.client.cert.base64</Name>
         <Ref>request.header.X-Client-Cert</Ref>
     </AssignVariable>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>

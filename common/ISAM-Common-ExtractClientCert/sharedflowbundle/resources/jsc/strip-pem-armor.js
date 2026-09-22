@@ -20,5 +20,5 @@ if (raw) {
         .replace(/-----BEGIN CERTIFICATE-----/g, '')
         .replace(/-----END CERTIFICATE-----/g, '')
         .replace(/\s+/g, '');
-    context.setVariable('client.cert.base64', stripped);
+    context.setVariable('isam.client.cert.base64', stripped);
 }

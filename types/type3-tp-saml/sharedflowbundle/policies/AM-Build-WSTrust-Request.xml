@@ -5,7 +5,16 @@
   technique as the original single-purpose WS-Trust bundle; see the
   top-level README for why AssignMessage Payload templates (not
   AssignVariable/Value) are used for the parts needing functions.
+
+  clientCertificate/clientCertificateSubjectDN/clientCertificateIssuerDN are
+  NOT wrapped in escapeXML(): their values are always base64 (client.cert.
+  base64/.subject.dn.base64/.issuer.dn.base64), whose alphabet (A-Za-z0-9+/=)
+  contains no character that XML escaping would ever change, so the call was
+  strictly unnecessary; it was also removed as a precaution after several
+  other message-template functions misbehaved on the actual deployment
+  target for this project (Apigee Edge Private Cloud 4.53.01).
 -->
+
 <AssignMessage name="AM-Build-WSTrust-Request">
     <DisplayName>AM Build WSTrust Request</DisplayName>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
@@ -46,9 +55,9 @@
                             <wsc:ContextItem Name="ip"><wsc:Value>{escapeXML(client.ip)}</wsc:Value></wsc:ContextItem>
                             <wsc:ContextItem Name="forwardedFor"><wsc:Value>{escapeXML(request.header.X-Forwarded-For)}</wsc:Value></wsc:ContextItem>
                             <wsc:ContextItem Name="userAgent"><wsc:Value>{escapeXML(request.header.User-Agent)}</wsc:Value></wsc:ContextItem>
-                            <wsc:ContextItem Name="clientCertificate"><wsc:Value>{escapeXML(client.cert.base64)}</wsc:Value></wsc:ContextItem>
-                            <wsc:ContextItem Name="clientCertificateSubjectDN"><wsc:Value>{escapeXML(client.cert.subject.dn.base64)}</wsc:Value></wsc:ContextItem>
-                            <wsc:ContextItem Name="clientCertificateIssuerDN"><wsc:Value>{escapeXML(client.cert.issuer.dn.base64)}</wsc:Value></wsc:ContextItem>
+                            <wsc:ContextItem Name="clientCertificate"><wsc:Value>{client.cert.base64}</wsc:Value></wsc:ContextItem>
+                            <wsc:ContextItem Name="clientCertificateSubjectDN"><wsc:Value>{client.cert.subject.dn.base64}</wsc:Value></wsc:ContextItem>
+                            <wsc:ContextItem Name="clientCertificateIssuerDN"><wsc:Value>{client.cert.issuer.dn.base64}</wsc:Value></wsc:ContextItem>
                         </wst:AdditionalContext>
                     </wst:RequestSecurityToken>
                 </soapenv:Body>

@@ -4,7 +4,16 @@
   "give me a SAML assertion" and "give me a JWT" depending on config/path,
   so the request shape is kept identical for consistency. Trim fields here
   if ISAM's actual JWT-only endpoint turns out not to need all of them.
+
+  clientCertificate/clientCertificateSubjectDN/clientCertificateIssuerDN are
+  NOT wrapped in escapeJSON(): their values are always base64 (client.cert.
+  base64/.subject.dn.base64/.issuer.dn.base64), whose alphabet (A-Za-z0-9+/=)
+  contains no character that JSON escaping would ever change, so the call was
+  strictly unnecessary; it was also removed as a precaution after several
+  other message-template functions misbehaved on the actual deployment
+  target for this project (Apigee Edge Private Cloud 4.53.01).
 -->
+
 <AssignMessage name="AM-Build-JSON-Request">
     <DisplayName>AM Build JSON Request</DisplayName>
     <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
@@ -21,9 +30,9 @@
                 "ip": "{escapeJSON(client.ip)}",
                 "forwardedFor": "{escapeJSON(request.header.X-Forwarded-For)}",
                 "userAgent": "{escapeJSON(request.header.User-Agent)}",
-                "clientCertificate": "{escapeJSON(client.cert.base64)}",
-                "clientCertificateSubjectDN": "{escapeJSON(client.cert.subject.dn.base64)}",
-                "clientCertificateIssuerDN": "{escapeJSON(client.cert.issuer.dn.base64)}"
+                "clientCertificate": "{client.cert.base64}",
+                "clientCertificateSubjectDN": "{client.cert.subject.dn.base64}",
+                "clientCertificateIssuerDN": "{client.cert.issuer.dn.base64}"
               }
             }
         </Payload>

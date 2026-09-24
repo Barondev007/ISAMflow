@@ -1,0 +1,13 @@
+<!--
+  Replaces the old AM-Build-JSON-Request: the actual ISAM JWT-SAML contract
+  turned out to be application/x-www-form-urlencoded with a subject_token
+  field holding a JSON string, not a plain JSON body. See
+  resources/jsc/build-token-exchange-request.js for the two request
+  variants and why this is JavaScript rather than native AssignMessage/
+  Payload templates.
+-->
+<Javascript name="JS-Build-TokenExchange-Request" timeLimit="200">
+    <DisplayName>JS Build TokenExchange Request</DisplayName>
+    <Properties/>
+    <ResourceURL>jsc://build-token-exchange-request.js</ResourceURL>
+</Javascript>

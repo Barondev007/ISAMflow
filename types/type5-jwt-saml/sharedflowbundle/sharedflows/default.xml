@@ -3,7 +3,7 @@
         <Name>KVM-Get-ISAMConfig</Name>
     </Step>
     <Step>
-        <Condition>isam.config.host1 = null OR isam.config.host2 = null OR isam.config.port = null OR isam.config.scheme = null OR isam.config.path = null OR isam.config.appliesTo = null OR isam.config.tokenType = null OR isam.config.keyType = null OR isam.config.requestType = null</Condition>
+        <Condition>isam.config.host1 = null OR isam.config.host2 = null OR isam.config.port = null OR isam.config.scheme = null OR isam.config.path = null OR isam.config.subjectTokenTypeUserId = null OR isam.config.subjectTokenTypeAccessToken = null OR isam.config.requestedTokenType = null OR isam.config.audience = null</Condition>
         <Name>RF-ISAM-Config-Missing</Name>
     </Step>
 
@@ -11,12 +11,16 @@
         <Name>FC-Extract-Client-Cert</Name>
     </Step>
 
+    <!-- Bearer token is optional here, unlike the WS-Trust types: this type
+         accepts EITHER a bearer token (+ client certificate) OR an
+         X-User-Id header, and builds a different subject_token shape for
+         each; see JS-Build-TokenExchange-Request. -->
     <Step>
         <Name>EV-Extract-BearerToken</Name>
     </Step>
     <Step>
-        <Condition>bearer.token = null</Condition>
-        <Name>RF-Missing-Bearer-Token</Name>
+        <Condition>bearer.token = null AND request.header.X-User-Id = null</Condition>
+        <Name>RF-Missing-Subject-Identity</Name>
     </Step>
 
     <Step>
@@ -25,7 +29,7 @@
     </Step>
 
     <Step>
-        <Name>AM-Build-JSON-Request</Name>
+        <Name>JS-Build-TokenExchange-Request</Name>
     </Step>
     <Step>
         <Name>AM-Set-ISAMCall-Inputs</Name>

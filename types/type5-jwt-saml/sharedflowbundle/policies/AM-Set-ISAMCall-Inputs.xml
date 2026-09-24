@@ -7,16 +7,21 @@
   variable-to-variable copy. A single-variable copy (the request body) uses
   Ref; a multi-token concatenation (the target URLs) uses Template; a real
   literal (the content type, the timeout defaults) uses Value.
+
+  isam.tokenexchange.request.body is set by JS-Build-TokenExchange-Request
+  as a plain string (already the full application/x-www-form-urlencoded
+  body, not a Message object), hence a Ref here rather than
+  isamJsonRequestMsg.content.
 -->
 <AssignMessage name="AM-Set-ISAMCall-Inputs">
     <DisplayName>AM Set ISAMCall Inputs</DisplayName>
     <AssignVariable>
         <Name>isamcall.request.body</Name>
-        <Ref>isamJsonRequestMsg.content</Ref>
+        <Ref>isam.tokenexchange.request.body</Ref>
     </AssignVariable>
     <AssignVariable>
         <Name>isamcall.request.contentType</Name>
-        <Value>application/json</Value>
+        <Value>application/x-www-form-urlencoded</Value>
     </AssignVariable>
     <AssignVariable>
         <Name>isamcall.target.url.primary</Name>

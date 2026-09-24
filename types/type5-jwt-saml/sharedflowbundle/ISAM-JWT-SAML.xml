@@ -3,21 +3,38 @@
     <CreatedAt>1735689600000</CreatedAt>
     <LastModifiedAt>1735689600000</LastModifiedAt>
     <Description>
-        Type 5: JWT-style JSON request, with a SAML assertion embedded in the
-        JSON response (assumed field "saml"; not a confirmed ISAM contract,
-        see the top-level README). Calls the shared ISAM-Common-* building
-        blocks for the actual ISAM callout, signature validation, compression,
-        and header-setting -- same as the WS-Trust types, just with a JSON
-        request/response instead of SOAP/XML.
+        Type 5: OAuth 2.0 Token Exchange (RFC 8693) style request to ISAM's
+        JWT-SAML endpoint -- application/x-www-form-urlencoded, NOT a plain
+        JSON body. The subject_token form field holds a JSON *string*;
+        subject_token_type, grant_type, requested_token_type and audience
+        are sibling form fields. The response is still JSON with a SAML
+        assertion embedded (assumed field "saml"; not a confirmed ISAM
+        contract, see the top-level README). Calls the shared ISAM-Common-*
+        building blocks for the actual ISAM callout, signature validation,
+        compression, and header-setting, same as every other type.
+
+        Two request variants, chosen by which identity the caller presented
+        (see JS-Build-TokenExchange-Request / resources/jsc/build-token-
+        exchange-request.js for the exact shapes):
+          - Authorization: Bearer token + client certificate -> principal
+            is the fixed "TECHNICAL-USER"; subject_token_type is
+            isam.config.subjectTokenTypeAccessToken; the token and the
+            certificate/DN go in a contextAttributes block.
+          - X-User-Id header, no bearer token -> principal is that user ID;
+            subject_token_type is isam.config.subjectTokenTypeUserId; no
+            contextAttributes at all.
+        Exactly one of the two must be present (RF-Missing-Subject-Identity
+        otherwise); if both are somehow present, the bearer-token variant
+        wins.
     </Description>
     <Policies>
         <Policy>KVM-Get-ISAMConfig</Policy>
         <Policy>RF-ISAM-Config-Missing</Policy>
         <Policy>FC-Extract-Client-Cert</Policy>
         <Policy>EV-Extract-BearerToken</Policy>
-        <Policy>RF-Missing-Bearer-Token</Policy>
+        <Policy>RF-Missing-Subject-Identity</Policy>
         <Policy>AM-Set-Default-CompressSaml</Policy>
-        <Policy>AM-Build-JSON-Request</Policy>
+        <Policy>JS-Build-TokenExchange-Request</Policy>
         <Policy>AM-Set-ISAMCall-Inputs</Policy>
         <Policy>FC-Call-ISAM</Policy>
         <Policy>EV-Parse-ISAM-Response</Policy>

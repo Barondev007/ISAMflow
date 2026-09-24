@@ -2,7 +2,14 @@
     <DisplayName>KVM Get ISAM Config</DisplayName>
     <Scope>environment</Scope>
     <ExpiryTimeInSecs>300</ExpiryTimeInSecs>
-    <!-- Type 5: JWT-style JSON request, SAML assertion in the JSON response. -->
+    <!--
+      Type 5: OAuth2 token-exchange style request (application/x-www-form-
+      urlencoded, subject_token is a JSON string) to ISAM's JWT-SAML
+      endpoint, SAML assertion embedded in the JSON response.
+      appliesTo/tokenType/keyType/requestType (the WS-Trust-shaped keys)
+      are gone; this request shape doesn't have them; requestedTokenType
+      and audience are their token-exchange equivalents.
+    -->
     <Get assignTo="isam.config.host1"><Key><Parameter>isam.jwtsaml.host1</Parameter></Key></Get>
     <Get assignTo="isam.config.host2"><Key><Parameter>isam.jwtsaml.host2</Parameter></Key></Get>
     <Get assignTo="isam.config.port"><Key><Parameter>isam.jwtsaml.port</Parameter></Key></Get>
@@ -10,10 +17,10 @@
     <Get assignTo="isam.config.path"><Key><Parameter>isam.jwtsaml.path</Parameter></Key></Get>
     <Get assignTo="isam.config.connectTimeoutMs"><Key><Parameter>isam.jwtsaml.connectTimeoutMs</Parameter></Key></Get>
     <Get assignTo="isam.config.ioTimeoutMs"><Key><Parameter>isam.jwtsaml.ioTimeoutMs</Parameter></Key></Get>
-    <Get assignTo="isam.config.appliesTo"><Key><Parameter>isam.jwtsaml.appliesTo</Parameter></Key></Get>
-    <Get assignTo="isam.config.tokenType"><Key><Parameter>isam.jwtsaml.tokenType</Parameter></Key></Get>
-    <Get assignTo="isam.config.keyType"><Key><Parameter>isam.jwtsaml.keyType</Parameter></Key></Get>
-    <Get assignTo="isam.config.requestType"><Key><Parameter>isam.jwtsaml.requestType</Parameter></Key></Get>
+    <Get assignTo="isam.config.subjectTokenTypeUserId"><Key><Parameter>isam.jwtsaml.subjectTokenTypeUserId</Parameter></Key></Get>
+    <Get assignTo="isam.config.subjectTokenTypeAccessToken"><Key><Parameter>isam.jwtsaml.subjectTokenTypeAccessToken</Parameter></Key></Get>
+    <Get assignTo="isam.config.requestedTokenType"><Key><Parameter>isam.jwtsaml.requestedTokenType</Parameter></Key></Get>
+    <Get assignTo="isam.config.audience"><Key><Parameter>isam.jwtsaml.audience</Parameter></Key></Get>
     <Get assignTo="isam.config.compressSaml"><Key><Parameter>isam.jwtsaml.compressSaml</Parameter></Key></Get>
     <Get assignTo="isam.config.trustedThumbprints"><Key><Parameter>isam.jwtsaml.trustedSigningCertThumbprints</Parameter></Key></Get>
 </KeyValueMapOperations>

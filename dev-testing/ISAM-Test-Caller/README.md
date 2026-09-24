@@ -17,7 +17,7 @@ header you send straight into the shared flow it calls.
 | `POST /isam-test/user` | `ISAM-SAML-User` | `Authorization: Bearer <token>` |
 | `POST /isam-test/tp` | `ISAM-SAML-TP` | `Authorization: Bearer <token>` |
 | `POST /isam-test/technical` | `ISAM-SAML-Technical` | `Authorization: Bearer <token>` |
-| `POST /isam-test/jwt-saml` | `ISAM-JWT-SAML` | `Authorization: Bearer <token>` |
+| `POST /isam-test/jwt-saml` | `ISAM-JWT-SAML` | `Authorization: Bearer <token>` **or** `X-User-Id` header |
 | `POST /isam-test/jwt-token` | `ISAM-JWT-Token` | `Authorization: Bearer <token>` |
 | `GET /isam-test/` | — | this table, as JSON |
 
@@ -40,6 +40,12 @@ curl -s -X POST "$BASE/light" -H 'X-Client-Cert: dGVzdC1jZXJ0LWJhc2U2NA==' | jq 
 
 # Type 2: user SAML, with a bearer token, requesting compression
 curl -s -X POST "$BASE/user?compressSaml=true" -H 'Authorization: Bearer dev-test-token' | jq .
+
+# Type 5: JWT-SAML, "access-token" variant (bearer token + cert)
+curl -s -X POST "$BASE/jwt-saml" -H 'Authorization: Bearer dev-test-token' | jq .
+
+# Type 5: JWT-SAML, "stsuu" variant (user ID only, no bearer token)
+curl -s -X POST "$BASE/jwt-saml" -H 'X-User-Id: jdoe' | jq .
 
 # Type 6: JWT-is-the-token
 curl -s -X POST "$BASE/jwt-token" -H 'Authorization: Bearer dev-test-token' | jq .

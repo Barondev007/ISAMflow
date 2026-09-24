@@ -81,10 +81,21 @@ for entry in "${TYPES[@]}"; do
     write_entry "${map_name}" "${key_prefix}.path" "/mock-isam/${mock_path}"
     write_entry "${map_name}" "${key_prefix}.connectTimeoutMs" "5000"
     write_entry "${map_name}" "${key_prefix}.ioTimeoutMs" "10000"
-    write_entry "${map_name}" "${key_prefix}.appliesTo" "urn:isam:relying-party:dev-test"
-    write_entry "${map_name}" "${key_prefix}.tokenType" "${token_type}"
-    write_entry "${map_name}" "${key_prefix}.keyType" "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer"
-    write_entry "${map_name}" "${key_prefix}.requestType" "${request_type}"
+
+    # type 5 (ISAM.JwtSaml.Config) uses an OAuth2 Token Exchange style
+    # request, not the WS-Trust-shaped appliesTo/tokenType/keyType/
+    # requestType keys every other type uses.
+    if [[ "${map_name}" == "ISAM.JwtSaml.Config" ]]; then
+        write_entry "${map_name}" "${key_prefix}.subjectTokenTypeUserId" "urn:bnppf:json:stsuu"
+        write_entry "${map_name}" "${key_prefix}.subjectTokenTypeAccessToken" "urn:bnppf:json:access-token"
+        write_entry "${map_name}" "${key_prefix}.requestedTokenType" "urn:bnppf:saml:tech"
+        write_entry "${map_name}" "${key_prefix}.audience" "urn:bnppf:b2b"
+    else
+        write_entry "${map_name}" "${key_prefix}.appliesTo" "urn:isam:relying-party:dev-test"
+        write_entry "${map_name}" "${key_prefix}.tokenType" "${token_type}"
+        write_entry "${map_name}" "${key_prefix}.keyType" "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer"
+        write_entry "${map_name}" "${key_prefix}.requestType" "${request_type}"
+    fi
 
     # type 6 (ISAM.JwtToken.Config) has no compressSaml/trustedSigningCertThumbprints
     # keys at all -- there's no SAML assertion involved for that type.

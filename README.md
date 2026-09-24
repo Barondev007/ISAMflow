@@ -45,7 +45,7 @@ SAML headers don't apply; it sets its own token header directly.
 | 2 | `ISAM-SAML-User` | WS-Trust (SOAP/XML) | yes | SAML assertion | same four |
 | 3 | `ISAM-SAML-TP` | WS-Trust (SOAP/XML) | yes | SAML assertion | same four |
 | 4 | `ISAM-SAML-Technical` | WS-Trust (SOAP/XML) | yes | SAML assertion | same four |
-| 5 | `ISAM-JWT-SAML` | JSON | yes | SAML assertion in a JSON field | same four |
+| 5 | `ISAM-JWT-SAML` | OAuth2 Token Exchange (`x-www-form-urlencoded`, `subject_token` is a JSON string) | yes, **or** an `X-User-Id` header instead | SAML assertion in a JSON field | same four |
 | 6 | `ISAM-JWT-Token` | JSON | yes | **JWT itself is the token** (no SAML) | CallISAM only |
 
 Types 2, 3, and 4 are structurally identical WS-Trust requests; they're
@@ -355,17 +355,32 @@ apigeecli sharedflows deploy -n ISAM-SAML-User --env <env> --org <org> --ovr --t
   carrying no bearer token; if ISAM's light-SAML endpoint responds
   differently (e.g. a bare assertion with no SOAP envelope at all), adjust
   `types/type1-light-saml/sharedflowbundle/policies/EV-Parse-ISAM-Response.xml`.
-- **Type 5 (JWT-SAML)**: request shape
-  (`requestType`/`tokenType`/`keyType`/`appliesTo`/`bearerToken`/`clientContext.*`)
-  and response field names (`saml`/`subjectId`/`notBefore`/`notOnOrAfter`/`error`)
-  are this repo's assumptions, not a confirmed ISAM contract.
-- **Type 6 (JWT-Token)**: request shape assumed identical to type 5's;
-  response field names (`token`/`tokenType`/`expiresIn`/`error`) are assumed
-  too. `X-Access-Token` / `X-Access-Token-Type` are this repo's own header
-  naming choice for surfacing the JWT — rename in
+- **Type 5 (JWT-SAML)**: the *request* shape is now confirmed, from real
+  examples — `application/x-www-form-urlencoded` with a `subject_token`
+  field holding a JSON string (OAuth 2.0 Token Exchange / RFC 8693 shape),
+  not a plain JSON body; see `JS-Build-TokenExchange-Request` and its
+  `resources/jsc/build-token-exchange-request.js`. Two variants depending
+  on whether the caller presents a bearer token (+ certificate) or an
+  `X-User-Id` header — see that bundle's own root descriptor. The header
+  names this repo reads for the request's other attributes
+  (`X-Distributor-Id`, `X-Authentication-Mean-Id`, `X-B3-TraceId`,
+  `X-User-Id`) are this repo's own assumption; adjust
+  `build-token-exchange-request.js` if the real header names differ. The
+  *response* field names (`saml`/`subjectId`/`notBefore`/`notOnOrAfter`/`error`)
+  are still this repo's assumption, not a confirmed ISAM contract.
+- **Type 6 (JWT-Token)**: request shape was assumed identical to type 5's
+  JSON body; now that type 5 is confirmed to be a different, form-urlencoded
+  shape, that assumption no longer holds — type 6 needs its own
+  confirmation against a real ISAM capture before relying on
+  `types/type6-jwt-token/sharedflowbundle/policies/AM-Build-JSON-Request.xml`
+  as-is. Response field names (`token`/`tokenType`/`expiresIn`/`error`) are
+  assumed too. `X-Access-Token` / `X-Access-Token-Type` are this repo's own
+  header naming choice for surfacing the JWT — rename in
   `types/type6-jwt-token/sharedflowbundle/policies/AM-Set-JWT-Response-Header.xml`
   if your downstream expects something specific (e.g. `Authorization: Bearer`).
-- **All types**: `TokenType`/`KeyType`/`RequestType`/`AppliesTo` are pulled
-  from each type's own KVM as static values — confirm the actual values
-  each ISAM endpoint expects; the provisioning scripts ship with placeholder
-  defaults.
+- **Types 1-4, 6**: `TokenType`/`KeyType`/`RequestType`/`AppliesTo` are
+  pulled from each type's own KVM as static values — confirm the actual
+  values each ISAM endpoint expects; the provisioning scripts ship with
+  placeholder defaults. Type 5 does not use these; it has its own
+  `subjectTokenTypeUserId`/`subjectTokenTypeAccessToken`/
+  `requestedTokenType`/`audience` KVM keys instead.

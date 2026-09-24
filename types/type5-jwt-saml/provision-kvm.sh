@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 #
 # Creates/updates the "ISAM.JwtSaml.Config" KVM entries for the
-# ISAM-JWT-SAML shared flow (type 5: JWT-style JSON request, SAML assertion
-# in the JSON response).
+# ISAM-JWT-SAML shared flow (type 5: OAuth2 Token Exchange style request,
+# application/x-www-form-urlencoded with a subject_token JSON string;
+# SAML assertion in the JSON response).
 #
 # Usage:
 #   ORG=my-org ENV=my-env TOKEN=$(gcloud auth print-access-token) \
@@ -25,10 +26,10 @@ declare -A KEYS=(
   [isam.jwtsaml.path]="/json/saml-token-exchange"
   [isam.jwtsaml.connectTimeoutMs]="5000"
   [isam.jwtsaml.ioTimeoutMs]="10000"
-  [isam.jwtsaml.appliesTo]="urn:isam:relying-party:jwt-saml"
-  [isam.jwtsaml.tokenType]="urn:oasis:names:tc:SAML:2.0:assertion"
-  [isam.jwtsaml.keyType]="http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer"
-  [isam.jwtsaml.requestType]="issue"
+  [isam.jwtsaml.subjectTokenTypeUserId]="urn:bnppf:json:stsuu"
+  [isam.jwtsaml.subjectTokenTypeAccessToken]="urn:bnppf:json:access-token"
+  [isam.jwtsaml.requestedTokenType]="urn:bnppf:saml:tech"
+  [isam.jwtsaml.audience]="urn:bnppf:b2b"
   [isam.jwtsaml.compressSaml]="false"
   [isam.jwtsaml.trustedSigningCertThumbprints]=""
 )

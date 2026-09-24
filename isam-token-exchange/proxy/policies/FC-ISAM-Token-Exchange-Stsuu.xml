@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+    ISAM token exchange with subject_token_type urn:bnppf:json:stsuu (end user, principal = userID).
+    The ref variables are the ones used by the existing ISAM templates; adapt them if your proxy names them differently.
+-->
+<FlowCallout name="FC-ISAM-Token-Exchange-Stsuu">
+    <DisplayName>FC-ISAM-Token-Exchange-Stsuu</DisplayName>
+    <SharedFlowBundle>isam-token-exchange</SharedFlowBundle>
+    <Parameters>
+        <Parameter name="isam.input.subjectTokenType">stsuu</Parameter>
+        <Parameter name="isam.input.userId" ref="userID"/>
+        <Parameter name="isam.input.distributorId" ref="requestdistributorId"/>
+        <Parameter name="isam.input.authenticationMeanId" ref="authenticationMeanId"/>
+        <Parameter name="isam.input.ipAddress" ref="requestXForwardedFor"/>
+        <Parameter name="isam.input.userAgent" ref="requestUserAgent"/>
+        <Parameter name="isam.input.xLogId" ref="xb3Traceid"/>
+        <Parameter name="isam.input.dacLevel">3</Parameter>
+    </Parameters>
+</FlowCallout>

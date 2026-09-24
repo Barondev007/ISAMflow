@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!-- Environment-scoped ISAM connection settings (see config/kvm-isam-config.json). -->
+<KeyValueMapOperations name="KVM-ISAM-Config" mapIdentifier="isam-config">
+    <DisplayName>KVM-ISAM-Config</DisplayName>
+    <Scope>environment</Scope>
+    <ExpiryTimeInSecs>300</ExpiryTimeInSecs>
+    <Get assignTo="isam.host">
+        <Key>
+            <Parameter>host</Parameter>
+        </Key>
+    </Get>
+    <Get assignTo="isam.basepath">
+        <Key>
+            <Parameter>basepath</Parameter>
+        </Key>
+    </Get>
+    <Get assignTo="isam.key-reference-name">
+        <Key>
+            <Parameter>key-reference-name</Parameter>
+        </Key>
+    </Get>
+    <Get assignTo="isam.key-alias">
+        <Key>
+            <Parameter>key-alias</Parameter>
+        </Key>
+    </Get>
+    <Get assignTo="isam.trust-reference-name">
+        <Key>
+            <Parameter>trust-reference-name</Parameter>
+        </Key>
+    </Get>
+</KeyValueMapOperations>

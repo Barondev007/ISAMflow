@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <!--
-    Extract of a ProxyEndpoint: the ISAM flow runs in the PreFlow, the TPRF check runs
+    Extract of a ProxyEndpoint: the ISAM token exchange (../../isam-token-exchange) runs in the PreFlow, the TPRF check runs
     in each OAS conditional flow so that current.flow.name is the operation name.
 -->
 <ProxyEndpoint name="default">
     <PreFlow name="PreFlow">
         <Request>
-            <!-- existing ISAM flow: certificate extraction, ISAM call, SAML extraction -->
+            <!-- certificate extraction (requestctxcert, requestCtxCertFullDn), then the ISAM token exchange -->
+            <Step>
+                <!-- or FC-ISAM-Token-Exchange-Stsuu for an end-user call -->
+                <Name>FC-ISAM-Token-Exchange-AccessToken</Name>
+            </Step>
         </Request>
     </PreFlow>
     <Flows>

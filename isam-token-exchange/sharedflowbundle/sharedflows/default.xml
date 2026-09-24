@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+    ISAM token exchange (type5-jwt-saml).
+    Call it with FC-ISAM-Token-Exchange-Stsuu or FC-ISAM-Token-Exchange-AccessToken (see ../../README.md).
+    Any failure ends with RF-ISAM-Unauthorized (HTTP 401); the reason is kept in isam.failure.reason.
+-->
+<SharedFlow name="default">
+    <Step>
+        <Name>KVM-ISAM-Config</Name>
+    </Step>
+    <Step>
+        <Name>JS-ISAM-Build-Request</Name>
+    </Step>
+    <Step>
+        <Name>RF-ISAM-Unauthorized</Name>
+        <Condition>isam.failed = "true"</Condition>
+    </Step>
+    <Step>
+        <Name>AM-ISAM-Request</Name>
+    </Step>
+    <Step>
+        <Name>SC-ISAM-Token-Exchange</Name>
+    </Step>
+    <Step>
+        <Name>JS-ISAM-Extract-Saml</Name>
+    </Step>
+    <Step>
+        <Name>RF-ISAM-Unauthorized</Name>
+        <Condition>isam.failed = "true"</Condition>
+    </Step>
+</SharedFlow>

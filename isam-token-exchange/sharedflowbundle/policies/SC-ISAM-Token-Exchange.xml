@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+    mTLS call to ISAM (token endpoint). Host, path and keystore/truststore references come from KVM-ISAM-Config.
+    continueOnError=true: a failed call is turned into a 401 by JS-ISAM-Extract-Saml.
+-->
+<ServiceCallout name="SC-ISAM-Token-Exchange" continueOnError="true">
+    <DisplayName>SC-ISAM-Token-Exchange</DisplayName>
+    <Request clearPayload="false" variable="isamRequest"/>
+    <Response>isamResponse</Response>
+    <Timeout>5000</Timeout>
+    <HTTPTargetConnection>
+        <SSLInfo>
+            <Enabled>true</Enabled>
+            <ClientAuthEnabled>true</ClientAuthEnabled>
+            <KeyStore>ref://{isam.key-reference-name}</KeyStore>
+            <KeyAlias>{isam.key-alias}</KeyAlias>
+            <TrustStore>ref://{isam.trust-reference-name}</TrustStore>
+        </SSLInfo>
+        <URL>https://{isam.host}{isam.basepath}</URL>
+    </HTTPTargetConnection>
+</ServiceCallout>

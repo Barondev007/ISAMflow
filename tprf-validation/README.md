@@ -5,7 +5,7 @@ Extra authorization step, run after the ISAM flow: TPRF confirms that the third 
 ## Flow
 
 ```
-ISAM flow (PreFlow)             -> client certificate, SAML clientId, SAML permissions
+isam-token-exchange (PreFlow)   -> SAML clientId, SAML permissions (see ../isam-token-exchange)
 KVM-TPRF-Method-Scopes (proxy)  -> scopes of the called method (key = current.flow.name)
 FC-TPRF-Validation (proxy)      -> shared flow tprf-validation:
    KVM-TPRF-Config              host, basepath, keystore/truststore references
@@ -70,6 +70,6 @@ The SAML `permissions` attribute has the format `CLIENT_SCOPES=a,b;SIGNED_SCOPES
 
 ## To adapt
 
-- In `FC-TPRF-Validation.xml`, replace the placeholders `isam.client.certificate`, `isam.saml.clientId` and `isam.saml.permissions` with the variables set by your ISAM flow. The certificate can be PEM or base64 DER.
+- `FC-TPRF-Validation.xml` reads `isam.saml.clientId` and `isam.saml.permissions` from the `isam-token-exchange` shared flow, and the client certificate from `requestctxcert` (PEM or base64 DER). Change that ref if your proxy stores the certificate elsewhere.
 - In `KVM-TPRF-Method-Scopes.xml`, set `mapIdentifier` to your proxy's KVM name.
 - Attach `KVM-TPRF-Method-Scopes` and `FC-TPRF-Validation` in each conditional flow, not in the PreFlow: `current.flow.name` is the operation name only inside the conditional flow.

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+    ISAM token exchange with subject_token_type urn:bnppf:json:access-token
+    (principal = TECHNICAL-USER, bearer token and client certificate in contextAttributes).
+    The ref variables are the ones used by the existing ISAM templates; adapt them if your proxy names them differently.
+    isam.input.certificate is the PEM certificate; it is URL-encoded by the shared flow.
+-->
+<FlowCallout name="FC-ISAM-Token-Exchange-AccessToken">
+    <DisplayName>FC-ISAM-Token-Exchange-AccessToken</DisplayName>
+    <SharedFlowBundle>isam-token-exchange</SharedFlowBundle>
+    <Parameters>
+        <Parameter name="isam.input.subjectTokenType">access-token</Parameter>
+        <Parameter name="isam.input.accessToken" ref="accesstoken"/>
+        <Parameter name="isam.input.requestCtxEnv" ref="requestCtxEnv"/>
+        <Parameter name="isam.input.certificateDn" ref="requestCtxCertFullDn"/>
+        <Parameter name="isam.input.certificate" ref="requestctxcert"/>
+        <Parameter name="isam.input.distributorId" ref="distributorId"/>
+        <Parameter name="isam.input.authenticationMeanId" ref="authenticationMeanId"/>
+        <Parameter name="isam.input.ipAddress" ref="requestXForwardedFor"/>
+        <Parameter name="isam.input.userAgent" ref="requestUserAgent"/>
+        <Parameter name="isam.input.xLogId" ref="xb3Traceid"/>
+    </Parameters>
+</FlowCallout>

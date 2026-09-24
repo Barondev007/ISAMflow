@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<AssignMessage name="AM-ISAM-Request">
+    <DisplayName>AM-ISAM-Request</DisplayName>
+    <AssignTo createNew="true" transport="http" type="request">isamRequest</AssignTo>
+    <Set>
+        <Verb>POST</Verb>
+        <Headers>
+            <Header name="Content-Type">application/x-www-form-urlencoded</Header>
+            <Header name="Accept">application/json</Header>
+        </Headers>
+        <Payload contentType="application/x-www-form-urlencoded">{isam.request.body}</Payload>
+    </Set>
+    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+</AssignMessage>

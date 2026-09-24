@@ -1,0 +1,12 @@
+{
+  "name": "isam-config",
+  "scope": "environment",
+  "encrypted": false,
+  "entry": [
+    { "name": "host", "value": "<isam-host>" },
+    { "name": "basepath", "value": "<isam-token-endpoint-path>" },
+    { "name": "key-reference-name", "value": "<keystore-reference>" },
+    { "name": "key-alias", "value": "<key-alias>" },
+    { "name": "trust-reference-name", "value": "<truststore-reference>" }
+  ]
+}

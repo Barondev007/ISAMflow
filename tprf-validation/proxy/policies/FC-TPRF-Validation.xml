@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <!--
     Calls the tprf-validation shared flow.
-    The three ref="isam.*" variables are placeholders: replace them with the variables
-    your ISAM flow sets for the client certificate, the SAML clientId and the SAML permissions attribute.
+    clientId and permissions are set by the isam-token-exchange shared flow.
+    requestctxcert is the client certificate extracted by the proxy (PEM or base64 DER).
 -->
 <FlowCallout name="FC-TPRF-Validation">
     <DisplayName>FC-TPRF-Validation</DisplayName>
     <SharedFlowBundle>tprf-validation</SharedFlowBundle>
     <Parameters>
-        <Parameter name="tprf.input.certificate" ref="isam.client.certificate"/>
+        <Parameter name="tprf.input.certificate" ref="requestctxcert"/>
         <Parameter name="tprf.input.clientId" ref="isam.saml.clientId"/>
         <Parameter name="tprf.input.permissions" ref="isam.saml.permissions"/>
         <Parameter name="tprf.input.methodScopes" ref="tprf.method.scopes"/>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!-- The detailed reason stays in isam.failure.reason for logging; the client gets a generic message. -->
+<RaiseFault name="RF-ISAM-Unauthorized">
+    <DisplayName>RF-ISAM-Unauthorized</DisplayName>
+    <FaultResponse>
+        <Set>
+            <StatusCode>401</StatusCode>
+            <ReasonPhrase>Unauthorized</ReasonPhrase>
+            <Headers>
+                <Header name="Content-Type">application/json</Header>
+            </Headers>
+            <Payload contentType="application/json" variablePrefix="@" variableSuffix="#">{"error":"unauthorized","error_description":"The token exchange failed"}</Payload>
+        </Set>
+    </FaultResponse>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</RaiseFault>

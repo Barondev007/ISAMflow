@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<SharedFlowBundle revision="1" name="isam-token-exchange">
+    <DisplayName>isam-token-exchange</DisplayName>
+    <Description>ISAM token exchange (type5-jwt-saml): gets a SAML token for an stsuu or access-token subject and extracts clientId and permissions.</Description>
+    <Policies>
+        <Policy>KVM-ISAM-Config</Policy>
+        <Policy>JS-ISAM-Build-Request</Policy>
+        <Policy>AM-ISAM-Request</Policy>
+        <Policy>SC-ISAM-Token-Exchange</Policy>
+        <Policy>JS-ISAM-Extract-Saml</Policy>
+        <Policy>RF-ISAM-Unauthorized</Policy>
+    </Policies>
+    <Resources>
+        <Resource>jsc://isam-build-request.js</Resource>
+        <Resource>jsc://isam-extract-saml.js</Resource>
+    </Resources>
+    <SharedFlows>
+        <SharedFlow>default</SharedFlow>
+    </SharedFlows>
+</SharedFlowBundle>

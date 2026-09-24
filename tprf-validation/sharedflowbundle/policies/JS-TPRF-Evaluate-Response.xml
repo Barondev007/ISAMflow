@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Javascript name="JS-TPRF-Evaluate-Response" timeLimit="200">
+    <DisplayName>JS-TPRF-Evaluate-Response</DisplayName>
+    <ResourceURL>jsc://tprf-evaluate-response.js</ResourceURL>
+</Javascript>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+    Reads the scopes of the called method from the proxy-scoped KVM
+    <organization>.<apcode>.<appname>.v<major>.tprfscopes (see config/kvm-tprf-method-scopes.json).
+    Key = current.flow.name, i.e. the name of the OAS conditional flow (operationId).
+    Value = comma-separated scope names.
+-->
+<KeyValueMapOperations name="KVM-TPRF-Method-Scopes" mapIdentifier="bnppf.ap25542-inbound-crm-servicing-request-snow.v1.tprfscopes">
+    <DisplayName>KVM-TPRF-Method-Scopes</DisplayName>
+    <Scope>apiproxy</Scope>
+    <ExpiryTimeInSecs>300</ExpiryTimeInSecs>
+    <Get assignTo="tprf.method.scopes">
+        <Key>
+            <Parameter ref="current.flow.name"/>
+        </Key>
+    </Get>
+</KeyValueMapOperations>

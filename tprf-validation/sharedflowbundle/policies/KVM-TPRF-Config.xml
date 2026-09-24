@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!-- Environment-scoped TPRF connection settings (see config/kvm-tprf-config.json). -->
+<KeyValueMapOperations name="KVM-TPRF-Config" mapIdentifier="tprf-config">
+    <DisplayName>KVM-TPRF-Config</DisplayName>
+    <Scope>environment</Scope>
+    <ExpiryTimeInSecs>300</ExpiryTimeInSecs>
+    <Get assignTo="tprf.host">
+        <Key>
+            <Parameter>host</Parameter>
+        </Key>
+    </Get>
+    <Get assignTo="tprf.basepath">
+        <Key>
+            <Parameter>basepath</Parameter>
+        </Key>
+    </Get>
+    <Get assignTo="tprf.key-reference-name">
+        <Key>
+            <Parameter>key-reference-name</Parameter>
+        </Key>
+    </Get>
+    <Get assignTo="tprf.key-alias">
+        <Key>
+            <Parameter>key-alias</Parameter>
+        </Key>
+    </Get>
+    <Get assignTo="tprf.trust-reference-name">
+        <Key>
+            <Parameter>trust-reference-name</Parameter>
+        </Key>
+    </Get>
+</KeyValueMapOperations>

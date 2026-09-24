@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<SharedFlowBundle revision="1" name="tprf-validation">
+    <DisplayName>tprf-validation</DisplayName>
+    <Description>Checks with TPRF that the third party is onboarded and allowed to call the requested method (scope).</Description>
+    <Policies>
+        <Policy>KVM-TPRF-Config</Policy>
+        <Policy>JS-TPRF-Prepare-Request</Policy>
+        <Policy>AM-TPRF-Request</Policy>
+        <Policy>SC-TPRF-Certificate-Validation</Policy>
+        <Policy>JS-TPRF-Evaluate-Response</Policy>
+        <Policy>RF-TPRF-Unauthorized</Policy>
+    </Policies>
+    <Resources>
+        <Resource>jsc://tprf-prepare-request.js</Resource>
+        <Resource>jsc://tprf-evaluate-response.js</Resource>
+    </Resources>
+    <SharedFlows>
+        <SharedFlow>default</SharedFlow>
+    </SharedFlows>
+</SharedFlowBundle>

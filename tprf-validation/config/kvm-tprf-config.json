@@ -1,0 +1,12 @@
+{
+  "name": "tprf-config",
+  "scope": "environment",
+  "encrypted": false,
+  "entry": [
+    { "name": "host", "value": "<tprf-host>" },
+    { "name": "basepath", "value": "/party/third-party-status-validation/v1/certificate-validation" },
+    { "name": "key-reference-name", "value": "<keystore-reference>" },
+    { "name": "key-alias", "value": "<key-alias>" },
+    { "name": "trust-reference-name", "value": "<truststore-reference>" }
+  ]
+}

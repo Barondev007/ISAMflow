@@ -1,0 +1,9 @@
+{
+  "name": "bnppf.ap25542-inbound-crm-servicing-request-snow.v1.tprfscopes",
+  "scope": "apiproxy",
+  "encrypted": false,
+  "entry": [
+    { "name": "validateCashAccount", "value": "crm.servicing-request-snow-inbound-front.cash-accounts.validate" },
+    { "name": "getCashAccount", "value": "crm.servicing-request-snow-inbound-front.cash-accounts.read,crm.servicing-request-snow-inbound-front.cash-accounts.validate" }
+  ]
+}

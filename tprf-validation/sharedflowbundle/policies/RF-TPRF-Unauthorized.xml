@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!-- The detailed reason stays in tprf.failure.reason for logging; the client gets a generic message. -->
+<RaiseFault name="RF-TPRF-Unauthorized">
+    <DisplayName>RF-TPRF-Unauthorized</DisplayName>
+    <FaultResponse>
+        <Set>
+            <StatusCode>401</StatusCode>
+            <ReasonPhrase>Unauthorized</ReasonPhrase>
+            <Headers>
+                <Header name="Content-Type">application/json</Header>
+            </Headers>
+            <Payload contentType="application/json" variablePrefix="@" variableSuffix="#">{"error":"unauthorized","error_description":"The third party is not authorized to call this operation"}</Payload>
+        </Set>
+    </FaultResponse>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</RaiseFault>

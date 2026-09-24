@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+    TPRF certificate validation.
+    Call it with FC-TPRF-Validation after the ISAM flow (see ../../README.md).
+    Any failure ends with RF-TPRF-Unauthorized (HTTP 401); the reason is kept in tprf.failure.reason.
+-->
+<SharedFlow name="default">
+    <Step>
+        <Name>KVM-TPRF-Config</Name>
+    </Step>
+    <Step>
+        <Name>JS-TPRF-Prepare-Request</Name>
+    </Step>
+    <Step>
+        <Name>RF-TPRF-Unauthorized</Name>
+        <Condition>tprf.failed = "true"</Condition>
+    </Step>
+    <Step>
+        <Name>AM-TPRF-Request</Name>
+    </Step>
+    <Step>
+        <Name>SC-TPRF-Certificate-Validation</Name>
+    </Step>
+    <Step>
+        <Name>JS-TPRF-Evaluate-Response</Name>
+    </Step>
+    <Step>
+        <Name>RF-TPRF-Unauthorized</Name>
+        <Condition>tprf.authorized != "true"</Condition>
+    </Step>
+</SharedFlow>

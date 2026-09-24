@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+    mTLS call to TPRF. Host, path and keystore/truststore references come from KVM-TPRF-Config,
+    the same way the ISAM call gets them.
+    continueOnError=true: a failed call is turned into a 401 by JS-TPRF-Evaluate-Response.
+-->
+<ServiceCallout name="SC-TPRF-Certificate-Validation" continueOnError="true">
+    <DisplayName>SC-TPRF-Certificate-Validation</DisplayName>
+    <Request clearPayload="false" variable="tprfRequest"/>
+    <Response>tprfResponse</Response>
+    <Timeout>5000</Timeout>
+    <HTTPTargetConnection>
+        <SSLInfo>
+            <Enabled>true</Enabled>
+            <ClientAuthEnabled>true</ClientAuthEnabled>
+            <KeyStore>ref://{tprf.key-reference-name}</KeyStore>
+            <KeyAlias>{tprf.key-alias}</KeyAlias>
+            <TrustStore>ref://{tprf.trust-reference-name}</TrustStore>
+        </SSLInfo>
+        <URL>https://{tprf.host}{tprf.basepath}</URL>
+    </HTTPTargetConnection>
+</ServiceCallout>

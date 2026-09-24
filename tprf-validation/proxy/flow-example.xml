@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+    Extract of a ProxyEndpoint: the ISAM flow runs in the PreFlow, the TPRF check runs
+    in each OAS conditional flow so that current.flow.name is the operation name.
+-->
+<ProxyEndpoint name="default">
+    <PreFlow name="PreFlow">
+        <Request>
+            <!-- existing ISAM flow: certificate extraction, ISAM call, SAML extraction -->
+        </Request>
+    </PreFlow>
+    <Flows>
+        <Flow name="validateCashAccount">
+            <Condition>(proxy.pathsuffix MatchesPath "/cash-accounts/validate") and (request.verb = "POST")</Condition>
+            <Request>
+                <Step>
+                    <Name>KVM-TPRF-Method-Scopes</Name>
+                </Step>
+                <Step>
+                    <Name>FC-TPRF-Validation</Name>
+                </Step>
+            </Request>
+        </Flow>
+    </Flows>
+</ProxyEndpoint>

@@ -2,15 +2,15 @@
 <!--
     Placeholder for the remaining XML-DSig sub-step: send
     signature.xmldsig.signing.string (base64 of the canonicalized
-    SignedInfo) to the external signature API, take back the
-    SignatureValue, and assemble the final <ds:Signature> —
-    <SignedInfo> (signature.xmldsig.signedinfo.canonical, reparsed) +
-    <SignatureValue>...</SignatureValue> + <KeyInfo> (X509 cert/KeyName,
-    static per proxy) — then insert it into the signed document (e.g.
-    as the last child of its root element, the conventional placement
-    for an enveloped signature) and return that as the response.
-    Replace this policy with a ServiceCallout + XML assembly chain when
-    the signing API contract is defined.
+    SignedInfo) to the external signature API and take back the
+    signature value. Replace this policy with a ServiceCallout (+
+    AssignMessage) chain when the signing API contract is defined — it
+    must set signature.xmldsig.signatureValue (the signature, base64
+    encoded — XML-DSig's SignatureValue is plain base64, unlike JWT's
+    base64url) before JC-Assemble-XmlDsig-Signature runs, which embeds it
+    — together with this proxy's KVM-configured X.509 certificate — into
+    the final <Signature> and splices it into the document. Same
+    contract shape as NI-Signature-JWT-Sign/signature.jwt.signature.encoded.
 -->
 <RaiseFault name="NI-Signature-XmlDsig-Sign">
     <DisplayName>NI-Signature-XmlDsig-Sign</DisplayName>

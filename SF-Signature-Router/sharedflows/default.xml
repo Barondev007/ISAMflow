@@ -88,9 +88,16 @@
          signature.xmldsig.signatureMethod defaults to
          "...xmldsig-more#rsa-sha256" if the calling proxy hasn't set
          it (same auto-default pattern as JWT's iat/exp).
-         TODO: NI-Signature-XmlDsig-Sign still needs to call the
-         signing API, assemble the final <ds:Signature>, and embed it
-         in the document. Leave the Condition unchanged.
+         TODO: NI-Signature-XmlDsig-Sign still needs to call the real
+         external signing API and set signature.xmldsig.signatureValue.
+         Leave the Condition unchanged. Once it does,
+         JC-Assemble-XmlDsig-Signature embeds that signature value —
+         together with this proxy's KVM-configured X.509 certificate
+         (entry key "{apiproxy.name}.xmldsig.sign", see
+         EV-XmlDsig-Sign-Parse-Config) — into the final <Signature> and
+         splices it into the document, so the result can be validated by
+         ANY XML-DSig verifier, not just this gateway's own, with no
+         out-of-band key distribution.
          ================================================================ -->
     <Step>
         <Name>JC-Build-XmlDsig-Signing-String</Name>
@@ -98,6 +105,26 @@
     </Step>
     <Step>
         <Name>NI-Signature-XmlDsig-Sign</Name>
+        <Condition>signature.type = "xmldsig"</Condition>
+    </Step>
+    <Step>
+        <Name>AM-XmlDsig-Sign-Set-KVM-Key</Name>
+        <Condition>signature.type = "xmldsig"</Condition>
+    </Step>
+    <Step>
+        <Name>KVM-Get-XmlDsig-Sign-Config</Name>
+        <Condition>signature.type = "xmldsig"</Condition>
+    </Step>
+    <Step>
+        <Name>RF-XmlDsig-Sign-Config-Missing</Name>
+        <Condition>signature.type = "xmldsig" AND signature.xmldsig.sign.config.json = null</Condition>
+    </Step>
+    <Step>
+        <Name>EV-XmlDsig-Sign-Parse-Config</Name>
+        <Condition>signature.type = "xmldsig"</Condition>
+    </Step>
+    <Step>
+        <Name>JC-Assemble-XmlDsig-Signature</Name>
         <Condition>signature.type = "xmldsig"</Condition>
     </Step>
 

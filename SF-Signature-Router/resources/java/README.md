@@ -4,7 +4,8 @@ before deploying this shared flow bundle — it can't be built in this
 environment (no Apigee SDK jars available here), so this directory is a
 placeholder until you build and drop it in.
 
-`JC-Build-XmlDsig-Signing-String.xml` references it via:
+One jar, two classes: `JC-Build-XmlDsig-Signing-String.xml` and
+`JC-Assemble-XmlDsig-Signature.xml` both reference it via:
 
 ```
 <ResourceURL>java://xmldsig-sign-callout.jar</ResourceURL>

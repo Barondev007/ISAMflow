@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RaiseFault name="RF-XmlDsig-Sign-Config-Missing">
+    <DisplayName>RF-XmlDsig-Sign-Config-Missing</DisplayName>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <FaultResponse>
+        <Set>
+            <StatusCode>500</StatusCode>
+            <ReasonPhrase>Internal Server Error</ReasonPhrase>
+            <Payload contentType="application/json">{
+    "error": "configuration_error",
+    "message": "No entry '{signature.kvm.key}' found in KVM 'signature'. Add an entry with that key holding the X.509 signing certificate (PEM) for this proxy."
+}</Payload>
+        </Set>
+    </FaultResponse>
+</RaiseFault>

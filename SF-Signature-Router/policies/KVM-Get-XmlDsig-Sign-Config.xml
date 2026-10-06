@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Reads this proxy's XML-DSig signing config from the shared KVM
+    "signature" (entry key "{apiproxy.name}.xmldsig.sign", set by
+    AM-XmlDsig-Sign-Set-KVM-Key into signature.kvm.key). The entry value
+    is a JSON object, e.g.:
+      {
+        "certificatePem": "[PEM BEGIN CERTIFICATE marker]\n...\n[PEM END CERTIFICATE marker]\n"
+      }
+      (an actual entry has real PEM "BEGIN/END CERTIFICATE" dashed
+      markers — spelled out here as bracketed placeholders only because a
+      run of dashes isn't legal inside an XML comment)
+
+    certificatePem is the full X.509 certificate (not just the bare
+    public key) that JC-Assemble-XmlDsig-Signature embeds into the
+    signed document's <KeyInfo><X509Data><X509Certificate> — this is
+    what lets any external verifier validate the signature from the
+    document alone, with no prior knowledge of this gateway's config. It
+    is populated out-of-band whenever the signing certificate is
+    issued/rotated, same PEM-in-KVM pattern used throughout this project
+    (there is no documented way to export certificate material from the
+    Apigee KeyStore at request time — see EV-XmlDsig-Verify-Parse-Config
+    in SF-Signature-Validator for the fuller version of this reasoning).
+
+    continueOnError lets the flow proceed past a missing key so
+    RF-XmlDsig-Sign-Config-Missing can raise a clear configuration error
+    instead of Apigee's generic KVM fault.
+-->
+<KeyValueMapOperations name="KVM-Get-XmlDsig-Sign-Config" mapIdentifier="signature" continueOnError="true">
+    <DisplayName>KVM-Get-XmlDsig-Sign-Config</DisplayName>
+    <Scope>environment</Scope>
+    <Get assignTo="signature.xmldsig.sign.config.json" index="1">
+        <Key>
+            <Parameter ref="signature.kvm.key"/>
+        </Key>
+    </Get>
+</KeyValueMapOperations>

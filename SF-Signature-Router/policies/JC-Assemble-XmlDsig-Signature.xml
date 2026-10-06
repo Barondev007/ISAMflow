@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Assembles the final enveloped <Signature> — SignedInfo + SignatureValue
+    + KeyInfo, with the signer's X.509 certificate embedded via
+    <X509Data><X509Certificate> — and inserts it as the last child of the
+    target document's root element. This is what makes the signed
+    document self-describing: any compliant XML-DSig verifier (ours or a
+    third party's) can validate it using only the certificate embedded in
+    the document itself, with no out-of-band key distribution. See
+    java-src/README.md and the class-level comment in
+    XmlDsigAssembleSignatureCallout.java for how this was verified (JSR
+    105's own validate() AND the independent xmlsec1 tool, both against
+    an assembled test document, plus a tampered copy correctly rejected
+    by both).
+
+    document/document-fallback must be the SAME document
+    JC-Build-XmlDsig-Signing-String signed. signed-info is the canonical
+    SignedInfo text that step produced — embedded verbatim (see the Java
+    class comment for why re-serializing it would be wrong).
+    signature-value is the base64 SignatureValue NI-Signature-XmlDsig-Sign
+    must set once it calls the real external signing API (still a
+    placeholder today — see that policy). certificate-pem comes from this
+    proxy's KVM entry (see EV-XmlDsig-Sign-Parse-Config) — same
+    PEM-in-KVM pattern as every other certificate/key in this project.
+
+    Sets signature.xmldsig.signed.document (the complete signed XML) on
+    success, or signature.xmldsig.error on failure — this callout never
+    raises the fault itself, same sets-a-flag pattern as everything else
+    here. continueOnError is "true" for the same reason.
+-->
+<JavaCallout name="JC-Assemble-XmlDsig-Signature" continueOnError="true">
+    <DisplayName>JC-Assemble-XmlDsig-Signature</DisplayName>
+    <ClassName>com.orders.signature.XmlDsigAssembleSignatureCallout</ClassName>
+    <ResourceURL>java://xmldsig-sign-callout.jar</ResourceURL>
+    <Properties>
+        <Property name="document">{signature.payload}</Property>
+        <Property name="document-fallback">{message.content}</Property>
+        <Property name="signed-info">{signature.xmldsig.signedinfo.canonical}</Property>
+        <Property name="signature-value">{signature.xmldsig.signatureValue}</Property>
+        <Property name="certificate-pem">{signature.xmldsig.certificate.pem}</Property>
+        <Property name="output-prefix">signature.xmldsig</Property>
+    </Properties>
+</JavaCallout>

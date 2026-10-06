@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Parses this proxy's XML-DSig signing config, loaded from the shared
+    KVM "signature" (entry key "{apiproxy.name}.xmldsig.sign"), into a
+    flow variable. The KVM entry value is a JSON object, e.g.:
+      {
+        "certificatePem": "[PEM BEGIN CERTIFICATE marker]\nMIIDGTCC...\n[PEM END CERTIFICATE marker]\n"
+      }
+      (an actual entry has real PEM "BEGIN/END CERTIFICATE" dashed
+      markers — spelled out here as bracketed placeholders only because a
+      run of dashes isn't legal inside an XML comment)
+
+    certificatePem is required (IgnoreUnresolvedVariables=false): a JSON
+    string can hold literal "\n" escapes for the multi-line PEM; JSONPath
+    extraction below unescapes them back into real newlines, which is
+    exactly what JC-Assemble-XmlDsig-Signature's CertificateFactory
+    parsing needs.
+
+    signature.xmldsig.certificate.pem feeds
+    JC-Assemble-XmlDsig-Signature's "certificate-pem" Property directly.
+-->
+<ExtractVariables name="EV-XmlDsig-Sign-Parse-Config">
+    <DisplayName>EV-XmlDsig-Sign-Parse-Config</DisplayName>
+    <Source>signature.xmldsig.sign.config.json</Source>
+    <JSONPayload>
+        <Variable name="signature.xmldsig.certificate.pem" type="string">
+            <JSONPath>$.certificatePem</JSONPath>
+        </Variable>
+    </JSONPayload>
+    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+</ExtractVariables>

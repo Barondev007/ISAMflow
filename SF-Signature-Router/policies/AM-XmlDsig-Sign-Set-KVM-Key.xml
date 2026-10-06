@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Sets the KVM entry key this proxy's XML-DSig signing config (the
+    certificate to embed in KeyInfo) lives under, same pattern as every
+    other AM-*-Set-KVM-Key policy in this bundle: the KVM name itself
+    must be static ("signature"), so per-proxy config lives on the entry
+    key instead.
+-->
+<AssignMessage name="AM-XmlDsig-Sign-Set-KVM-Key">
+    <DisplayName>AM-XmlDsig-Sign-Set-KVM-Key</DisplayName>
+    <AssignVariable>
+        <Name>signature.kvm.key</Name>
+        <Template>{apiproxy.name}.xmldsig.sign</Template>
+    </AssignVariable>
+    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+</AssignMessage>

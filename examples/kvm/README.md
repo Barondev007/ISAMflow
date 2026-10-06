@@ -8,12 +8,13 @@ calls it, and puts the per-proxy part on the **entry key** instead
 (`{apiproxy.name}.<sub-step>...`), which does support a runtime
 variable via `<Parameter ref="...">`.
 
-For the `orders-api` example proxy that's three entries in the same KVM:
+For the `orders-api` example proxy that's four entries in the same KVM:
 
 | Sub-step | Entry key | Value |
 |---|---|---|
 | JWT | `orders-api.jwt.header` | JOSE header JSON template |
 | JWT | `orders-api.jwt.output` | plain string: the header name the finished JWS goes in |
+| XML-DSig | `orders-api.xmldsig.sign` | JSON: `{"certificatePem": "..."}`, the X.509 cert embedded in the signed document's KeyInfo |
 | Cavage | `orders-api.cavage.headers` | JSON array of header names to sign |
 
 `SF-SAML-Extractor` doesn't use a KVM at all — it just decodes the
@@ -47,6 +48,24 @@ for how a proxy opts into a profile.
   because `JS-Build-JWT-Signing-String` copies every top-level key of
   that entry straight into the JWT's actual JOSE header; an extra field
   there would leak into the token.
+
+## XML-DSig
+
+- `orders-api.signature.xmldsig-sign.json` — the signing config, for
+  readability: `certificatePem` is the full X.509 certificate (not just
+  the bare public key) that `JC-Assemble-XmlDsig-Signature` embeds into
+  every signed document's `<KeyInfo><X509Data><X509Certificate>`, so any
+  external verifier can validate the signature from the document alone —
+  no out-of-band key distribution. **The certificate here is a throwaway
+  self-signed test certificate generated for this example only (`CN =
+  test-signing-cert`, 1-day validity) — replace it with your real signing
+  certificate's public cert before using this in anything real; the
+  matching private key is never stored in Apigee at all, since the actual
+  RSA/ECDSA signing happens on the external signing API this shared flow
+  calls, not locally.**
+- `orders-api.xmldsig-sign.entry.json` — the same JSON minified into a
+  single (doubly-escaped — it's JSON-inside-JSON) string under key
+  `orders-api.xmldsig.sign`, ready to POST as the KVM entry.
 
 ## Cavage
 
@@ -87,14 +106,19 @@ curl -s -X POST \
 curl -s -X POST \
   "https://apigee.googleapis.com/v1/organizations/$ORG/environments/$ENV/keyvaluemaps/signature/entries" \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d @orders-api.xmldsig-sign.entry.json
+
+curl -s -X POST \
+  "https://apigee.googleapis.com/v1/organizations/$ORG/environments/$ENV/keyvaluemaps/signature/entries" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d @orders-api.cavage-headers.entry.json
 ```
 
 To change an entry later, update it (`PUT` the same URL with
 `/entries/<key>`) — no proxy or shared flow redeploy needed. Adding a
 new proxy just adds new entries (`{proxyName}.jwt.header`,
-`{proxyName}.jwt.output`, `{proxyName}.cavage.headers`) to this same
-KVM.
+`{proxyName}.jwt.output`, `{proxyName}.xmldsig.sign`,
+`{proxyName}.cavage.headers`) to this same KVM.
 
 ## Or with apigeecli
 
@@ -107,6 +131,10 @@ apigeecli kvms entries create -m signature -k orders-api.jwt.header \
 
 apigeecli kvms entries create -m signature -k orders-api.jwt.output \
   -v "X-JWS-Signature" \
+  -o "$ORG" -e "$ENV" --token "$TOKEN"
+
+apigeecli kvms entries create -m signature -k orders-api.xmldsig.sign \
+  -v "$(jq -c . orders-api.signature.xmldsig-sign.json)" \
   -o "$ORG" -e "$ENV" --token "$TOKEN"
 
 apigeecli kvms entries create -m signature -k orders-api.cavage.headers \

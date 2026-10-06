@@ -8,7 +8,11 @@
         shared flow via FlowCallout; it routes to the matching sub-step. For
         JWT, the finished JWS is written into a request header whose NAME is
         also per-proxy config, from the shared KVM "signature" (entry key
-        "{apiproxy.name}.jwt.output") — see JS-JWT-Set-Output-Header.
+        "{apiproxy.name}.jwt.output") — see JS-JWT-Set-Output-Header. For
+        XML-DSig, the finished document (with the signer's X.509 certificate
+        embedded in KeyInfo, so it can be validated by any XML-DSig verifier,
+        not just this gateway's own) lands in signature.xmldsig.signed.document
+        — see JC-Assemble-XmlDsig-Signature.
     </Description>
     <Policies>
         <Policy>RF-Missing-Signature-Type</Policy>
@@ -26,6 +30,11 @@
         <Policy>JS-JWT-Set-Output-Header</Policy>
         <Policy>JC-Build-XmlDsig-Signing-String</Policy>
         <Policy>NI-Signature-XmlDsig-Sign</Policy>
+        <Policy>AM-XmlDsig-Sign-Set-KVM-Key</Policy>
+        <Policy>KVM-Get-XmlDsig-Sign-Config</Policy>
+        <Policy>RF-XmlDsig-Sign-Config-Missing</Policy>
+        <Policy>EV-XmlDsig-Sign-Parse-Config</Policy>
+        <Policy>JC-Assemble-XmlDsig-Signature</Policy>
         <Policy>AM-Cavage-Set-KVM-Key</Policy>
         <Policy>KVM-Get-Cavage-Headers-Template</Policy>
         <Policy>RF-Cavage-Headers-Config-Missing</Policy>

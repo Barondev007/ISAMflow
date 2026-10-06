@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Builds the digest and SignedInfo signing string for an enveloped XML
+    signature — canonicalization, digest, and SignedInfo construction, all
+    in Java — replacing the former JS-Build-XmlDsig-Signing-String
+    (xmldsig-build-signing-string.js + the hand-rolled xml-exc-c14n.js
+    canonicalizer). See java-src/README.md for build/deploy steps, and
+    the class-level comment in XmlDsigSignCallout.java (and XmlC14n.java)
+    for why this doesn't reuse javax.xml.crypto.dsig (JSR 105) the way
+    the validator side's JC-XmlDsig-Verify-Signature does — generation
+    needs the raw canonicalized SignedInfo bytes as an output (the actual
+    RSA/ECDSA signing happens on an external API, not locally), which
+    JSR 105's public API has no supported way to produce standalone.
+
+    document/document-fallback mirror the validator side's own
+    signature.verify.payload / message.content fallback: this signs
+    signature.payload if the calling proxy staged one, else message.content.
+    signature-method is read from signature.xmldsig.signatureMethod if the
+    calling proxy already set it; default-signature-method supplies
+    "...xmldsig-more#rsa-sha256" otherwise — same auto-default behavior
+    the JS version had, now literal config instead of an `if` in the
+    script.
+
+    Sets signature.xmldsig.signatureMethod (echoing back whichever value
+    was actually used), signature.xmldsig.digest.value,
+    signature.xmldsig.signedinfo.canonical, and
+    signature.xmldsig.signing.string — the exact same flow variables the
+    JS step set, so NI-Signature-XmlDsig-Sign (still a placeholder for the
+    external signing-API call and final <ds:Signature> assembly) needs no
+    changes. continueOnError is "true" so a malformed document fails via
+    signature.xmldsig.error rather than a generic Apigee JavaCallout
+    fault — there's no RaiseFault step checking it yet since the JS
+    version this replaces didn't have one either (it just threw, which
+    Apigee turns into a fault); add one alongside
+    NI-Signature-XmlDsig-Sign if you want this guarded the same way the
+    validator side guards its own steps.
+-->
+<JavaCallout name="JC-Build-XmlDsig-Signing-String" continueOnError="true">
+    <DisplayName>JC-Build-XmlDsig-Signing-String</DisplayName>
+    <ClassName>com.orders.signature.XmlDsigSignCallout</ClassName>
+    <ResourceURL>java://xmldsig-sign-callout.jar</ResourceURL>
+    <Properties>
+        <Property name="document">{signature.payload}</Property>
+        <Property name="document-fallback">{message.content}</Property>
+        <Property name="signature-method">{signature.xmldsig.signatureMethod}</Property>
+        <Property name="default-signature-method">http://www.w3.org/2001/04/xmldsig-more#rsa-sha256</Property>
+        <Property name="output-prefix">signature.xmldsig</Property>
+    </Properties>
+</JavaCallout>

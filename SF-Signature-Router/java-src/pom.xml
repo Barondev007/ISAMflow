@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.orders.signature</groupId>
+    <artifactId>xmldsig-sign-callout</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <!--
+        Only the Apigee Java Callout SDK is needed — this callout's own
+        exclusive-C14N canonicalizer (XmlC14n.java) and digest/SignedInfo
+        construction (XmlDsigSignCallout.java) use nothing beyond
+        org.w3c.dom, javax.xml.parsers, java.security.MessageDigest, and
+        java.util.Base64 — all standard since Java 5/6, no Apache Santuario
+        or other XML-security dependency. (javax.xml.crypto.dsig, used by
+        the sibling xmldsig-verify-callout, was deliberately NOT reused
+        here: JSR 105's public API has no supported way to canonicalize an
+        arbitrary DOM subtree standalone — the internal canonicalizer class
+        it uses for that is in a non-exported `com.sun.org.apache...`
+        package, confirmed by a direct compile attempt against this
+        project's own JDK, and the alternative — a throwaway-key sign()
+        call with a substitute java.security.Provider to capture the bytes
+        — would require Security.insertProviderAt(), a JVM-global mutation
+        that's genuinely unsafe on a shared, multi-tenant Apigee Message
+        Processor. Verification only ever needs the all-in-one validate()
+        path, which doesn't have this problem — generation does, since the
+        actual signing happens on an external API, not locally.) As with
+        the sibling callout, Apigee doesn't publish its SDK jars
+        (message-flow-*.jar, expressions-*.jar) to Maven Central under any
+        coordinates confirmed from here — download them from Apigee for
+        your edition (see README.md) and drop them into ./lib.
+    -->
+    <dependencies>
+        <dependency>
+            <groupId>com.apigee.edge</groupId>
+            <artifactId>message-flow</artifactId>
+            <version>1.0.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/message-flow.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.apigee.edge</groupId>
+            <artifactId>expressions</artifactId>
+            <version>1.0.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/expressions.jar</systemPath>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>xmldsig-sign-callout</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>com.apigee.edge:*</exclude>
+                                </excludes>
+                            </artifactSet>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

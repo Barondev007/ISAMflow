@@ -81,7 +81,10 @@
          over signature.payload (or message.content): canonicalizes the
          target with Exclusive C14N, SHA-256s it into DigestValue,
          builds <SignedInfo>, canonicalizes that too, and base64s it
-         into signature.xmldsig.signing.string.
+         into signature.xmldsig.signing.string. Fully Java now
+         (JC-Build-XmlDsig-Signing-String, see java-src/README.md) — no
+         JavaScript left in this sub-flow; canonicalization runs on a
+         real org.w3c.dom tree via XmlC14n, not a hand-rolled JS parser.
          signature.xmldsig.signatureMethod defaults to
          "...xmldsig-more#rsa-sha256" if the calling proxy hasn't set
          it (same auto-default pattern as JWT's iat/exp).
@@ -90,7 +93,7 @@
          in the document. Leave the Condition unchanged.
          ================================================================ -->
     <Step>
-        <Name>JS-Build-XmlDsig-Signing-String</Name>
+        <Name>JC-Build-XmlDsig-Signing-String</Name>
         <Condition>signature.type = "xmldsig"</Condition>
     </Step>
     <Step>

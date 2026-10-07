@@ -10,12 +10,15 @@ generation in Java — no JavaScript anywhere in this path:
 - **`XmlDsigAssembleSignatureCallout`** (policy
   `JC-Assemble-XmlDsig-Signature`) — once that external API has signed
   those bytes, assembles the final `<Signature>` — SignedInfo +
-  SignatureValue + `<KeyInfo><X509Data><X509Certificate>` with this
-  proxy's own signing certificate embedded — and inserts it into the
-  document. The embedded certificate is what makes the result
-  independently verifiable: **any** compliant XML-DSig verifier can check
-  it using nothing but the document itself, not just this gateway's own
-  validator.
+  SignatureValue + KeyInfo — and inserts it into the document. KeyInfo
+  carries the signer's key two ways, both derived from the same
+  KVM-configured certificate: `<KeyValue><RSAKeyValue><Modulus>`/
+  `<Exponent>` (the raw key, no certificate parsing needed — RSA only)
+  and `<X509Data><X509Certificate>` (the full certificate — any key
+  type). Embedding both is what makes the result independently
+  verifiable: **any** compliant XML-DSig verifier can check it using
+  nothing but the document itself, not just this gateway's own validator,
+  regardless of which KeyInfo child that verifier happens to prefer.
 
 Both use the JDK's own `org.w3c.dom`/`javax.xml.parsers` APIs plus a
 from-scratch Exclusive C14N implementation (`XmlC14n.java`), not
@@ -91,18 +94,25 @@ canonicalization) was also diffed end-to-end against the real, unmodified
 `xmldsig-build-signing-string.js` running under Node — only the
 PI-handling difference above showed up, exactly as expected.
 
-**Assembly + embedded certificate**: a full dry run — build signing
+**Assembly + embedded key material**: a full dry run — build signing
 string, sign with a real throwaway RSA keypair standing in for the
-external signing API, assemble the final document with its certificate
-embedded — was validated two ways, using *only* what's in the assembled
-document, no out-of-band config:
+external signing API, assemble the final document with its `KeyValue`
+and certificate embedded — was validated multiple ways, using *only*
+what's in the assembled document, no out-of-band config:
 
 1. JSR 105's own `XMLSignature.validate()` (the same engine
    `xmldsig-verify-callout` uses), with the public key pulled from the
    document's own embedded `<X509Certificate>`.
-2. `xmlsec1` — an independent, widely-used C implementation (libxmlsec,
+2. The same validation again, this time with the public key built
+   *only* from the embedded `<RSAKeyValue>`'s Modulus/Exponent — the
+   certificate ignored entirely — to prove `KeyValue` is independently
+   sufficient, not just decorative alongside `X509Data`.
+3. `xmlsec1` — an independent, widely-used C implementation (libxmlsec,
    unrelated to the JDK) — `xmlsec1 verify --insecure signed.xml`
    reported `OK`, `SignedInfo References (ok/all): 1/1`.
+4. The embedded Modulus bytes cross-checked against `openssl x509
+   -noout -modulus` on the same certificate — byte-for-byte identical —
+   and the Exponent decoded to the expected `65537`.
 
 A tampered copy of the same signed document (one digit changed in a
 value) was correctly **rejected** by `xmlsec1` with a digest mismatch —

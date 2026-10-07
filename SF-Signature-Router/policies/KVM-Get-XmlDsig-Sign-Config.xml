@@ -13,14 +13,18 @@
 
     certificatePem is the full X.509 certificate (not just the bare
     public key) that JC-Assemble-XmlDsig-Signature embeds into the
-    signed document's <KeyInfo><X509Data><X509Certificate> — this is
-    what lets any external verifier validate the signature from the
-    document alone, with no prior knowledge of this gateway's config. It
-    is populated out-of-band whenever the signing certificate is
-    issued/rotated, same PEM-in-KVM pattern used throughout this project
-    (there is no documented way to export certificate material from the
-    Apigee KeyStore at request time — see EV-XmlDsig-Verify-Parse-Config
-    in SF-Signature-Validator for the fuller version of this reasoning).
+    signed document's KeyInfo two ways: <X509Data><X509Certificate> (the
+    whole certificate) and, when its key is RSA,
+    <KeyValue><RSAKeyValue> (the raw modulus/exponent pulled straight
+    out of this same certificate) — this is what lets any external
+    verifier validate the signature from the document alone, with no
+    prior knowledge of this gateway's config, regardless of which
+    KeyInfo child that verifier prefers. It is populated out-of-band
+    whenever the signing certificate is issued/rotated, same PEM-in-KVM
+    pattern used throughout this project (there is no documented way to
+    export certificate material from the Apigee KeyStore at request
+    time — see EV-XmlDsig-Verify-Parse-Config in SF-Signature-Validator
+    for the fuller version of this reasoning).
 
     continueOnError lets the flow proceed past a missing key so
     RF-XmlDsig-Sign-Config-Missing can raise a clear configuration error

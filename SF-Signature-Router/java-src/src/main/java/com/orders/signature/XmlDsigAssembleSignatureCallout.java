@@ -20,20 +20,29 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
+import java.security.interfaces.RSAPublicKey;
 import java.util.Base64;
 import java.util.Map;
 
 /**
  * Assembles the final enveloped &lt;Signature&gt; -- SignedInfo +
- * SignatureValue + KeyInfo (with the signer's X.509 certificate embedded
- * via &lt;X509Data&gt;&lt;X509Certificate&gt;) -- and inserts it as the
- * last child of the target document's root element, so the resulting
- * document can be validated by ANY compliant XML-DSig verifier using
- * nothing but the document itself: no out-of-band key distribution, no
- * prior knowledge of this gateway's KVM config. Runs after
+ * SignatureValue + KeyInfo -- and inserts it as the last child of the
+ * target document's root element, so the resulting document can be
+ * validated by ANY compliant XML-DSig verifier using nothing but the
+ * document itself: no out-of-band key distribution, no prior knowledge of
+ * this gateway's KVM config. KeyInfo carries the signer's key two ways,
+ * both derived from the same KVM-configured certificate so they can never
+ * disagree with each other: &lt;KeyValue&gt;&lt;RSAKeyValue&gt; (the raw
+ * modulus/exponent, for verifiers that read the key directly, no
+ * certificate parsing needed -- RSA only, see the Java class comment
+ * below) and &lt;X509Data&gt;&lt;X509Certificate&gt; (the full
+ * certificate, for verifiers that want to check the cert itself, e.g.
+ * its chain or validity window). Runs after
  * JC-Build-XmlDsig-Signing-String (which produced the canonicalized
  * SignedInfo this callout embeds verbatim) and NI-Signature-XmlDsig-Sign
  * (which must set signature.xmldsig.signatureValue -- the base64
@@ -54,9 +63,12 @@ import java.util.Map;
  * the XML-DSig spec, not as part of some larger canonicalization. Proven,
  * not just reasoned about: an assembled document was round-tripped
  * through JSR 105's own XMLSignature.validate() AND through xmlsec1 (an
- * independent C implementation, unrelated to the JDK) using ONLY the
- * public key extracted from the embedded certificate -- both passed; a
- * tampered copy of the same document was correctly rejected by both.
+ * independent C implementation, unrelated to the JDK), validated once
+ * using only the public key extracted from the embedded certificate and
+ * once using only the embedded &lt;RSAKeyValue&gt; (ignoring the
+ * certificate entirely) -- all passed, with the Modulus/Exponent bytes
+ * cross-checked against openssl's own reading of the same certificate; a
+ * tampered copy of the same document was correctly rejected.
  *
  * Policy config (see JC-Assemble-XmlDsig-Signature.xml):
  *   &lt;Properties&gt;
@@ -123,12 +135,14 @@ public class XmlDsigAssembleSignatureCallout implements Execution {
                 return fail(msgCtxt, outputPrefix, "certificate-pem is not set (check this proxy's {apiproxy.name}.xmldsig.sign KVM entry)");
             }
 
-            String certificateBase64;
+            Certificate certificate;
             try {
-                certificateBase64 = reencodeCertificate(certificatePem);
+                CertificateFactory cf = CertificateFactory.getInstance("X.509");
+                certificate = cf.generateCertificate(new ByteArrayInputStream(certificatePem.getBytes(StandardCharsets.UTF_8)));
             } catch (Exception certError) {
                 return fail(msgCtxt, outputPrefix, "certificate-pem is not a valid X.509 certificate: " + certError.getMessage());
             }
+            String certificateBase64 = Base64.getEncoder().encodeToString(certificate.getEncoded());
 
             Document targetDoc;
             Document signedInfoDoc;
@@ -152,6 +166,32 @@ public class XmlDsigAssembleSignatureCallout implements Execution {
             signatureEl.appendChild(signatureValueEl);
 
             Element keyInfoEl = targetDoc.createElementNS(DSIG_NS, "KeyInfo");
+
+            // <KeyValue><RSAKeyValue> gives a verifier the raw key
+            // directly, with no certificate parsing needed -- some
+            // tooling expects it alongside (or instead of) X509Data. Only
+            // emitted for RSA keys: XML-DSig 1.0 (the namespace this
+            // bundle uses throughout) defines RSAKeyValue and
+            // DSAKeyValue, but no EC representation -- ECKeyValue is a
+            // 1.1 addition this project doesn't otherwise use. An EC
+            // signing certificate still works fine; it just won't get a
+            // KeyValue block, only X509Data, which remains fully
+            // sufficient on its own.
+            PublicKey publicKey = certificate.getPublicKey();
+            if (publicKey instanceof RSAPublicKey) {
+                RSAPublicKey rsaPublicKey = (RSAPublicKey) publicKey;
+                Element keyValueEl = targetDoc.createElementNS(DSIG_NS, "KeyValue");
+                Element rsaKeyValueEl = targetDoc.createElementNS(DSIG_NS, "RSAKeyValue");
+                Element modulusEl = targetDoc.createElementNS(DSIG_NS, "Modulus");
+                modulusEl.setTextContent(base64Unsigned(rsaPublicKey.getModulus()));
+                Element exponentEl = targetDoc.createElementNS(DSIG_NS, "Exponent");
+                exponentEl.setTextContent(base64Unsigned(rsaPublicKey.getPublicExponent()));
+                rsaKeyValueEl.appendChild(modulusEl);
+                rsaKeyValueEl.appendChild(exponentEl);
+                keyValueEl.appendChild(rsaKeyValueEl);
+                keyInfoEl.appendChild(keyValueEl);
+            }
+
             Element x509DataEl = targetDoc.createElementNS(DSIG_NS, "X509Data");
             Element x509CertEl = targetDoc.createElementNS(DSIG_NS, "X509Certificate");
             x509CertEl.setTextContent(certificateBase64);
@@ -173,18 +213,25 @@ public class XmlDsigAssembleSignatureCallout implements Execution {
     }
 
     /**
-     * Parses certificate-pem as an X.509 certificate and re-encodes its
-     * DER bytes as base64 -- the exact content &lt;X509Certificate&gt;
-     * needs. Going through CertificateFactory (rather than just stripping
-     * the PEM markers and trusting the base64 in between) means a
-     * malformed or truncated KVM entry fails closed here with a clear
-     * error, instead of embedding bytes that merely look like a
-     * certificate.
+     * ds:CryptoBinary (what Modulus/Exponent hold) is an UNSIGNED
+     * big-endian integer, but BigInteger.toByteArray() is two's-complement
+     * and prepends a 0x00 sign byte whenever the value's high bit would
+     * otherwise read as negative. RSA moduli/exponents are always
+     * positive, so that leading byte -- when present -- is purely a
+     * sign-disambiguation artifact, not part of the value itself, and
+     * must be stripped or the encoded value is off by one leading zero
+     * byte from what every XML-DSig implementation expects (the same
+     * gotcha JWK n/e encoding has). Cross-checked against openssl's own
+     * reading of a real certificate's modulus before relying on this.
      */
-    private String reencodeCertificate(String pem) throws Exception {
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        Certificate cert = cf.generateCertificate(new ByteArrayInputStream(pem.getBytes(StandardCharsets.UTF_8)));
-        return Base64.getEncoder().encodeToString(cert.getEncoded());
+    private String base64Unsigned(BigInteger n) {
+        byte[] bytes = n.toByteArray();
+        if (bytes.length > 1 && bytes[0] == 0) {
+            byte[] trimmed = new byte[bytes.length - 1];
+            System.arraycopy(bytes, 1, trimmed, 0, trimmed.length);
+            bytes = trimmed;
+        }
+        return Base64.getEncoder().encodeToString(bytes);
     }
 
     private Document parseSecurely(String xml) throws Exception {

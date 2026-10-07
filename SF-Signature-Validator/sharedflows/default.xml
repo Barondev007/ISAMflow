@@ -138,32 +138,26 @@
          via one JavaCallout (JC-XmlDsig-Verify-Signature) doing
          canonicalization + digest + the SignatureValue cryptographic
          check together, using the JDK's built-in JSR 105 implementation
-         (javax.xml.crypto.dsig — no extra library). The verification
-         public key (PEM) and key algorithm are per-proxy, from the
-         shared KVM "signature" (entry key
-         "{apiproxy.name}.xmldsig.verify") — same PEM-in-KVM pattern as
-         JWT verification, for the same reason (see
-         EV-XmlDsig-Verify-Parse-Config). The callout sets
-         signature.verify.xmldsig.valid rather than raising a fault
-         itself; RF-XmlDsig-Verify-Failed does that, so a failed
-         verification gets this bundle's normal 401 shape.
+         (javax.xml.crypto.dsig — no extra library).
+
+         The verification key comes from the document's own KeyInfo
+         (KeyValue, else X509Data's certificate) — NOT from any
+         per-proxy KVM config. This is a deliberate trust-model choice,
+         not an oversight: see the class-level comment in
+         XmlDsigVerifyCallout.java for exactly what it does and does not
+         prove (it proves the message wasn't altered after being signed
+         by whoever holds the matching private key; it does NOT prove
+         WHO that was, since an attacker able to modify the message in
+         transit can replace the embedded key/certificate along with the
+         signature). There is no KVM entry for XML-DSig verification
+         config at all any more — if that guarantee turns out to matter,
+         see that same comment for how to add it back (pinning or full
+         CA-chain validation).
+
+         The callout sets signature.verify.xmldsig.valid rather than
+         raising a fault itself; RF-XmlDsig-Verify-Failed does that, so a
+         failed verification gets this bundle's normal 401 shape.
          ================================================================ -->
-    <Step>
-        <Name>AM-XmlDsig-Verify-Set-KVM-Key</Name>
-        <Condition>signature.verify.type = "xmldsig"</Condition>
-    </Step>
-    <Step>
-        <Name>KVM-Get-XmlDsig-Verify-Config</Name>
-        <Condition>signature.verify.type = "xmldsig"</Condition>
-    </Step>
-    <Step>
-        <Name>RF-XmlDsig-Verify-Config-Missing</Name>
-        <Condition>signature.verify.type = "xmldsig" AND signature.verify.xmldsig.config.json = null</Condition>
-    </Step>
-    <Step>
-        <Name>EV-XmlDsig-Verify-Parse-Config</Name>
-        <Condition>signature.verify.type = "xmldsig"</Condition>
-    </Step>
     <Step>
         <Name>JC-XmlDsig-Verify-Signature</Name>
         <Condition>signature.verify.type = "xmldsig"</Condition>

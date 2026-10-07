@@ -18,6 +18,47 @@ algorithm/shape allow-list this enforces (deliberately narrower than
 "whatever the document declares," to close off XML Signature wrapping
 attacks).
 
+## Trust model: the verification key comes from the document, not KVM
+
+**This is a deliberate choice, made explicitly after being warned about
+its consequence — not an oversight.** The verification key is resolved
+via a `javax.xml.crypto.KeySelector` that reads it straight out of the
+signed document's own `KeyInfo` (preferring `KeyValue`, falling back to
+the first certificate in `X509Data`) — there is no KVM entry for
+XML-DSig verification config any more.
+
+Validating a signature against a key that travels inside the same
+message it signs proves only "whoever sent this possesses a private
+key." It does **not** prove the message came from any specific,
+previously-known party: an attacker able to modify the message in
+transit can replace the signature *and* the embedded key/certificate
+together with their own, and this callout will still report the result
+as valid. If this bundle ever needs to assert *who* signed something —
+not just that it wasn't altered after some signing event — that needs
+either:
+- pinning the embedded certificate against a known-expected one (e.g. a
+  KVM-configured fingerprint, checked before trusting the key it
+  contains), or
+- full certificate-chain validation against a trusted CA
+  (`java.security.cert.CertPathValidator`).
+
+Neither is implemented here. The previous revision of this class (see
+git history) took a `public-key-pem` KVM-configured Property instead of
+reading the key from the document at all — restore that approach, or add
+pinning on top of this one, if the "prove who signed it" guarantee turns
+out to matter.
+
+**Verified, not just reasoned about**: the `KeySelector` was run end to
+end (via the real `Execution.execute()` entry point, not just a unit of
+the canonicalization logic) against a genuinely signed document (passes,
+resolving the key via `KeyValue`), a document whose `KeyInfo` only has
+`X509Data` (passes, resolving via the certificate fallback), a precisely
+tampered copy — one word changed in the payload, `KeyInfo` untouched —
+(correctly rejected, the Reference digest check catches it), a document
+with no `KeyInfo` at all, and a document whose `KeyInfo` has neither
+`KeyValue` nor `X509Data` (both correctly rejected with a clear error,
+not a crash).
+
 ## No extra XML-security dependency
 
 Unlike the earlier (now-removed) JWT KeyStore callout attempt, this one
@@ -69,12 +110,7 @@ SF-Signature-Validator/resources/java/xmldsig-verify-callout.jar
   resolved at request time)
 - `document-fallback` — `{message.content}`, used when `document` is
   empty
-- `public-key-pem` — `{signature.verify.xmldsig.publicKey.pem}`
-- `key-algorithm` — `{signature.verify.xmldsig.keyAlgorithm}` (defaults
-  to `"RSA"` if the KVM entry leaves it blank)
 - `output-prefix` — `signature.verify.xmldsig` (a literal flow-variable
   name *prefix* to write results under, not a ref)
 
-`public-key-pem`/`key-algorithm` come from the shared KVM `signature`,
-entry key `{apiproxy.name}.xmldsig.verify` — same pattern as JWT
-verification (see `EV-XmlDsig-Verify-Parse-Config.xml`).
+No key-related config — see "Trust model" above for why.

@@ -14,11 +14,14 @@
     wrapping attacks).
 
     document/document-fallback mirror the signing side's own
-    signature.payload / message.content fallback. public-key-pem and
-    key-algorithm come from this proxy's KVM entry (see
-    EV-XmlDsig-Verify-Parse-Config) — the same PEM-in-KVM pattern JWT
-    verification uses, for the same reason (no way to read Apigee
-    KeyStore key material from inside a running proxy).
+    signature.payload / message.content fallback. There is no
+    key-related config here at all — unlike JWT, the verification key
+    is resolved from the document's own KeyInfo (KeyValue, else
+    X509Data's certificate), not from a KVM entry. This is a deliberate
+    trust-model choice: see the class-level comment in
+    XmlDsigVerifyCallout.java for exactly what it does and does not
+    prove, and for how to add pinning or CA-chain validation back if
+    that guarantee turns out to matter here.
 
     Sets signature.verify.xmldsig.valid ("true"/"false") and, when not
     valid, signature.verify.xmldsig.error with a human-readable reason.
@@ -37,8 +40,6 @@
     <Properties>
         <Property name="document">{signature.verify.payload}</Property>
         <Property name="document-fallback">{message.content}</Property>
-        <Property name="public-key-pem">{signature.verify.xmldsig.publicKey.pem}</Property>
-        <Property name="key-algorithm">{signature.verify.xmldsig.keyAlgorithm}</Property>
         <Property name="output-prefix">signature.verify.xmldsig</Property>
     </Properties>
 </JavaCallout>

@@ -10,18 +10,26 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
+import javax.xml.crypto.AlgorithmMethod;
+import javax.xml.crypto.KeySelector;
+import javax.xml.crypto.KeySelectorException;
+import javax.xml.crypto.KeySelectorResult;
+import javax.xml.crypto.XMLCryptoContext;
+import javax.xml.crypto.XMLStructure;
 import javax.xml.crypto.dsig.Reference;
 import javax.xml.crypto.dsig.Transform;
 import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.crypto.dsig.XMLSignatureFactory;
 import javax.xml.crypto.dsig.dom.DOMValidateContext;
+import javax.xml.crypto.dsig.keyinfo.KeyInfo;
+import javax.xml.crypto.dsig.keyinfo.KeyValue;
+import javax.xml.crypto.dsig.keyinfo.X509Data;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.StringReader;
-import java.security.KeyFactory;
+import java.security.Key;
 import java.security.PublicKey;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 
@@ -30,16 +38,27 @@ import java.util.Map;
  * digest, and the SignatureValue cryptographic check -- in one policy,
  * using the JDK's built-in JSR 105 implementation (javax.xml.crypto.dsig,
  * part of the standard Java platform since Java 6, in the java.xml.crypto
- * module; no extra library beyond the Apigee SDK). This replaces both
- * JS-Verify-XmlDsig-Digest (which only checked the digest against the
- * document's own claimed value -- proving content integrity but nothing
- * about authenticity) and the NI-XmlDsig-Verify-Signature placeholder:
- * neither JavaScript nor any native Apigee policy can perform RSA/ECDSA
- * math, so this piece has to be compiled Java, and once it is, doing
- * canonicalization + digest + signature-value checking together in one
- * conformant implementation is strictly better than keeping a hand-rolled
- * JS canonicalizer in the loop alongside it -- one less place a subtle
- * mismatch between two independent implementations could hide.
+ * module; no extra library beyond the Apigee SDK).
+ *
+ * &lt;b&gt;Trust model: the verification key comes from the document's own
+ * KeyInfo (KeyValue, else X509Data's certificate), not from any
+ * separately configured, pre-trusted key material.&lt;/b&gt; This is a
+ * DELIBERATE choice, made explicitly after being warned about its
+ * consequence, not an oversight: validating a signature against a key
+ * that travels inside the same message it signs proves only "whoever
+ * sent this possesses a private key" -- it does NOT prove the message
+ * came from any specific party, since an attacker able to modify the
+ * message in transit can just as easily replace the signature AND the
+ * embedded key/certificate together with their own, and this callout
+ * would still report the signature as valid. If this bundle ever needs
+ * to assert WHO signed something -- not just that it wasn't altered
+ * after some signing event -- that requires either pinning the embedded
+ * certificate against a known-expected one (e.g. a KVM-configured
+ * fingerprint) or full certificate-chain validation against a trusted
+ * CA, neither of which this class does. The earlier revision of this
+ * file (git history) took a public-key-pem Property from this proxy's
+ * KVM entry instead -- restore that approach (or add pinning on top of
+ * this one) if that guarantee turns out to matter here after all.
  *
  * Fixed (NOT KVM-configurable) security decisions, deliberately baked
  * into this compiled class rather than left to runtime config -- the
@@ -58,25 +77,24 @@ import java.util.Map;
  * content that actually matters has been altered or was never covered by
  * the signature at all. Anything outside this exact shape fails closed
  * -- this class never trusts whatever algorithm/structure the document
- * itself happens to declare.
+ * itself happens to declare. This allow-list is independent of, and no
+ * weaker because of, the KeyInfo trust-model choice above: it still
+ * closes off wrapping attacks regardless of where the key came from.
  *
  * Policy config (see JC-XmlDsig-Verify-Signature.xml):
  *   &lt;Properties&gt;
  *     &lt;Property name="document"&gt;{signature.verify.payload}&lt;/Property&gt;
  *     &lt;Property name="document-fallback"&gt;{message.content}&lt;/Property&gt;
- *     &lt;Property name="public-key-pem"&gt;{signature.verify.xmldsig.publicKey.pem}&lt;/Property&gt;
- *     &lt;Property name="key-algorithm"&gt;{signature.verify.xmldsig.keyAlgorithm}&lt;/Property&gt;
  *     &lt;Property name="output-prefix"&gt;signature.verify.xmldsig&lt;/Property&gt;
  *   &lt;/Properties&gt;
  *
- * "document"/"document-fallback"/"public-key-pem"/"key-algorithm" are
- * resolved as flow-variable references the same way
- * PublicKeyFromKeystoreCallout (the earlier, now-removed JWT KeyStore
- * callout) resolved its config: a property value wrapped in "{...}" is
- * looked up via MessageContext.getVariable() at request time, since this
- * class is instantiated once at policy load and reused across requests.
+ * "document"/"document-fallback" are resolved as flow-variable
+ * references: a property value wrapped in "{...}" is looked up via
+ * MessageContext.getVariable() at request time, since this class is
+ * instantiated once at policy load and reused across requests.
  * "output-prefix" is always a literal flow-variable name PREFIX, never a
- * ref.
+ * ref. There is no key-related config left -- see the trust-model note
+ * above for why.
  *
  * Sets &lt;output-prefix&gt;.valid ("true"/"false") and, when not valid,
  * &lt;output-prefix&gt;.error with a human-readable reason, plus (only when
@@ -114,15 +132,6 @@ public class XmlDsigVerifyCallout implements Execution {
                 return fail(msgCtxt, outputPrefix, "no document to verify (both 'document' and 'document-fallback' were empty)");
             }
 
-            String publicKeyPem = resolveConfigValue(msgCtxt, "public-key-pem");
-            if (isBlank(publicKeyPem)) {
-                return fail(msgCtxt, outputPrefix, "public-key-pem is not set (check this proxy's {apiproxy.name}.xmldsig.verify KVM entry)");
-            }
-            String keyAlgorithm = resolveConfigValue(msgCtxt, "key-algorithm");
-            if (isBlank(keyAlgorithm)) {
-                keyAlgorithm = "RSA";
-            }
-
             Document doc;
             try {
                 doc = parseSecurely(xml);
@@ -139,23 +148,37 @@ public class XmlDsigVerifyCallout implements Execution {
             }
             Element sigElement = (Element) sigNodes.item(0);
 
-            PublicKey publicKey;
-            try {
-                publicKey = decodePublicKey(publicKeyPem, keyAlgorithm);
-            } catch (Exception keyError) {
-                return fail(msgCtxt, outputPrefix, "could not decode public-key-pem as a " + keyAlgorithm + " key: " + keyError.getMessage());
-            }
-
             XMLSignatureFactory factory = XMLSignatureFactory.getInstance("DOM");
-            DOMValidateContext validateContext = new DOMValidateContext(publicKey, sigElement);
-            XMLSignature signature = factory.unmarshalXMLSignature(validateContext);
+            DOMValidateContext validateContext = new DOMValidateContext(new FromDocumentKeySelector(), sigElement);
+            XMLSignature signature;
+            try {
+                signature = factory.unmarshalXMLSignature(validateContext);
+            } catch (Exception unmarshalError) {
+                return fail(msgCtxt, outputPrefix, "could not read <Signature>: " + unmarshalError.getMessage());
+            }
 
             String shapeError = checkExpectedShape(signature);
             if (shapeError != null) {
                 return fail(msgCtxt, outputPrefix, shapeError);
             }
 
-            boolean coreValid = signature.validate(validateContext);
+            boolean coreValid;
+            try {
+                coreValid = signature.validate(validateContext);
+            } catch (Exception validateError) {
+                // Covers KeySelectorException -- thrown when KeyInfo has
+                // neither a KeyValue nor an X509Data/X509Certificate to
+                // resolve a key from. JSR 105 wraps it in a generic
+                // XMLSignatureException("cannot find validation key"),
+                // so surface the cause's message (FromDocumentKeySelector's
+                // own, specific text) when there is one -- confirmed by
+                // direct test that the cause is where the useful detail
+                // actually ends up, not the wrapping exception itself.
+                String detail = (validateError.getCause() != null)
+                        ? validateError.getCause().getMessage()
+                        : validateError.getMessage();
+                return fail(msgCtxt, outputPrefix, "could not resolve a verification key from KeyInfo: " + detail);
+            }
             msgCtxt.setVariable(outputPrefix + ".valid", coreValid ? "true" : "false");
 
             if (!coreValid) {
@@ -171,13 +194,53 @@ public class XmlDsigVerifyCallout implements Execution {
 
                 msgCtxt.setVariable(outputPrefix + ".error", sigValueValid
                         ? "signature value is valid but a reference digest did not match -- content was altered after signing, or is malformed"
-                        : "signature value does not validate against the configured public key");
+                        : "signature value does not validate against the key found in KeyInfo");
             }
 
             return new ExecutionResult(true, ExecutionResult.Action.CONTINUE);
 
         } catch (Exception e) {
             return fail(msgCtxt, outputPrefix, e.toString());
+        }
+    }
+
+    /**
+     * Resolves the verification key from the document's own KeyInfo --
+     * see the class-level comment for why this is a deliberate trust-model
+     * choice, not an oversight. Prefers KeyValue (the raw key, no
+     * certificate parsing needed) and falls back to the first
+     * X509Certificate found in X509Data; throws if KeyInfo has neither.
+     */
+    private static class FromDocumentKeySelector extends KeySelector {
+        public KeySelectorResult select(KeyInfo keyInfo, Purpose purpose, AlgorithmMethod method, XMLCryptoContext context) throws KeySelectorException {
+            if (keyInfo == null) {
+                throw new KeySelectorException("document has no KeyInfo -- nothing to resolve a verification key from");
+            }
+            for (Object infoObj : keyInfo.getContent()) {
+                if (infoObj instanceof KeyValue) {
+                    try {
+                        return result(((KeyValue) infoObj).getPublicKey());
+                    } catch (Exception e) {
+                        throw new KeySelectorException(e);
+                    }
+                }
+            }
+            for (Object infoObj : keyInfo.getContent()) {
+                if (infoObj instanceof X509Data) {
+                    for (Object x509Obj : ((X509Data) infoObj).getContent()) {
+                        if (x509Obj instanceof X509Certificate) {
+                            return result(((X509Certificate) x509Obj).getPublicKey());
+                        }
+                    }
+                }
+            }
+            throw new KeySelectorException("KeyInfo has neither a KeyValue nor an X509Data/X509Certificate");
+        }
+
+        private KeySelectorResult result(final Key key) {
+            return new KeySelectorResult() {
+                public Key getKey() { return key; }
+            };
         }
     }
 
@@ -228,17 +291,6 @@ public class XmlDsigVerifyCallout implements Execution {
         dbf.setExpandEntityReferences(false);
         DocumentBuilder builder = dbf.newDocumentBuilder();
         return builder.parse(new InputSource(new StringReader(xml)));
-    }
-
-    private PublicKey decodePublicKey(String pem, String keyAlgorithm) throws Exception {
-        String cleaned = pem
-                .replace("-----BEGIN PUBLIC KEY-----", "")
-                .replace("-----END PUBLIC KEY-----", "")
-                .replaceAll("\\s", "");
-        byte[] der = Base64.getDecoder().decode(cleaned);
-        X509EncodedKeySpec spec = new X509EncodedKeySpec(der);
-        KeyFactory kf = KeyFactory.getInstance(keyAlgorithm);
-        return kf.generatePublic(spec);
     }
 
     private ExecutionResult fail(MessageContext msgCtxt, String outputPrefix, String message) {

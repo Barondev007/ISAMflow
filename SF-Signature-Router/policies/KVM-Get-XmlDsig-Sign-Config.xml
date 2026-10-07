@@ -23,8 +23,10 @@
     whenever the signing certificate is issued/rotated, same PEM-in-KVM
     pattern used throughout this project (there is no documented way to
     export certificate material from the Apigee KeyStore at request
-    time — see EV-XmlDsig-Verify-Parse-Config in SF-Signature-Validator
-    for the fuller version of this reasoning).
+    time — see EV-JWT-Verify-Parse-Config in SF-Signature-Validator for
+    the fuller version of this reasoning; XML-DSig verification itself no
+    longer uses a KVM-configured key at all, see
+    XmlDsigVerifyCallout.java's class comment).
 
     continueOnError lets the flow proceed past a missing key so
     RF-XmlDsig-Sign-Config-Missing can raise a clear configuration error

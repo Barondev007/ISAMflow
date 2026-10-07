@@ -42,8 +42,13 @@
         (JC-XmlDsig-Verify-Signature) does canonicalization, digest, and
         the SignatureValue check together, using the JDK's built-in JSR
         105 implementation (javax.xml.crypto.dsig — no extra library
-        beyond the Apigee SDK). Its verification public key is PEM-in-KVM
-        too, same pattern and reason as JWT.
+        beyond the Apigee SDK). Unlike JWT, its verification key is NOT
+        KVM-configured: it's resolved from the KeyInfo embedded in the
+        signed document itself (KeyValue, else X509Data's certificate) —
+        a deliberate trust-model choice (see XmlDsigVerifyCallout.java's
+        class comment for exactly what that does and does not prove)
+        made explicitly after being warned it means the document alone,
+        not a separately trusted key, decides what verifies.
     </Description>
     <Policies>
         <Policy>RF-Missing-Signature-Verify-Type</Policy>
@@ -66,10 +71,6 @@
         <Policy>VerifyJWS-Jwt-Detached</Policy>
         <Policy>JS-Verify-Cavage-Signing-String</Policy>
         <Policy>NI-Cavage-Verify-Signature</Policy>
-        <Policy>AM-XmlDsig-Verify-Set-KVM-Key</Policy>
-        <Policy>KVM-Get-XmlDsig-Verify-Config</Policy>
-        <Policy>RF-XmlDsig-Verify-Config-Missing</Policy>
-        <Policy>EV-XmlDsig-Verify-Parse-Config</Policy>
         <Policy>JC-XmlDsig-Verify-Signature</Policy>
         <Policy>RF-XmlDsig-Verify-Failed</Policy>
     </Policies>

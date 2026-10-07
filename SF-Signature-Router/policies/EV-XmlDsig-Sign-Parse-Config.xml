@@ -11,10 +11,20 @@
       run of dashes isn't legal inside an XML comment)
 
     certificatePem is required (IgnoreUnresolvedVariables=false): a JSON
-    string can hold literal "\n" escapes for the multi-line PEM; JSONPath
-    extraction below unescapes them back into real newlines, which is
-    exactly what JC-Assemble-XmlDsig-Signature's CertificateFactory
-    parsing needs.
+    string can hold literal "\n" escapes for the multi-line PEM, and this
+    JSONPath extraction is EXPECTED to unescape them back into real
+    newlines the way JC-Assemble-XmlDsig-Signature's CertificateFactory
+    parsing needs — but confirm that on your actual Apigee version rather
+    than trusting this comment: that assumption was documented here
+    without having been verified against a live instance, and a real
+    failure traced back to exactly this gap. JC-Assemble-XmlDsig-Signature
+    now normalizes literal "\n"/"\r\n"/"\r" sequences defensively before
+    parsing (see its class comment), so a wrong assumption here no longer
+    breaks signing — but if VerifyJWS ever rejects a KVM-configured
+    public key that looks correct (signature.verify.jwt.publicKey.pem,
+    parsed the same way in SF-Signature-Validator), the same gap is the
+    first thing to check there, since that path has no Java callout to
+    add the same normalization to.
 
     signature.xmldsig.certificate.pem feeds
     JC-Assemble-XmlDsig-Signature's "certificate-pem" Property directly.

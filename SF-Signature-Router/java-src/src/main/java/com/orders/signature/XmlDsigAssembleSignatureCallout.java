@@ -138,7 +138,7 @@ public class XmlDsigAssembleSignatureCallout implements Execution {
             Certificate certificate;
             try {
                 CertificateFactory cf = CertificateFactory.getInstance("X.509");
-                certificate = cf.generateCertificate(new ByteArrayInputStream(certificatePem.getBytes(StandardCharsets.UTF_8)));
+                certificate = cf.generateCertificate(new ByteArrayInputStream(normalizePem(certificatePem).getBytes(StandardCharsets.UTF_8)));
             } catch (Exception certError) {
                 return fail(msgCtxt, outputPrefix, "certificate-pem is not a valid X.509 certificate: " + certError.getMessage());
             }
@@ -210,6 +210,28 @@ public class XmlDsigAssembleSignatureCallout implements Execution {
         } catch (Exception e) {
             return fail(msgCtxt, outputPrefix, e.toString());
         }
+    }
+
+    /**
+     * Defensive normalization before handing certificate-pem to
+     * CertificateFactory: if the string still has LITERAL two-character
+     * "\n"/"\r\n"/"\r" escape sequences -- rather than real newline bytes
+     * -- turn them into real newlines first. This happens whenever
+     * something upstream (Apigee's ExtractVariables/JSONPath included --
+     * confirmed to matter in practice, not just a theoretical edge case)
+     * hands this callout a JSON-escaped string without having unescaped
+     * it; CertificateFactory's PEM parser requires an actual newline
+     * right after "-----BEGIN CERTIFICATE-----" to recognize the
+     * boundary; without it, the whole base64 body reads as one
+     * malformed line and parsing fails (with wording that varies by JDK
+     * version -- confirmed to include both "Incomplete data" and other
+     * phrasings across versions, so this is matched on the underlying
+     * shape of the string, not on any particular error message). Also
+     * trims incidental leading/trailing whitespace. A no-op on PEM text
+     * that already has real newlines.
+     */
+    private String normalizePem(String pem) {
+        return pem.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\r", "\n").trim();
     }
 
     /**

@@ -201,5 +201,34 @@ Sets `<output-prefix>.signatureMethod`, `<output-prefix>.digest.value`,
   needs the whole cert.
 - `output-prefix` — `signature.xmldsig`
 
+**Known pitfall, now handled**: `XmlDsigAssembleSignatureCallout` runs
+`certificate-pem` through `normalizePem()` before parsing it, which turns
+literal two-character `\n`/`\r\n`/`\r` escape sequences into real
+newlines. This matters because `EV-XmlDsig-Sign-Parse-Config.xml`'s own
+comment claims Apigee's `ExtractVariables`/JSONPath unescapes a JSON
+string's `\n` into a real newline automatically — that claim was
+documented but never actually verified against a live Apigee instance,
+and a user hit exactly the failure mode you'd expect if it's wrong on
+their Apigee version: `CertificateFactory` refusing a PEM string whose
+`-----BEGIN CERTIFICATE-----` line never actually ends (because the
+"newline" after it is still the two characters `\`+`n`, not a real
+line break), with an error to the effect of "not a valid X.509
+certificate" / "unexpected data in stream" (exact wording is JDK-version
+dependent — confirmed to vary across JDK versions for this same
+underlying cause, so don't pattern-match on the literal text). The
+normalization is a no-op on PEM text that's already correctly escaped,
+so this costs nothing when the assumption does hold.
+
+**The same assumption is unverified everywhere else in this project a
+PEM value is pulled out of a KVM-backed JSON config via
+`ExtractVariables`/JSONPath** — most notably JWT verification's
+`signature.verify.jwt.publicKey.pem`, consumed directly by the native
+`VerifyJWS` policy's `<PublicKey><Value ref="...">`. Unlike here, there's
+no Java callout in that path to add a normalization step to — if the
+same symptom shows up there (`VerifyJWS` rejecting a KVM-configured
+public key that looks correct), the fix is a native `AssignMessage` or
+`JS` step before `VerifyJWS` that does the same `\n`-literal-to-real-
+newline substitution before the PEM is used.
+
 Sets `<output-prefix>.signed.document` — the complete signed XML, ready
 for the calling proxy to use as its response or request body.

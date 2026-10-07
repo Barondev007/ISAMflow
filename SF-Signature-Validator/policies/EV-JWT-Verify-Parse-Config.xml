@@ -75,9 +75,19 @@
     also pastes its public key here as PEM (e.g. via
     `openssl x509 -in cert.pem -pubkey -noout`, or the Management API's
     export endpoint run once from a terminal, not from a proxy). A JSON
-    string can hold literal "\n" escapes for the multi-line PEM; JSONPath
-    extraction below unescapes them back into real newlines, which is
-    exactly what VerifyJWS's PublicKey/Value needs.
+    string can hold literal "\n" escapes for the multi-line PEM, and this
+    JSONPath extraction is EXPECTED to unescape them back into real
+    newlines, which is exactly what VerifyJWS's PublicKey/Value needs —
+    but CONFIRM that on your actual Apigee version rather than trusting
+    this comment. The same assumption, documented the same way, turned
+    out to be unverified in SF-Signature-Router's XmlDsig signing path
+    and a real failure traced back to it (see
+    EV-XmlDsig-Sign-Parse-Config.xml there). Unlike that path, there is
+    no Java callout here to defensively normalize a wrong unescape before
+    VerifyJWS consumes it — if VerifyJWS ever rejects a KVM-configured
+    public key that looks correct, add a native AssignMessage or JS step
+    before it that turns literal "\n"/"\r\n"/"\r" sequences into real
+    newlines.
 
     knownHeaders is a comma-separated string, not a JSON array — a
     JSONPath extraction is for pulling out one scalar value, and a

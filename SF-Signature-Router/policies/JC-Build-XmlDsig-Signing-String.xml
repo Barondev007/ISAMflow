@@ -14,7 +14,18 @@
 
     document/document-fallback mirror the validator side's own
     signature.verify.payload / message.content fallback: this signs
-    signature.payload if the calling proxy staged one, else message.content.
+    signature.payload if the calling proxy staged one, else message.content
+    — and immediately writes WHICHEVER one was actually used back into
+    signature.payload, so JC-Assemble-XmlDsig-Signature (which resolves
+    its own "document" Property the same way, but runs later, after the
+    external signing-API call in between) is guaranteed to embed the
+    exact same bytes that got hashed here, not whatever message.content
+    happens to hold by the time it runs. See XmlDsigSignCallout.java's
+    class comment for the real failure this closes: a calling proxy that
+    never explicitly stages signature.payload (relying only on the
+    message.content fallback) can otherwise end up with these two steps
+    silently disagreeing if anything mutates message.content in between.
+
     signature-method is read from signature.xmldsig.signatureMethod if the
     calling proxy already set it; default-signature-method supplies
     "...xmldsig-more#rsa-sha256" otherwise — same auto-default behavior

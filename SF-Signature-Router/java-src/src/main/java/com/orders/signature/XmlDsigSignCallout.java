@@ -31,9 +31,21 @@ import java.util.Map;
  * the problem, and for the processing-instruction bug this port fixes
  * along the way.
  *
- * 1) Canonicalize the target XML (signature.payload if the calling proxy
- *    staged one, else message.content) with Exclusive C14N and SHA-256 it
- *    -&gt; DigestValue.
+ * 0) Resolve the target XML (signature.payload if the calling proxy
+ *    staged one, else message.content) and immediately pin it back into
+ *    signature.payload -- so JC-Assemble-XmlDsig-Signature, which
+ *    resolves its own "document" Property the same way but runs later
+ *    (after the external signing-API call in between), is guaranteed to
+ *    embed the EXACT bytes this step hashed, not whatever message.content
+ *    happens to hold by then. Closes a real failure mode: a calling
+ *    proxy relying on the message.content fallback (never explicitly
+ *    staging signature.payload) can end up with the two steps reading
+ *    different content if anything mutates message.content in between --
+ *    producing a signature that's internally consistent with neither the
+ *    document it claims to cover nor this gateway's own verifier, while
+ *    an externally-signed document (no such two-read gap) verifies fine.
+ * 1) Canonicalize that same XML with Exclusive C14N and SHA-256 it -&gt;
+ *    DigestValue.
  * 2) Build &lt;SignedInfo&gt; (CanonicalizationMethod = exc-c14n,
  *    SignatureMethod = signature.xmldsig.signatureMethod, one Reference
  *    with the enveloped-signature + exc-c14n Transforms, DigestMethod =
@@ -101,6 +113,27 @@ public class XmlDsigSignCallout implements Execution {
             if (isBlank(xml)) {
                 return fail(msgCtxt, outputPrefix, "no document to sign (both 'document' and 'document-fallback' were empty)");
             }
+
+            // Pin down exactly what gets hashed below, so
+            // JC-Assemble-XmlDsig-Signature -- which runs later, after
+            // the external signing-API call, and resolves ITS OWN
+            // "document" Property the same way ({signature.payload},
+            // falling back to {message.content}) -- is guaranteed to
+            // read the SAME bytes, not whatever message.content happens
+            // to hold by the time it runs. Without this, a calling proxy
+            // that relies on the message.content fallback (rather than
+            // explicitly staging signature.payload itself) risks the two
+            // steps disagreeing if anything mutates message.content in
+            // between -- e.g. another policy reformatting the body, or
+            // Apigee's own internal handling of it -- which produces
+            // exactly "signs fine, then fails its own verification"
+            // (confirmed as the actual root cause of a real report: the
+            // same proxy's own signature failed its own verification
+            // while an externally-signed document, with no such
+            // two-read gap, verified correctly). Writing this is a
+            // harmless no-op when the calling proxy already set
+            // signature.payload explicitly -- same value either way.
+            msgCtxt.setVariable("signature.payload", xml);
 
             String signatureMethod = resolveConfigValue(msgCtxt, "signature-method");
             if (isBlank(signatureMethod)) {

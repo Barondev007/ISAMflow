@@ -12,7 +12,8 @@
         XML-DSig, the finished document (with the signer's X.509 certificate
         embedded in KeyInfo, so it can be validated by any XML-DSig verifier,
         not just this gateway's own) lands in signature.xmldsig.signed.document
-        — see JC-Assemble-XmlDsig-Signature.
+        and replaces the original request payload — see
+        JC-Assemble-XmlDsig-Signature and AM-XmlDsig-Set-Request-Payload.
     </Description>
     <Policies>
         <Policy>RF-Missing-Signature-Type</Policy>
@@ -35,6 +36,7 @@
         <Policy>RF-XmlDsig-Sign-Config-Missing</Policy>
         <Policy>EV-XmlDsig-Sign-Parse-Config</Policy>
         <Policy>JC-Assemble-XmlDsig-Signature</Policy>
+        <Policy>AM-XmlDsig-Set-Request-Payload</Policy>
         <Policy>AM-Cavage-Set-KVM-Key</Policy>
         <Policy>KVM-Get-Cavage-Headers-Template</Policy>
         <Policy>RF-Cavage-Headers-Config-Missing</Policy>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Replaces the original request body with the fully-assembled signed
+    document: once JC-Assemble-XmlDsig-Signature succeeds,
+    signature.xmldsig.signed.document holds the complete XML (original
+    content + the embedded <Signature>), and this step applies it back
+    onto the request message so the signature is actually what gets sent
+    onward — mirroring JS-JWT-Set-Output-Header's role for the JWT path
+    (which writes its own output into a request header instead, since a
+    JWT isn't the request body itself).
+
+    AssignTo explicitly targets type="request" (createNew="false") rather
+    than relying on Apigee's implicit "current message" context, since
+    this shared flow can in principle be attached to either a request or
+    a response flow — the explicit AssignTo makes it unambiguous that
+    the REQUEST payload is what gets replaced, matching "it should
+    replace the original request" exactly, instead of silently doing the
+    wrong thing if ever invoked from a response flow.
+
+    Only runs if assembly actually produced a document — same
+    signature.xmldsig.error-guarded pattern as the rest of this sub-flow;
+    if JC-Assemble-XmlDsig-Signature failed, signed.document is unset and
+    this step's Condition skips it, leaving the original request
+    untouched (and whatever fault/guard already fired stands).
+-->
+<AssignMessage name="AM-XmlDsig-Set-Request-Payload">
+    <DisplayName>AM-XmlDsig-Set-Request-Payload</DisplayName>
+    <AssignTo type="request" createNew="false"/>
+    <Set>
+        <Payload contentType="application/xml">{signature.xmldsig.signed.document}</Payload>
+    </Set>
+    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+</AssignMessage>

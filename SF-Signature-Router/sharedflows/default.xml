@@ -97,7 +97,14 @@
          EV-XmlDsig-Sign-Parse-Config) — into the final <Signature> and
          splices it into the document, so the result can be validated by
          ANY XML-DSig verifier, not just this gateway's own, with no
-         out-of-band key distribution.
+         out-of-band key distribution. AM-XmlDsig-Set-Request-Payload
+         then replaces the original request body with that assembled
+         document (signature.xmldsig.signed.document) — the signed XML
+         IS the request going forward, the same role
+         JS-JWT-Set-Output-Header plays for the JWT path above (which
+         writes into a header instead, since a JWT isn't the body
+         itself). Guarded by signed.document != null so a failed
+         assembly leaves the original request untouched.
          ================================================================ -->
     <Step>
         <Name>JC-Build-XmlDsig-Signing-String</Name>
@@ -126,6 +133,10 @@
     <Step>
         <Name>JC-Assemble-XmlDsig-Signature</Name>
         <Condition>signature.type = "xmldsig"</Condition>
+    </Step>
+    <Step>
+        <Name>AM-XmlDsig-Set-Request-Payload</Name>
+        <Condition>signature.type = "xmldsig" AND signature.xmldsig.signed.document != null</Condition>
     </Step>
 
     <!-- ================================================================

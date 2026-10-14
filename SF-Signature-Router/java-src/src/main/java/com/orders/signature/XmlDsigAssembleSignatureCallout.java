@@ -135,11 +135,34 @@ public class XmlDsigAssembleSignatureCallout implements Execution {
             }
 
             Certificate certificate;
+            byte[] certDer = null;
             try {
+                certDer = certificateDer(certificatePem);
                 CertificateFactory cf = CertificateFactory.getInstance("X.509");
-                certificate = cf.generateCertificate(new ByteArrayInputStream(certificateDer(certificatePem)));
+                certificate = cf.generateCertificate(new ByteArrayInputStream(certDer));
             } catch (Exception certError) {
-                return fail(msgCtxt, outputPrefix, "certificate-pem is not a valid X.509 certificate: " + certError.getMessage());
+                // Deliberately verbose but still safe to log/return: length,
+                // a short prefix/suffix (not the sensitive middle, and not
+                // sensitive by itself -- most certs share a common prefix
+                // shape), and whether base64-decoding itself succeeded
+                // (and to how many DER bytes) BEFORE CertificateFactory
+                // ever saw it. Added because "not a valid X.509
+                // certificate" alone wasn't enough to tell two reportedly
+                // byte-identical inputs (one wrapped in a PEM header with
+                // line breaks, one not) apart -- this surfaces whatever
+                // the actual difference is without requiring the
+                // certificate's real content to be pasted anywhere.
+                String detail = certError.getMessage();
+                Throwable cause = certError.getCause();
+                if (cause != null && cause.getMessage() != null && !cause.getMessage().equals(detail)) {
+                    detail = detail + " (caused by: " + cause.getMessage() + ")";
+                }
+                return fail(msgCtxt, outputPrefix, "certificate-pem is not a valid X.509 certificate: " + detail
+                        + " [diagnostic: input length=" + certificatePem.length()
+                        + ", prefix=" + safeEdge(certificatePem, true)
+                        + ", suffix=" + safeEdge(certificatePem, false)
+                        + ", base64-decoded bytes=" + (certDer == null ? "decode itself failed" : String.valueOf(certDer.length))
+                        + "]");
             }
             String certificateBase64 = Base64.getEncoder().encodeToString(certificate.getEncoded());
 
@@ -251,6 +274,18 @@ public class XmlDsigAssembleSignatureCallout implements Execution {
                 .replace('-', '+')
                 .replace('_', '/');
         return Base64.getMimeDecoder().decode(body);
+    }
+
+    /**
+     * First or last 12 characters of s, for safe inclusion in a
+     * diagnostic error message -- enough to spot a stray leading/trailing
+     * quote character, a BOM, unexpected whitespace, or truncation
+     * without exposing the sensitive middle (the actual modulus-bearing
+     * content) of the certificate.
+     */
+    private String safeEdge(String s, boolean leading) {
+        int n = Math.min(12, s.length());
+        return leading ? s.substring(0, n) : s.substring(s.length() - n);
     }
 
     /**

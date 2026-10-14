@@ -201,23 +201,32 @@ Sets `<output-prefix>.signatureMethod`, `<output-prefix>.digest.value`,
   needs the whole cert.
 - `output-prefix` — `signature.xmldsig`
 
-**Known pitfall, now handled**: `XmlDsigAssembleSignatureCallout` runs
-`certificate-pem` through `normalizePem()` before parsing it, which turns
-literal two-character `\n`/`\r\n`/`\r` escape sequences into real
-newlines. This matters because `EV-XmlDsig-Sign-Parse-Config.xml`'s own
-comment claims Apigee's `ExtractVariables`/JSONPath unescapes a JSON
-string's `\n` into a real newline automatically — that claim was
-documented but never actually verified against a live Apigee instance,
-and a user hit exactly the failure mode you'd expect if it's wrong on
-their Apigee version: `CertificateFactory` refusing a PEM string whose
-`-----BEGIN CERTIFICATE-----` line never actually ends (because the
-"newline" after it is still the two characters `\`+`n`, not a real
-line break), with an error to the effect of "not a valid X.509
+**Known pitfall, now handled**: `certificate-pem` has been seen in KVM in
+more than one shape — a properly formatted PEM
+(`-----BEGIN CERTIFICATE-----`, base64 body wrapped across lines,
+`-----END CERTIFICATE-----`) and just the raw base64 body alone, with no
+header/footer and no line breaks at all. `CertificateFactory`'s own PEM
+parser is picky about both the header/footer being present *and* real
+line breaks existing where it expects them, so neither shape is safe to
+hand it as-is. `XmlDsigAssembleSignatureCallout.certificateDer()` handles
+every variant the same way instead of relying on that parser at all:
+strip whatever header/footer is present (if any), un-escape literal
+two-character `\n`/`\r\n`/`\r` sequences — this matters because
+`EV-XmlDsig-Sign-Parse-Config.xml`'s own comment claims Apigee's
+`ExtractVariables`/JSONPath unescapes a JSON string's `\n` into a real
+newline automatically, a claim that was documented but never actually
+verified against a live Apigee instance, and a user hit exactly the
+failure mode you'd expect if it's wrong on their Apigee version — strip
+every remaining whitespace character, then base64-decode what's left
+straight to DER bytes and hand `CertificateFactory` those bytes directly.
+A PEM missing its header, missing real newlines, or both, all converge on
+the same DER bytes as a properly formatted one; confirmed to produce a
+byte-identical embedded `<X509Certificate>` across all three shapes in a
+test harness run. The previous error this fixes looked like
+`CertificateFactory` refusing the PEM with "not a valid X.509
 certificate" / "unexpected data in stream" (exact wording is JDK-version
 dependent — confirmed to vary across JDK versions for this same
-underlying cause, so don't pattern-match on the literal text). The
-normalization is a no-op on PEM text that's already correctly escaped,
-so this costs nothing when the assumption does hold.
+underlying cause, so don't pattern-match on the literal text).
 
 **The same assumption is unverified everywhere else in this project a
 PEM value is pulled out of a KVM-backed JSON config via

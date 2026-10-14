@@ -21,7 +21,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
@@ -138,7 +137,7 @@ public class XmlDsigAssembleSignatureCallout implements Execution {
             Certificate certificate;
             try {
                 CertificateFactory cf = CertificateFactory.getInstance("X.509");
-                certificate = cf.generateCertificate(new ByteArrayInputStream(normalizePem(certificatePem).getBytes(StandardCharsets.UTF_8)));
+                certificate = cf.generateCertificate(new ByteArrayInputStream(certificateDer(certificatePem)));
             } catch (Exception certError) {
                 return fail(msgCtxt, outputPrefix, "certificate-pem is not a valid X.509 certificate: " + certError.getMessage());
             }
@@ -213,25 +212,28 @@ public class XmlDsigAssembleSignatureCallout implements Execution {
     }
 
     /**
-     * Defensive normalization before handing certificate-pem to
-     * CertificateFactory: if the string still has LITERAL two-character
-     * "\n"/"\r\n"/"\r" escape sequences -- rather than real newline bytes
-     * -- turn them into real newlines first. This happens whenever
-     * something upstream (Apigee's ExtractVariables/JSONPath included --
-     * confirmed to matter in practice, not just a theoretical edge case)
-     * hands this callout a JSON-escaped string without having unescaped
-     * it; CertificateFactory's PEM parser requires an actual newline
-     * right after "-----BEGIN CERTIFICATE-----" to recognize the
-     * boundary; without it, the whole base64 body reads as one
-     * malformed line and parsing fails (with wording that varies by JDK
-     * version -- confirmed to include both "Incomplete data" and other
-     * phrasings across versions, so this is matched on the underlying
-     * shape of the string, not on any particular error message). Also
-     * trims incidental leading/trailing whitespace. A no-op on PEM text
-     * that already has real newlines.
+     * certificate-pem in KVM has been seen in two shapes: a properly
+     * formatted PEM (-----BEGIN CERTIFICATE-----, base64 body wrapped
+     * across lines, -----END CERTIFICATE-----) and just the raw base64
+     * body alone, with no header/footer and no line breaks at all -- both
+     * are valid ways to store the same certificate, and which one a given
+     * KVM entry holds depends only on how it was populated. Handles both
+     * (and anything in between -- header with no CR, body with embedded
+     * literal "\n" escapes from JSON, etc.) the same way: strip whatever
+     * header/footer is present, un-escape literal CR/LF sequences (the
+     * same ones a raw-JSON-string KVM value can carry), strip every
+     * remaining whitespace character, and base64-decode what's left
+     * straight to DER bytes -- which CertificateFactory accepts directly,
+     * sidestepping its own PEM parser (and whatever line-length/CRLF
+     * assumptions that parser makes) entirely.
      */
-    private String normalizePem(String pem) {
-        return pem.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\r", "\n").trim();
+    private byte[] certificateDer(String pem) {
+        String unescaped = pem.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\r", "\n");
+        String body = unescaped
+                .replace("-----BEGIN CERTIFICATE-----", "")
+                .replace("-----END CERTIFICATE-----", "")
+                .replaceAll("\\s+", "");
+        return Base64.getDecoder().decode(body);
     }
 
     /**

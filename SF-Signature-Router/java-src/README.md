@@ -202,31 +202,44 @@ Sets `<output-prefix>.signatureMethod`, `<output-prefix>.digest.value`,
 - `output-prefix` — `signature.xmldsig`
 
 **Known pitfall, now handled**: `certificate-pem` has been seen in KVM in
-more than one shape — a properly formatted PEM
+several shapes — a properly formatted PEM
 (`-----BEGIN CERTIFICATE-----`, base64 body wrapped across lines,
-`-----END CERTIFICATE-----`) and just the raw base64 body alone, with no
-header/footer and no line breaks at all. `CertificateFactory`'s own PEM
-parser is picky about both the header/footer being present *and* real
-line breaks existing where it expects them, so neither shape is safe to
-hand it as-is. `XmlDsigAssembleSignatureCallout.certificateDer()` handles
-every variant the same way instead of relying on that parser at all:
-strip whatever header/footer is present (if any), un-escape literal
+`-----END CERTIFICATE-----`), the raw base64 body alone with no
+header/footer and no line breaks at all, and — the one that kept failing
+even after header/CRLF handling was added — a single base64 string using
+the **URL-safe alphabet** (RFC 4648 `-`/`_` in place of `+`/`/`), which an
+external signing/KMS-style API can hand back instead of standard base64.
+That last case doesn't fail loudly: `-`/`_` are simply outside the
+standard base64 alphabet, so decoding either throws on them or (with a
+lenient decoder) silently skips them — corrupting the decoded bytes and
+surfacing as `CertificateFactory`'s generic "not a valid X.509
+certificate", indistinguishable from the error an actually malformed
+certificate produces.
+
+`XmlDsigAssembleSignatureCallout.certificateDer()` handles every shape
+the same way instead of relying on `CertificateFactory`'s own PEM parser
+at all: strip whatever header/footer is present, un-escape literal
 two-character `\n`/`\r\n`/`\r` sequences — this matters because
 `EV-XmlDsig-Sign-Parse-Config.xml`'s own comment claims Apigee's
 `ExtractVariables`/JSONPath unescapes a JSON string's `\n` into a real
 newline automatically, a claim that was documented but never actually
 verified against a live Apigee instance, and a user hit exactly the
-failure mode you'd expect if it's wrong on their Apigee version — strip
-every remaining whitespace character, then base64-decode what's left
-straight to DER bytes and hand `CertificateFactory` those bytes directly.
-A PEM missing its header, missing real newlines, or both, all converge on
-the same DER bytes as a properly formatted one; confirmed to produce a
-byte-identical embedded `<X509Certificate>` across all three shapes in a
-test harness run. The previous error this fixes looked like
-`CertificateFactory` refusing the PEM with "not a valid X.509
-certificate" / "unexpected data in stream" (exact wording is JDK-version
-dependent — confirmed to vary across JDK versions for this same
-underlying cause, so don't pattern-match on the literal text).
+failure mode you'd expect if it's wrong on their Apigee version —
+translate `-`/`_` to the standard `+`/`/` alphabet (a no-op on input
+that's already standard base64), then decode what's left with
+`Base64.getMimeDecoder()` instead of `Base64.getDecoder()`: the MIME
+decoder ignores any character outside the base64 alphabet (stray
+whitespace, quotes left over from JSON extraction, etc.) instead of
+throwing on it, and tolerates missing padding. Confirmed in a test
+harness to produce a byte-identical embedded `<X509Certificate>` across
+all of: a formatted PEM, header-present-but-escaped-newlines, raw
+single-line base64, raw URL-safe base64, base64 wrapped in stray quotes,
+base64 with its padding stripped, and a combined worst case (URL-safe +
+no padding + literal `\n` junk mixed through the body). The error this
+fixes looked like `CertificateFactory` refusing the value with "not a
+valid X.509 certificate" / "unexpected data in stream" (exact wording is
+JDK-version dependent — confirmed to vary across JDK versions for this
+same underlying cause, so don't pattern-match on the literal text).
 
 **The same assumption is unverified everywhere else in this project a
 PEM value is pulled out of a KVM-backed JSON config via

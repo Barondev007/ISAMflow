@@ -212,28 +212,45 @@ public class XmlDsigAssembleSignatureCallout implements Execution {
     }
 
     /**
-     * certificate-pem in KVM has been seen in two shapes: a properly
+     * certificate-pem in KVM has been seen in several shapes: a properly
      * formatted PEM (-----BEGIN CERTIFICATE-----, base64 body wrapped
-     * across lines, -----END CERTIFICATE-----) and just the raw base64
-     * body alone, with no header/footer and no line breaks at all -- both
-     * are valid ways to store the same certificate, and which one a given
-     * KVM entry holds depends only on how it was populated. Handles both
-     * (and anything in between -- header with no CR, body with embedded
-     * literal "\n" escapes from JSON, etc.) the same way: strip whatever
-     * header/footer is present, un-escape literal CR/LF sequences (the
-     * same ones a raw-JSON-string KVM value can carry), strip every
-     * remaining whitespace character, and base64-decode what's left
-     * straight to DER bytes -- which CertificateFactory accepts directly,
-     * sidestepping its own PEM parser (and whatever line-length/CRLF
-     * assumptions that parser makes) entirely.
+     * across lines, -----END CERTIFICATE-----), the raw base64 body
+     * alone with no header/footer and no line breaks at all, and (the
+     * case that kept failing even after header/CRLF handling was added)
+     * a single base64 string using the URL-safe alphabet (RFC 4648 '-'
+     * and '_' in place of '+' and '/') instead of standard base64 --
+     * something external signing/KMS-style APIs commonly hand back,
+     * since the same project already pipes other base64 values to and
+     * from an external signing API. That case doesn't fail loudly: '-'
+     * and '_' are simply outside the standard alphabet, so a strict
+     * decoder either throws on them or (with a lenient decoder) silently
+     * skips them, corrupting the decoded bytes and surfacing as
+     * CertificateFactory's generic "not a valid X.509 certificate" --
+     * indistinguishable, from the error message alone, from an actually
+     * malformed certificate.
+     *
+     * Handles every shape above the same way: strip whatever header/
+     * footer is present, un-escape literal "\n"/"\r\n"/"\r" sequences
+     * (the same ones a raw-JSON-string KVM value can carry), translate
+     * '-'/'_' to the standard '+'/'/' alphabet (a no-op when the input
+     * was already standard base64 -- neither character ever appears in
+     * standard base64 output), and base64-decode what's left straight to
+     * DER bytes via the MIME decoder, which -- unlike Base64.getDecoder()
+     * -- ignores any remaining character outside the base64 alphabet
+     * (stray whitespace, quotes left over from JSON extraction, etc.)
+     * instead of throwing on it, and tolerates missing padding. The
+     * result feeds CertificateFactory directly, sidestepping its own PEM
+     * parser (and whatever line-length/CRLF assumptions that parser
+     * makes) entirely.
      */
     private byte[] certificateDer(String pem) {
         String unescaped = pem.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\r", "\n");
         String body = unescaped
                 .replace("-----BEGIN CERTIFICATE-----", "")
                 .replace("-----END CERTIFICATE-----", "")
-                .replaceAll("\\s+", "");
-        return Base64.getDecoder().decode(body);
+                .replace('-', '+')
+                .replace('_', '/');
+        return Base64.getMimeDecoder().decode(body);
     }
 
     /**

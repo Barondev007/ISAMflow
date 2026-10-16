@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  One-way TLS token call. The real URL comes from tokenretry.url: the init
+  script writes it to servicecallout.SC-TokenRetry-Call.target.url, which
+  overrides the placeholder below.
+  continueOnError + success.codes: no fault is raised for an HTTP error or
+  a timeout, JS-TokenRetry-Check decides from the status code.
+-->
+<ServiceCallout name="SC-TokenRetry-Call" continueOnError="true" async="false">
+    <DisplayName>SC-TokenRetry-Call</DisplayName>
+    <Request variable="tokenRetryRequest" clearPayload="false"/>
+    <Response>tokenRetryResponse</Response>
+    <!-- max wait per attempt (ms); keep equal to CALL_TIMEOUT_MS in token-retry-init.js -->
+    <Timeout>3000</Timeout>
+    <HTTPTargetConnection>
+        <Properties>
+            <Property name="success.codes">1xx,2xx,3xx,4xx,5xx</Property>
+            <Property name="connect.timeout.millis">2000</Property>
+            <Property name="io.timeout.millis">3000</Property>
+        </Properties>
+        <SSLInfo>
+            <Enabled>true</Enabled>
+            <!-- Uncomment to validate the token server certificate:
+            <Enforce>true</Enforce>
+            <TrustStore>ref://tokenretry-truststore-ref</TrustStore>
+            -->
+        </SSLInfo>
+        <URL>https://token-url.not-set.invalid</URL>
+    </HTTPTargetConnection>
+</ServiceCallout>

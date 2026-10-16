@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  TargetEndpoint PreFlow of a consumer proxy (snippet).
+  Only the token part is shown: keep your existing KVM, cache and
+  "Authorization: Bearer" policies, and replace your old ServiceCallout
+  with the three steps marked NEW.
+-->
+<PreFlow name="PreFlow">
+    <Request>
+        <Step>
+            <Name>LC-OAuth2-Token</Name>
+        </Step>
+        <Step>
+            <Name>KVM-Get-OAuth2-Credentials</Name>
+            <Condition>lookupcache.LC-OAuth2-Token.cachehit = false</Condition>
+        </Step>
+        <!-- NEW -->
+        <Step>
+            <Name>AM-TokenRetry-Config</Name>
+            <Condition>lookupcache.LC-OAuth2-Token.cachehit = false</Condition>
+        </Step>
+        <!-- NEW -->
+        <Step>
+            <Name>AM-TokenRetry-BuildRequest</Name>
+            <Condition>lookupcache.LC-OAuth2-Token.cachehit = false</Condition>
+        </Step>
+        <!-- NEW: retries inside, raises a 503 if all attempts fail -->
+        <Step>
+            <Name>FC-TokenRetry</Name>
+            <Condition>lookupcache.LC-OAuth2-Token.cachehit = false</Condition>
+        </Step>
+        <Step>
+            <Name>EV-TokenRetry-ExtractToken</Name>
+            <Condition>lookupcache.LC-OAuth2-Token.cachehit = false</Condition>
+        </Step>
+        <Step>
+            <Name>PC-OAuth2-Token</Name>
+            <Condition>lookupcache.LC-OAuth2-Token.cachehit = false</Condition>
+        </Step>
+        <Step>
+            <Name>AM-Set-Bearer-Token</Name>
+        </Step>
+    </Request>
+    <Response/>
+</PreFlow>

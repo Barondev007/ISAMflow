@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RaiseFault name="RF-TokenRetry-Unavailable">
+    <DisplayName>RF-TokenRetry-Unavailable</DisplayName>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+    <FaultResponse>
+        <Set>
+            <StatusCode>503</StatusCode>
+            <ReasonPhrase>Service Unavailable</ReasonPhrase>
+            <Headers>
+                <Header name="Retry-After">5</Header>
+            </Headers>
+            <Payload contentType="application/json">{
+    "error": "token_unavailable",
+    "message": "Could not obtain a backend access token.",
+    "attempts": "{tokenretry.attempts}",
+    "lastStatus": "{tokenretry.lastStatus}"
+}</Payload>
+        </Set>
+    </FaultResponse>
+</RaiseFault>

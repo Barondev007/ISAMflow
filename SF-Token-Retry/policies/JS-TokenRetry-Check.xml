@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- timeLimit must stay above the largest allowed delay (2000 ms, see token-retry-init.js). -->
+<Javascript name="JS-TokenRetry-Check" timeLimit="3000">
+    <DisplayName>JS-TokenRetry-Check</DisplayName>
+    <ResourceURL>jsc://token-retry-check.js</ResourceURL>
+</Javascript>

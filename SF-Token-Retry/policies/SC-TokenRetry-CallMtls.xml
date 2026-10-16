@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Same as SC-TokenRetry-Call, with a client certificate (mTLS).
+  Used when the calling proxy sets tokenretry.mtls = "true".
+  The keystore / truststore references below must exist in each environment.
+-->
+<ServiceCallout name="SC-TokenRetry-CallMtls" continueOnError="true" async="false">
+    <DisplayName>SC-TokenRetry-CallMtls</DisplayName>
+    <Request variable="tokenRetryRequest" clearPayload="false"/>
+    <Response>tokenRetryResponse</Response>
+    <Timeout>3000</Timeout>
+    <HTTPTargetConnection>
+        <Properties>
+            <Property name="success.codes">1xx,2xx,3xx,4xx,5xx</Property>
+            <Property name="connect.timeout.millis">2000</Property>
+            <Property name="io.timeout.millis">3000</Property>
+        </Properties>
+        <SSLInfo>
+            <Enabled>true</Enabled>
+            <Enforce>true</Enforce>
+            <ClientAuthEnabled>true</ClientAuthEnabled>
+            <KeyStore>ref://tokenretry-keystore-ref</KeyStore>
+            <KeyAlias>tokenretry-key</KeyAlias>
+            <TrustStore>ref://tokenretry-truststore-ref</TrustStore>
+        </SSLInfo>
+        <URL>https://token-url.not-set.invalid</URL>
+    </HTTPTargetConnection>
+</ServiceCallout>

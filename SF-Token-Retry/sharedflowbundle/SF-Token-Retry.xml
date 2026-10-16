@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SharedFlowBundle name="SF-Token-Retry">
+    <ConfigurationVersion majorVersion="4" minorVersion="0"/>
+    <DisplayName>SF-Token-Retry</DisplayName>
+    <Description>
+        Sends the token request prepared by the calling proxy
+        (message variable tokenRetryRequest) with a per-attempt timeout,
+        and retries up to 2 times (3 attempts in total) with a short delay
+        between attempts, within a global time budget. Retries only on
+        timeout / connection error, 408, 429 and 5xx. The response is left
+        in tokenRetryResponse; a 503 is raised when every attempt failed.
+    </Description>
+    <Policies>
+        <Policy>JS-TokenRetry-Init</Policy>
+        <Policy>RF-TokenRetry-ConfigError</Policy>
+        <Policy>SC-TokenRetry-Call</Policy>
+        <Policy>SC-TokenRetry-CallMtls</Policy>
+        <Policy>JS-TokenRetry-Check</Policy>
+        <Policy>RF-TokenRetry-Unavailable</Policy>
+    </Policies>
+    <Resources>
+        <Resource>jsc://token-retry-init.js</Resource>
+        <Resource>jsc://token-retry-check.js</Resource>
+    </Resources>
+    <SharedFlows>
+        <SharedFlow>default</SharedFlow>
+    </SharedFlows>
+</SharedFlowBundle>

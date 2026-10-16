@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Retry loop, unrolled: attempt 1 + up to 2 retries.
+  The same ServiceCallout policy is attached once per attempt;
+  JS-TokenRetry-Check decides after each attempt whether another one is
+  needed (tokenretry.retry), and waits the configured delay before it.
+-->
+<SharedFlow name="default">
+    <Step>
+        <Name>JS-TokenRetry-Init</Name>
+    </Step>
+    <Step>
+        <Name>RF-TokenRetry-ConfigError</Name>
+        <Condition>tokenretry.configError != null</Condition>
+    </Step>
+
+    <!-- attempt 1 -->
+    <Step>
+        <Name>SC-TokenRetry-Call</Name>
+        <Condition>tokenretry.mtls != "true"</Condition>
+    </Step>
+    <Step>
+        <Name>SC-TokenRetry-CallMtls</Name>
+        <Condition>tokenretry.mtls = "true"</Condition>
+    </Step>
+    <Step>
+        <Name>JS-TokenRetry-Check</Name>
+    </Step>
+
+    <!-- attempt 2 (retry 1) -->
+    <Step>
+        <Name>SC-TokenRetry-Call</Name>
+        <Condition>tokenretry.retry = "true" and tokenretry.mtls != "true"</Condition>
+    </Step>
+    <Step>
+        <Name>SC-TokenRetry-CallMtls</Name>
+        <Condition>tokenretry.retry = "true" and tokenretry.mtls = "true"</Condition>
+    </Step>
+    <Step>
+        <Name>JS-TokenRetry-Check</Name>
+        <Condition>tokenretry.retry = "true"</Condition>
+    </Step>
+
+    <!-- attempt 3 (retry 2) -->
+    <Step>
+        <Name>SC-TokenRetry-Call</Name>
+        <Condition>tokenretry.retry = "true" and tokenretry.mtls != "true"</Condition>
+    </Step>
+    <Step>
+        <Name>SC-TokenRetry-CallMtls</Name>
+        <Condition>tokenretry.retry = "true" and tokenretry.mtls = "true"</Condition>
+    </Step>
+    <Step>
+        <Name>JS-TokenRetry-Check</Name>
+        <Condition>tokenretry.retry = "true"</Condition>
+    </Step>
+
+    <!-- every attempt failed -->
+    <Step>
+        <Name>RF-TokenRetry-Unavailable</Name>
+        <Condition>tokenretry.success != "true" and tokenretry.raiseFault != "false"</Condition>
+    </Step>
+</SharedFlow>

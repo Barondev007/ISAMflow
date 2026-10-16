@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Builds the client-credentials token request that SF-Token-Retry sends. -->
+<AssignMessage name="AM-TokenRetry-BuildRequest">
+    <DisplayName>AM-TokenRetry-BuildRequest</DisplayName>
+    <AssignTo createNew="true" transport="http" type="request">tokenRetryRequest</AssignTo>
+    <Set>
+        <Verb>POST</Verb>
+        <Headers>
+            <Header name="Content-Type">application/x-www-form-urlencoded</Header>
+            <Header name="Accept">application/json</Header>
+        </Headers>
+        <FormParams>
+            <FormParam name="grant_type">client_credentials</FormParam>
+            <FormParam name="client_id">{private.oauth2.client_id}</FormParam>
+            <FormParam name="client_secret">{private.oauth2.client_secret}</FormParam>
+            <FormParam name="scope">{private.oauth2.scope}</FormParam>
+        </FormParams>
+    </Set>
+    <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+</AssignMessage>

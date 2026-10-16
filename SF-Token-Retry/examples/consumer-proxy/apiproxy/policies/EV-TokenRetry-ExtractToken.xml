@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExtractVariables name="EV-TokenRetry-ExtractToken">
+    <DisplayName>EV-TokenRetry-ExtractToken</DisplayName>
+    <Source clearPayload="false">tokenRetryResponse</Source>
+    <JSONPayload>
+        <Variable name="access_token" type="string">
+            <JSONPath>$.access_token</JSONPath>
+        </Variable>
+        <Variable name="expires_in" type="string">
+            <JSONPath>$.expires_in</JSONPath>
+        </Variable>
+    </JSONPayload>
+    <VariablePrefix>oauth2</VariablePrefix>
+    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+</ExtractVariables>

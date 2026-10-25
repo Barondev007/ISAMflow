@@ -59,6 +59,64 @@ with no `KeyInfo` at all, and a document whose `KeyInfo` has neither
 `KeyValue` nor `X509Data` (both correctly rejected with a clear error,
 not a crash).
 
+## Whole document, or just a signed Assertion extracted from one
+
+Supports two Reference shapes, auto-detected from what the Signature
+itself declares — no separate mode switch:
+
+- **`URI=""`** — the whole document is covered. The only shape this
+  bundle's own signing side (`JC-Assemble-XmlDsig-Signature`) ever
+  produces, for self-signed documents.
+- **`URI="#id"`** — exactly one element, located by an `id-attribute-name`
+  match (default `"ID"`, SAML 2.0's own `Assertion` attribute), is
+  covered. This is the shape SAML-style externally-signed Assertions
+  almost always use, *even when* that Assertion happens to be the whole
+  input document — e.g. because an earlier policy already extracted just
+  the `<Assertion>` subtree as its own fragment before handing it to
+  `JC-XmlDsig-Verify-Signature`. Feeding in the full enclosing document
+  (Assertion nested somewhere inside it) or just the extracted Assertion
+  fragment both work unchanged, since either way the fragment or document
+  being parsed still contains the one element the Reference's own "#id"
+  names.
+
+`"#id"` support needed two extra checks beyond what JSR 105 does on its
+own, both enforced *before* `signature.validate()` is ever called:
+
+1. **The id match must be unique.** More than one element carrying the
+   same id value is refused outright, not resolved to "the first one" —
+   that's the textbook XML Signature wrapping setup (an attacker-inserted
+   second element with the legitimate id, hoping a lookup or a human
+   picks the wrong one).
+2. **The `<Signature>` must be a descendant of the matched element.** A
+   Reference can otherwise name an element the Signature isn't even
+   nested in, which `validate()` alone would still accept as
+   cryptographically "valid" — it only checks that the digest of
+   whatever the URI resolves to matches, with no opinion on where the
+   Signature itself lives in the tree.
+
+On success, `signature.verify.xmldsig.referencedElementId` is set to the
+matched id (unset for the `URI=""` whole-document case). **Callers must
+cross-check this against whatever id they actually mean to trust** (e.g.
+the Assertion ID their own business logic is about to act on) rather than
+re-searching the document for "the Assertion" by tag name afterward,
+which would silently reopen the same wrapping hole closed above: this
+class only proves one specific, uniquely-identified element was
+validated — not that it's the element the caller meant to rely on.
+
+Verified end to end against a hand-built SAML-Assertion-shaped test
+document (`XMLSignatureFactory`-signed with `URI="#id"`, Signature nested
+inside the Assertion, independent of this project's own signing side):
+the whole-document-with-nested-Assertion case, the standalone-extracted-
+Assertion-fragment case, a duplicate-id wrapping attempt (correctly
+refused), a Signature relocated outside the referenced element (correctly
+refused), and a tampered-after-signing Assertion (correctly refused) —
+plus a regression check that the pre-existing `URI=""` whole-document
+path (this bundle's own self-signed documents) is unaffected.
+
+Only ever matches a plain, unprefixed attribute — a namespaced id
+attribute (e.g. WS-Security's `wsu:Id`) isn't handled by `id-attribute-name`
+and would need a small code change, not just a config change.
+
 ## No extra XML-security dependency
 
 Unlike the earlier (now-removed) JWT KeyStore callout attempt, this one
@@ -110,6 +168,9 @@ SF-Signature-Validator/resources/java/xmldsig-verify-callout.jar
   resolved at request time)
 - `document-fallback` — `{message.content}`, used when `document` is
   empty
+- `id-attribute-name` — `"ID"` (a literal, never a ref) — only matters
+  when the Reference uses `URI="#id"`; see "Whole document, or just a
+  signed Assertion" above
 - `output-prefix` — `signature.verify.xmldsig` (a literal flow-variable
   name *prefix* to write results under, not a ref)
 

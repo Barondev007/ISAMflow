@@ -23,6 +23,25 @@
     prove, and for how to add pinning or CA-chain validation back if
     that guarantee turns out to matter here.
 
+    This accepts EITHER a Signature whose Reference covers the whole
+    document (URI="", the only shape this bundle's own signing side ever
+    produces) OR one whose Reference targets a single element by id
+    (URI="#id", e.g. a SAML-style signed Assertion) — the same policy
+    works whether "document" is a full document with a signed Assertion
+    nested somewhere inside it, or just that Assertion already extracted
+    as its own standalone fragment, since either way the Reference's own
+    URI says which shape it is; no separate mode switch needed.
+    id-attribute-name names the attribute searched for a "#id" match
+    (default "ID", SAML 2.0 Assertion's own attribute) — override it if
+    whatever signs these documents uses a different attribute name (e.g.
+    SAML 1.1's "AssertionID"). See the class-level comment in
+    XmlDsigVerifyCallout.java for the uniqueness and
+    Signature-must-be-inside-the-target checks this enforces around "#id"
+    references to keep them from reopening XML Signature wrapping — and
+    for signature.verify.xmldsig.referencedElementId, which callers MUST
+    cross-check against whatever id they actually mean to trust rather
+    than re-searching the document by tag name afterward.
+
     Sets signature.verify.xmldsig.valid ("true"/"false") and, when not
     valid, signature.verify.xmldsig.error with a human-readable reason.
     continueOnError is "true" deliberately: this callout never raises
@@ -40,6 +59,7 @@
     <Properties>
         <Property name="document">{signature.verify.payload}</Property>
         <Property name="document-fallback">{message.content}</Property>
+        <Property name="id-attribute-name">ID</Property>
         <Property name="output-prefix">signature.verify.xmldsig</Property>
     </Properties>
 </JavaCallout>

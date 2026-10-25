@@ -7,6 +7,7 @@ import com.apigee.flow.message.MessageContext;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
@@ -67,10 +68,17 @@ import java.util.Map;
  *   - CanonicalizationMethod must be Exclusive C14N (no comments).
  *   - SignatureMethod must be RSA-SHA256 or ECDSA-SHA256.
  *   - Exactly one &lt;Signature&gt; element in the document.
- *   - Exactly one &lt;Reference&gt;, URI="" (the whole document), with
- *     DigestMethod SHA-256 and EXACTLY the two Transforms
- *     [enveloped-signature, exclusive-c14n] in that order -- no XSLT
- *     transform, no extra transform, no reference to a sub-element by ID.
+ *   - Exactly one &lt;Reference&gt;, with DigestMethod SHA-256 and EXACTLY
+ *     the two Transforms [enveloped-signature, exclusive-c14n] in that
+ *     order -- no XSLT transform, no extra transform, no second
+ *     Reference. URI must be either "" (covers the whole document -- the
+ *     only shape this class's own signing side, JC-Assemble-XmlDsig-Signature,
+ *     ever produces) or "#id" (covers one specific element, located by
+ *     an id-attribute-name Property match -- the shape SAML-style
+ *     externally-signed Assertions almost always use, even when that
+ *     Assertion happens to be the whole input document, e.g. because an
+ *     earlier step already extracted just the &lt;Assertion&gt; subtree
+ *     before handing it to this policy).
  * A looser check here is a real, well-known class of XML Signature
  * "wrapping" vulnerability: a maliciously crafted document can be built
  * so that *a* Reference validates against *some* element while the
@@ -81,10 +89,40 @@ import java.util.Map;
  * weaker because of, the KeyInfo trust-model choice above: it still
  * closes off wrapping attacks regardless of where the key came from.
  *
+ * Supporting "#id" references safely needs two extra checks beyond what
+ * JSR 105 does on its own, both enforced inline in execute() -- via
+ * findUniqueElementById() and isDescendant() -- before
+ * signature.validate() is ever called:
+ *   1) The id-attribute-name value named by the Reference's "#id" must
+ *      match EXACTLY ONE element in the document. More than one match is
+ *      refused outright -- the textbook wrapping setup is a second,
+ *      attacker-inserted element carrying the SAME id value as the
+ *      legitimate one, hoping a lookup finds (or a human eyeballing the
+ *      document sees) the wrong one.
+ *   2) The &lt;Signature&gt; element must be a descendant of that matched
+ *      element -- i.e. the Signature actually lives inside what its own
+ *      Reference claims to cover, the normal enveloped-signature shape.
+ *      Refused otherwise: a Reference can otherwise point at an
+ *      element the Signature isn't even nested in, which the core JSR
+ *      105 validate() call alone would still accept as cryptographically
+ *      "valid" (it only checks that the digest of whatever the URI
+ *      resolves to matches -- it has no opinion on where the Signature
+ *      itself sits in the tree).
+ * On success, &lt;output-prefix&gt;.referencedElementId is set to the
+ * matched id value (unset for the URI="" whole-document case) --
+ * callers MUST re-check this against whatever id they actually intend to
+ * trust (e.g. the Assertion ID their own business logic is about to act
+ * on) rather than independently re-searching the document for "the
+ * Assertion" by tag name after the fact, which would silently reopen the
+ * same wrapping hole this class closes internally: this class only
+ * proves ONE specific, uniquely-identified element was validated, not
+ * that it's the element the caller meant.
+ *
  * Policy config (see JC-XmlDsig-Verify-Signature.xml):
  *   &lt;Properties&gt;
  *     &lt;Property name="document"&gt;{signature.verify.payload}&lt;/Property&gt;
  *     &lt;Property name="document-fallback"&gt;{message.content}&lt;/Property&gt;
+ *     &lt;Property name="id-attribute-name"&gt;ID&lt;/Property&gt;
  *     &lt;Property name="output-prefix"&gt;signature.verify.xmldsig&lt;/Property&gt;
  *   &lt;/Properties&gt;
  *
@@ -92,9 +130,13 @@ import java.util.Map;
  * references: a property value wrapped in "{...}" is looked up via
  * MessageContext.getVariable() at request time, since this class is
  * instantiated once at policy load and reused across requests.
- * "output-prefix" is always a literal flow-variable name PREFIX, never a
- * ref. There is no key-related config left -- see the trust-model note
- * above for why.
+ * "id-attribute-name" and "output-prefix" are always literal values,
+ * never refs -- "id-attribute-name" only matters when the Reference uses
+ * "#id" at all, and is only ever compared against a plain, unprefixed
+ * attribute (SAML 2.0 Assertion's own "ID", by default); a namespaced id
+ * attribute (e.g. WS-Security's wsu:Id) isn't handled by this property
+ * and would need a small code change, not just a config change. There is
+ * no key-related config left -- see the trust-model note above for why.
  *
  * Sets &lt;output-prefix&gt;.valid ("true"/"false") and, when not valid,
  * &lt;output-prefix&gt;.error with a human-readable reason, plus (only when
@@ -160,6 +202,28 @@ public class XmlDsigVerifyCallout implements Execution {
             String shapeError = checkExpectedShape(signature);
             if (shapeError != null) {
                 return fail(msgCtxt, outputPrefix, shapeError);
+            }
+
+            String refUri = ((Reference) signature.getSignedInfo().getReferences().get(0)).getURI();
+            if (refUri != null && refUri.length() > 0) {
+                String idAttributeName = getLiteralProperty("id-attribute-name", "ID");
+                String idValue = refUri.substring(1);
+                Element targetElement;
+                try {
+                    targetElement = findUniqueElementById(doc, idAttributeName, idValue);
+                } catch (Exception idError) {
+                    return fail(msgCtxt, outputPrefix, "Reference URI \"" + refUri + "\": " + idError.getMessage());
+                }
+                if (!isDescendant(targetElement, sigElement)) {
+                    return fail(msgCtxt, outputPrefix, "Reference URI \"" + refUri + "\" points at an element that does not contain the <Signature> -- refusing (possible signature wrapping attempt)");
+                }
+                // Tells JSR 105 how to resolve "#idValue" to targetElement --
+                // must happen before validate(), since Reference
+                // dereferencing happens lazily inside it. See the class
+                // comment for why the uniqueness and descendant checks
+                // above run BEFORE this, not after.
+                validateContext.setIdAttributeNS(targetElement, null, idAttributeName);
+                msgCtxt.setVariable(outputPrefix + ".referencedElementId", idValue);
             }
 
             boolean coreValid;
@@ -267,7 +331,12 @@ public class XmlDsigVerifyCallout implements Execution {
         Reference ref = (Reference) refs.get(0);
         String uri = ref.getURI();
         if (uri != null && uri.length() > 0) {
-            return "expected Reference URI=\"\" (the whole document), found \"" + uri + "\"";
+            if (!uri.startsWith("#")) {
+                return "expected Reference URI=\"\" (whole document) or \"#id\" (a specific element), found \"" + uri + "\"";
+            }
+            if (uri.length() == 1) {
+                return "Reference URI is \"#\" with no id value";
+            }
         }
         if (ref.getDigestMethod() == null || !DIGEST_SHA256.equals(ref.getDigestMethod().getAlgorithm())) {
             return "unsupported or missing DigestMethod on the Reference";
@@ -279,6 +348,46 @@ public class XmlDsigVerifyCallout implements Execution {
             return "expected exactly [enveloped-signature, exclusive-c14n] Transforms on the Reference, in that order";
         }
         return null;
+    }
+
+    /**
+     * Finds the element whose attrName attribute equals idValue --
+     * EXACTLY one match required. More than one is refused rather than
+     * returning the first/any match: the textbook XML Signature wrapping
+     * setup is an attacker-inserted second element carrying the same id
+     * value as the legitimate one, hoping a naive lookup (or a human
+     * eyeballing the document) picks the wrong one. Only ever compares a
+     * plain, unprefixed attribute (see the class comment) -- doesn't
+     * attempt namespace-aware matching.
+     */
+    private Element findUniqueElementById(Document doc, String attrName, String idValue) throws Exception {
+        NodeList all = doc.getElementsByTagName("*");
+        Element match = null;
+        for (int i = 0; i < all.getLength(); i++) {
+            Element el = (Element) all.item(i);
+            if (el.hasAttribute(attrName) && idValue.equals(el.getAttribute(attrName))) {
+                if (match != null) {
+                    throw new Exception("more than one element has " + attrName + "=\"" + idValue + "\" -- refusing to guess (possible signature wrapping attempt)");
+                }
+                match = el;
+            }
+        }
+        if (match == null) {
+            throw new Exception("no element found with " + attrName + "=\"" + idValue + "\"");
+        }
+        return match;
+    }
+
+    /** True if node is anywhere under ancestor (not equal to it). */
+    private boolean isDescendant(Node ancestor, Node node) {
+        Node p = node.getParentNode();
+        while (p != null) {
+            if (p == ancestor) {
+                return true;
+            }
+            p = p.getParentNode();
+        }
+        return false;
     }
 
     private Document parseSecurely(String xml) throws Exception {
